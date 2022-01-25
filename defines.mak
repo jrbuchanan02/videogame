@@ -28,6 +28,14 @@ VPATH += ./
 VPATH += ./source
 VPATH += ./init
 
+windows_exec_name = videogame.exe
+linux_exec_name = videogame.out
+ifeq ($(operating_system), windows)
+	exec_name = $(windows_exec_name)
+else
+	exec_name = $(linux_exec_name)
+endif
+
 source = 
 
 
