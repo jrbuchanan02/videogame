@@ -116,14 +116,14 @@ void initConsoleEnvironment ( )
     // not all versions of windows / linux 
     // support this operation, so it might
     // be ignored or output garbage to the screen.
-    std::cout << "\u001b[3j";
+    std::cout << "\u001b[3J";
     // clear the screen but not the scrollback.
     // if the previous output cleared the screen,
     // then this command has no effect, if it did not
     // clear the screen, then this command does the next
     // closest thing to what we meant to do in the first
     // command. 
-    std::cout << "\u001b[2j";
+    std::cout << "\u001b[2J";
     // move the cursor to the top left part of the screen. If the 
     // reset to initial state does not do so already, we now ensure that
     // the cursor is in the top left corner of the screen.
