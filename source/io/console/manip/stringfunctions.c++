@@ -1,169 +1,199 @@
 /**
  * @file stringfunctions.c++
  * @author Joshua Buchanan (joshuarobertbuchanan@gmail.com)
- * @brief The code for the string functions
+ * @brief Implementation for string functions
  * @version 1
- * @date 2022-01-25
+ * @date 2022-01-26
  *
  * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed above.
  *
  */
 #include <io/console/manip/stringfunctions.h++>
 
-#include <functional>
+#include <stdexcept>
 #include <string>
+#include <vector>
+using namespace io::console::manip;
 
-enum class C0Codes
+enum CodePointType
 {
-    nul = 0 ,
-    soh ,
-    stx ,
-    etx ,
-    eot ,
-    enq ,
-    ack ,
-    bel ,
-    bs ,
-    ht ,
-    lf ,
-    vt ,
-    ff ,
-    cr ,
-    so ,
-    si ,
-    dle ,
-    dc1 ,
-    dc2 ,
-    dc3 ,
-    dc4 ,
-    nak ,
-    syn ,
-    etb ,
-    can ,
-    em ,
-    sub ,
-    esc ,
-    fs ,
-    gs ,
-    rs ,
-    us ,
-    del = 0x7f ,
-};
-enum class C1Codes
-{
-    bph = 'B',
-    nbh,
-    ind,
-    nel,
-    ssa,
-    esa,
-    hts,
-    htj,
-    vts,
-    pld,
-    plu,
-    ri,
-    ss2,
-    ss3,
-    dcs,
-    pu1,
-    pu2,
-    sts,
-    cch,
-    mw,
-    spa,
-    epa,
-    sos,
-    sgc,
-    sci,
-    csi,
-    st,
-    osc,
-    pm,
-    apc,
+    TERMINAL , // ansi escape sequence or control character, [0x00 - 0x20]
+    UTF1BYTE , // one byte utf-8 starts with [0x20 - 0x7f]
+    UTF2BYTE , // two byte utf-8 starts with [0xC0 - 0xDF]
+    UTF3BYTE , // three byte utf-8 starts with [0xE0 - 0xEf]
+    UTF4BYTE , // four byte utf-8 starts with [0xF0 - 0xF8]
+    UTFNBYTE , // unknown, but it's probably unicode? perhaps 5-byte?
+    INVALID_ , // we know we errored out and found a character we know to be invalid
 };
 
-static_assert( ( char ) C0Codes::esc == '\x1b' , "Invalid C0 Codes!" );
-static_assert( ( char ) C1Codes::csi == '[', "Invalid C1 Codes!");
-
-#define C0Code(X)                                                               \
-io::console::manip::ANSISequence const io::console::manip::X ( ) noexcept       \
-{                                                                               \
-    ANSISequence result = "";                                                   \
-    result += (char)C0Codes::X;                                                 \
-    return result;                                                              \
+CodePointType identifyFirst ( std::string const &string )
+{
+    auto front = string.front ( );
+    if ( front & '\x80' ) // is the highest bit set?
+    {
+        // multi-byte unicode
+        if ( front & '\x40' ) // highest + second highest
+        {
+            if ( front & '\x20' ) // highest three
+            {
+                if ( front & '\x10' ) // highest four
+                {
+                    if ( front & '\x08' ) // highest five
+                    {
+                        // if the highest five are set, we don't know what
+                        // the character is, but, since it's matching this
+                        // unicode pattern, we'll assume it's some new 
+                        // version of unicode and indicate as such.
+                        //
+                        // this return value still indicates an error
+                        return UTFNBYTE;
+                    } else
+                    {
+                        // highest four and not fifth highest
+                        return UTF4BYTE;
+                    }
+                } else
+                {
+                    // highest three and not fourth highest
+                    return UTF3BYTE;
+                }
+            } else
+            {
+                // highest two and not third highest
+                return UTF2BYTE;
+            }
+        } else
+        {
+            return INVALID_; // We found the following byte in a multi-byte
+                             // unicode sequence. This is an error.
+        }
+    } else
+    {
+        // terminal / single byte
+        if ( front < ' ' ) // is this a control character?
+        {
+            return TERMINAL;
+        } else return UTF1BYTE;
+    }
 }
 
-C0Code ( nul )
-C0Code ( soh )
-C0Code ( stx )
-C0Code ( etx )
-C0Code ( eot )
-C0Code ( enq )
-C0Code ( ack )
-C0Code ( bel )
-C0Code ( bs )
-C0Code ( ht )
-C0Code ( lf )
-C0Code ( vt )
-C0Code ( ff )
-C0Code ( cr )
-C0Code ( so )
-C0Code ( si )
-C0Code ( dle )
-C0Code ( dc1 )
-C0Code ( dc2 )
-C0Code ( dc3 )
-C0Code ( dc4 )
-C0Code ( nak )
-C0Code ( syn )
-C0Code ( etb )
-C0Code ( can )
-C0Code ( em )
-C0Code ( sub )
-C0Code ( esc )
-C0Code ( fs )
-C0Code ( gs )
-C0Code ( rs )
-C0Code ( us )
-C0Code ( del )
-
-#undef C0Code
-#define C1Code(X)                                                               \
-io::console::manip::ANSISequence const io::console::manip::X ( ) noexcept       \
-{                                                                               \
-    ANSISequence result = esc();                                                \
-    result += (char)C1Codes::X;                                                 \
-    return result;                                                              \
+bool endsVariableLengthCode ( char const &character )
+{
+    if ( character < 0x08 || character > 0x7E )
+    {
+        return true;
+    } else if ( character < 0x20 && character > 0x0D )
+    {
+        return true;
+    } else
+    {
+        return false;
+    }
 }
 
-C1Code ( bph )
-C1Code ( nbh )
-C1Code ( ind )
-C1Code ( nel )
-C1Code ( ssa )
-C1Code ( esa )
-C1Code ( hts )
-C1Code ( htj )
-C1Code ( vts )
-C1Code ( pld )
-C1Code ( plu )
-C1Code ( ri )
-C1Code ( ss2 )
-C1Code ( ss3 )
-C1Code ( dcs )
-C1Code ( pu1 )
-C1Code ( pu2 )
-C1Code ( sts )
-C1Code ( cch )
-C1Code ( mw )
-C1Code ( spa )
-C1Code ( epa )
-C1Code ( sos )
-C1Code ( sgc )
-C1Code ( sci )
-C1Code ( csi )
-C1Code ( st )
-C1Code ( osc )
-C1Code ( pm )
-C1Code ( apc )
+bool endsCSI ( char const &character )
+{
+    return character >= 0x40 && character <= 0x7E;
+}
+
+
+std::string grabCodePoint ( std::string &string )
+{
+    std::string result = "";
+    std::string errorMessage = "Unknown (UTF-8?) Sequence!";
+    switch ( identifyFirst ( string ) )
+    {
+    case INVALID_:
+        errorMessage = "Invalid Character Sequence!";
+    case UTFNBYTE:
+        throw std::runtime_error ( errorMessage );
+    case TERMINAL:
+        result += string.front ( );
+        string = string.substr ( 1 );
+        // check for an escape sequence.
+        if ( result.back ( ) == '\x1b' )
+        {
+            result += string.front ( );
+            string = string.substr ( 1 );
+            // what type of sequence do we have?
+            // some are only two bytes long (incl. esc)
+            // others can be infinitely long.
+            switch ( result.back ( ) )
+            {
+                // SS2 and SS3 require one more character
+            case 'N': // ss2
+            case 'O': // ss3
+                result += string.front ( );
+                string = string.substr ( 1 );
+                break;
+                // PU1 and PU2 are subject to prior agreement on meaning between
+                // us and the terminal. We can't know the length here without
+                // more documentation on the windows / linux terminals.
+            case 'Q':
+            case 'R':
+                throw std::runtime_error ( "Private use Sequence!" );
+                // these four commands are terminated by the string terminator 
+                // (or, on xterm and windows terminal, BEL), and can contain the 
+                // character in the range [\x08, \x0D] U [\x20, \x7E]
+            case 'P': // DCS
+            case ']': // OSC
+            case '^': // PM
+            case '_': // APC
+                while ( !result.ends_with ( "\u001b\\" ) && !string.empty ( ) && !endsVariableLengthCode ( result.back ( ) ) )
+                {
+                    result += string.front ( );
+                    string = string.substr ( 1 );
+                }
+                break;
+                // SOS is different from the four above in that it only ends with
+                // either SOS or ST
+            case 'X': // SOS
+                while ( !result.ends_with ( "\x1bX" ) && !result.ends_with ( "\x1b\\" ) && !string.empty ( ) )
+                {
+                    result += string.front ( );
+                    string = string.substr ( 1 );
+                }
+                break;
+            case '[': // CSI
+                // CSI can be terminated by a byte in the range [0x40, 0x7E]
+                // the sequences that use a control character in this 
+                // range have undefined behavior, so we'll assume that we 
+                // know what we're doing and not terminate the sequence.
+                while ( !endsCSI ( result.back ( ) ) && !string.empty ( ) )
+                {
+                    result += string.front ( );
+                    string = string.substr ( 1 );
+                }
+                break;
+            default:
+                break;
+            }
+        }
+        break;
+    case UTF4BYTE:
+        result += string.front ( );
+        string = string.substr ( 1 );
+    case UTF3BYTE:
+        result += string.front ( );
+        string = string.substr ( 1 );
+    case UTF2BYTE:
+        result += string.front ( );
+        string = string.substr ( 1 );
+    case UTF1BYTE:
+        result += string.front ( );
+        string = string.substr ( 1 );
+    default:
+        break;
+    }
+    return result;
+}
+
+std::vector < std::string > io::console::manip::splitByCodePoint ( std::string string )
+{
+    std::vector < std::string > result = {};
+    while ( !string.empty ( ) )
+    {
+        result.push_back ( grabCodePoint ( string ) );
+    }
+    return result;
+}

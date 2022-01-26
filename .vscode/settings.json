@@ -2,6 +2,7 @@
     "files.associations": {
         "*.h++": "cpp",
         "*.h": "c",
-        "streambuf": "cpp"
+        "streambuf": "cpp",
+        "thread": "cpp"
     }
 }
