@@ -16,17 +16,17 @@ generals = --std=gnu++2a
 
 ifeq ($(operating_system), windows)
 	defines = -DWINDOWS
-	RM = @echo
+	RM = C:\msys64\usr\bin\rm.exe -f
 else
 	defines = -DLINUX
 	CXX = g++-10 -pthread -Wl,--no-as-needed
 endif
 
-CXXFLAGS += $(generals) $(warnings) $(optimize) $(defines)
+ifeq ($(findstring --check,$(MAKEFLAGS)), --check)
+	CXXFLAGS += -DUNITTEST
+endif
 
-VPATH += ./
-VPATH += ./source
-VPATH += ./init
+CXXFLAGS += $(generals) $(warnings) $(optimize) $(defines)
 
 windows_exec_name = videogame.exe
 linux_exec_name = videogame.out
@@ -35,8 +35,6 @@ ifeq ($(operating_system), windows)
 else
 	exec_name = $(linux_exec_name)
 endif
-
-source = 
 
 
 defs_test:
