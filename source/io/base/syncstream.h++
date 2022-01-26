@@ -157,7 +157,7 @@ namespace io::base
                 if ( stream )
                 {
                     stream->sputn ( buffer.c_str ( ) , buffer.size ( ) );
-                    buffer = "";
+                    buffer = buffer.substr ( 0 , 0 );
                     result = true;
                     if ( !stream->pubsync ( ) ) {
                         result &= true;
@@ -266,7 +266,7 @@ namespace io::base
 
         std::streamsize xsputn ( Traits::char_type const *s , std::streamsize count ) override
         {
-            std::basic_string < CharT , Traits , Allocator > str = "";
+            std::basic_string < CharT , Traits , Allocator > str = buffer.substr ( 0 , 0 );
             for ( std::streamsize i = 0; i < count; i++ )
             {
                 str += s [ i ];

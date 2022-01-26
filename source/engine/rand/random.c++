@@ -23,7 +23,7 @@ void seedTable ( );
 std::uint64_t grabFromTable ( );
 
 
-bool sigmaCheck ( RandomNumber const against )
+bool engine::rand::sigmaCheck ( RandomNumber const against )
 {
     auto roll = distribution ( generator );
     if ( roll * roll >= 100 )
