@@ -30,6 +30,7 @@ int main ( int const argc , char const *const *const argv )
     testBasicSyncstreambuf ( );
     std::cout << "Testing complete. Press enter to exit.\n";
     std::cin.get ( );
+    // FIXME: #2 Program Cannot Exit Noramlly on Linux
 #ifdef LINUX
     throw std::runtime_error ( "I don't know why I can't get the program to exit normally.");
 #endif
@@ -58,7 +59,7 @@ void dumpInformation ( int const &argc , char const *const *const &argv )
 
 #include <thread>
 
-// FIXME: occaisionally segfaults on linux
+// FIXME: #1 occaisionally segfaults on linux
 // FIXME: the multithreading here prevents posix systems from exiting normally?
 void testBasicSyncstreambuf ( )
 {
