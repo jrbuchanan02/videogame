@@ -1,7 +1,7 @@
 /**
- * @file stringfunctions.c++
+ * @file codePoint.c++
  * @author Joshua Buchanan (joshuarobertbuchanan@gmail.com)
- * @brief Implementation for string functions
+ * @brief CodePoint processing implementation for stringfunctions
  * @version 1
  * @date 2022-01-26
  *
