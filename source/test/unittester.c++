@@ -24,6 +24,10 @@
 #include <io/base/unistring.h++>
 #include <io/console/manip/stringfunctions.h++>
 
+#ifdef WINDOWS
+#include "windows.h"
+#endif
+
 struct Unittest
 {
     char const *const passMessage = "Success.";
@@ -160,45 +164,96 @@ bool testBasicSyncstreambuf ( )
 
 bool testCodePointSplitting ( )
 {
-    static std::vector < std::string > expected =
+    auto testOne = [ ] ( std::string against )
     {
-        "A",                // 1-byte UTF-8
-        "\u001bN@",         // SS2
-        "\u001b[37m",       // CSI (set white foreground)
-        "\u001b[38:1m",     // CSI (set transparent foreground)
-        "\u001b]P1ff000000\u001b\\", // Linux command to set color 1 to bright red
-        "\u001b]4;1;rgb:ff/00/00\u001b\\" , // Equivalent windows command
-        "\u001bXHello, World!\u001b[37m\u001b\\", // valid SOS sequence
-        "\u001bXHello, World!\u001b[37m\u001b\u001bX" , // *technically* valid SOS sequence
-        "©", // copyright sign, (2-byte UTF-8)
-        "€", // euro sign, (3-byte UTF-8)
-        "כּ", // Hebrew Letter Kaf with Dagesh (4-byte UTF-8)
-        "\U0010FFFF" , // final character in Supplementary Private Use Area B
+        std::cout << "Testing \"" << against << "\"\n";
+        auto result = io::console::manip::splitByCodePoint ( against );
+        bool pass = against.starts_with ( result.at ( 0 ) );
+        std::string conditions [ 2 ] = {
+            ( pass ? "equals" : "does not equal" ),
+            ( pass ? "passes" : "does not pass" ),
+        };
+        std::cout << "Since \"" << result.at ( 0 ) << "\" " << conditions [ 0 ];
+        std::cout << " the first code point of " << against;
+        std::cout << " the test " << conditions [ 1 ];
+        std::cout << std::endl;
+        return pass;
+    };
+    auto testTwo = [ ] ( std::string against , char escape , char with )
+    {
+        auto replace = [ & ] ( std::string string )
+        {
+            for ( auto &c : string )
+            {
+                if ( c == escape ) c = with;
+            }
+            return string;
+        };
+
+        std::cout << "Testing \"" << replace ( against ) << "\"\n";
+        std::cout << "Where \"" << with << "\" represents codepoint u+" << std::hex << ( int ) escape;
+        std::cout << std::dec << std::endl;
+        auto result = io::console::manip::splitByCodePoint ( against );
+        bool pass = against.starts_with ( result.at ( 0 ) );
+        std::string conditions [ 2 ] = {
+            ( pass ? "equals" : "does not equal" ),
+            ( pass ? "passes" : "does not pass" ),
+        };
+        std::cout << "Since \"" << replace ( result.at ( 0 ) ) << "\" " << conditions [ 0 ];
+        std::cout << " the first code point of " << replace ( against );
+        std::cout << " the test " << conditions [ 1 ];
+        std::cout << std::endl;
+        return pass;
     };
 
-    std::string test = "A\u001bN@\u001b[37m\u001b[38:1m\u001b]P1ff000000\u001b\\"
-        "\u001b]4;1;rgb:ff/00/00\u001b\\\u001bXHello, World!\u001b[37m\u001b\\"
-        "\u001bXHello, World!\u001b[37m\u001b\\\u001b"
-        "X©€כּ\U0010FFFF";
-
-    std::vector < std::string > result = io::console::manip::splitByCodePoint ( test );
-    bool pass = true;
-    try
+    auto testBig = [ & ] ( )
     {
-        for ( std::size_t i = 0; i < result.size ( ); i++ )
+        std::string against = "\U0010ffff";
+        std::cout << "Testing \"" << "[Final Private Use Character Here]" << "\"\n";
+        std::cout << "Where [Final Private Use Character Here]" << " represents U+10FFFF\n";
+        auto result = io::console::manip::splitByCodePoint ( against );
+        bool pass = against.starts_with ( result.at ( 0 ) );
+        std::string conditions [ 2 ] = {
+            ( pass ? "equals" : "does not equal" ),
+            ( pass ? "passes" : "does not pass" ),
+        };
+        std::cout << "Since \"" << result.at ( 0 ) << "\" " << conditions [ 0 ];
+        std::cout << " the first code point of " << against;
+        std::cout << " the test " << conditions [ 1 ];
+        std::cout << std::endl;
+        return pass;
+    };
+
+
+    auto testBad = [ & ] ( )
+    {
+        // this test will remain if the compiler lets it.
+        char badChars [ ] = {
+            (char)0xff,
+            0x00,
+        };
+
+        std::string bad ( badChars );
+        try
         {
-            if ( result.at ( i ) != expected.at ( i ) )
-            {
-                pass = false;
-                std::cout << "Failed since item " << i + 1 << " does not match!\n";
-                std::cout << "Offending sequence is: " << result.at ( i ) << "\n";
-            }
+            io::console::manip::splitByCodePoint ( bad );
+        } catch ( std::runtime_error &error )
+        {
+            return true;
         }
-    } catch ( ... )
-    {
-        pass = false;
-        std::cout << "Failed because an exception was thrown.\n";
-    }
+        return false;
+    };
 
+    bool pass = true;
+    pass &= testOne ( "A" );
+    pass &= testOne ( "🅱  ");
+    pass &= testOne ( "©  ");
+    pass &= testTwo ( "\u001b[37m" , '\u001b' , '?' );
+    pass &= testTwo ( "\u001b]P1ff0000\u001b\\" , '\u001b' , '?' );
+    pass &= testTwo ( "\u001b]Hello, World!!!!!\u001b\\" , '\u001b' , '?' );
+    pass &= testTwo ( "\u001bXProper Start of String\u001b\\" , '\u001b' , '?' );
+    pass &= testTwo ( "\u001bXJanky Start of String\u001bX" , '\u001b' , '?' );
+    pass &= testBig ( );
+    pass &= testBad ( );
     return pass;
 }

@@ -15,6 +15,26 @@
 #include <vector>
 using namespace io::console::manip;
 
+
+constexpr char bit80 = '\x80';
+constexpr char bit40 = '\x40';
+constexpr char bit20 = '\x20';
+constexpr char bit10 = '\x10';
+constexpr char bit08 = '\x08';
+
+constexpr char maxControlCharacter = '\x1f';
+
+constexpr char del = '\x7f';
+
+
+#ifdef SUPER_DEBUG
+constexpr char esc [ ] = "\\u001b";
+constexpr char bsl [ ] = "\\\\";
+#else
+constexpr char esc [ ] = "\u001b";
+constexpr char bsl [ ] = "\\";
+#endif
+
 enum CodePointType
 {
     TERMINAL , // ansi escape sequence or control character, [0x00 - 0x20]
@@ -29,16 +49,16 @@ enum CodePointType
 CodePointType identifyFirst ( std::string const &string )
 {
     auto front = string.front ( );
-    if ( front & '\x80' ) // is the highest bit set?
+    if ( front & bit80 ) // is the highest bit set?
     {
         // multi-byte unicode
-        if ( front & '\x40' ) // highest + second highest
+        if ( front & bit40 ) // highest + second highest
         {
-            if ( front & '\x20' ) // highest three
+            if ( front & bit20 ) // highest three
             {
-                if ( front & '\x10' ) // highest four
+                if ( front & bit10 ) // highest four
                 {
-                    if ( front & '\x08' ) // highest five
+                    if ( front & bit08 ) // highest five
                     {
                         // if the highest five are set, we don't know what
                         // the character is, but, since it's matching this
@@ -70,7 +90,7 @@ CodePointType identifyFirst ( std::string const &string )
     } else
     {
         // terminal / single byte
-        if ( front < ' ' ) // is this a control character?
+        if ( front <= maxControlCharacter ) // is this a control character?
         {
             return TERMINAL;
         } else return UTF1BYTE;
@@ -79,10 +99,10 @@ CodePointType identifyFirst ( std::string const &string )
 
 bool endsVariableLengthCode ( char const &character )
 {
-    if ( character < 0x08 || character > 0x7E )
+    if ( character < bit08 || character > del )
     {
         return true;
-    } else if ( character < 0x20 && character > 0x0D )
+    } else if ( character < bit20 && character > '\x0d' )
     {
         return true;
     } else
@@ -93,7 +113,7 @@ bool endsVariableLengthCode ( char const &character )
 
 bool endsCSI ( char const &character )
 {
-    return character >= 0x40 && character <= 0x7E;
+    return character >= '@' && character < del;
 }
 
 
@@ -111,7 +131,7 @@ std::string grabCodePoint ( std::string &string )
         result += string.front ( );
         string = string.substr ( 1 );
         // check for an escape sequence.
-        if ( result.back ( ) == '\x1b' )
+        if ( result.starts_with ( esc ) )
         {
             result += string.front ( );
             string = string.substr ( 1 );
@@ -139,31 +159,34 @@ std::string grabCodePoint ( std::string &string )
             case ']': // OSC
             case '^': // PM
             case '_': // APC
-                while ( !result.ends_with ( "\u001b\\" ) && !string.empty ( ) && !endsVariableLengthCode ( result.back ( ) ) )
+                do
                 {
+                    if ( string.empty ( ) ) break;
                     result += string.front ( );
                     string = string.substr ( 1 );
-                }
+                } while ( !result.ends_with ( std::string ( esc ) + bsl ) && !string.empty ( ) && !endsVariableLengthCode ( result.back ( ) ) );
                 break;
                 // SOS is different from the four above in that it only ends with
                 // either SOS or ST
             case 'X': // SOS
-                while ( !result.ends_with ( "\x1bX" ) && !result.ends_with ( "\x1b\\" ) && !string.empty ( ) )
+                do
                 {
+                    if ( string.empty ( ) ) break;
                     result += string.front ( );
                     string = string.substr ( 1 );
-                }
+                } while ( !result.ends_with ( std::string ( esc ) + "X" ) && !result.ends_with ( std::string ( esc ) + bsl ) && !string.empty ( ) );
                 break;
             case '[': // CSI
                 // CSI can be terminated by a byte in the range [0x40, 0x7E]
                 // the sequences that use a control character in this 
                 // range have undefined behavior, so we'll assume that we 
                 // know what we're doing and not terminate the sequence.
-                while ( !endsCSI ( result.back ( ) ) && !string.empty ( ) )
+                do
                 {
+                    if ( string.empty ( ) ) break;
                     result += string.front ( );
                     string = string.substr ( 1 );
-                }
+                } while ( !endsCSI ( result.back ( ) ) && !string.empty ( ) );
                 break;
             default:
                 break;
