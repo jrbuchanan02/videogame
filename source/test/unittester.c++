@@ -13,6 +13,8 @@
  // here, we have all of the header files required for our tests
 #include <atomic>
 #include <chrono>
+#include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -74,19 +76,59 @@ void test::runUnittests ( std::ostream &ostream )
 
 bool testSigmaCheck ( )
 {
-    // [-5,5]
-    unsigned passFailCounters [ 11 ];
-    for ( int i = 0; i < 100; i++ )
+    // table of p-values
+    constexpr double pValues [ 11 ] = {
+        1.0 - 2.87104999e-7 , // p of -5 (passing)
+        1.0 - 3.1686034591e5 , // p of -4 (passing)
+        1.0 - 0.001349967222235 , // p of -3 (passing)
+        1.0 - 0.022750062014251 , // p of -2 (passing)
+        1.0 - 0.15865525956313 , // p of -1 (passing)
+        0.0 + 0.5 , // p of 0 ( passing )
+        0.0 + 0.15865525956313 , // p of 1 (passing)
+        0.0 + 0.022750062014251 , // p of 2 (passing)
+        0.0 + 0.001349967222235 , // p of 3 (passing)
+        0.0 + 3.1686034591e5 , // p of 4 (passing)
+        0.0 + 2.87104999e-7 , // p of 5 (passing)
+    };
+
+    int tallies [ 11 ];
+    for ( int i = 0; i < 11; i++ ) tallies [ i ] = 0;
+    // in total, we go through 110000 times
+    for ( int i = 0; i < 10000; i++ )
     {
         for ( int j = 0; j < 11; j++ )
         {
-            passFailCounters [ j ] += engine::rand::sigmaCheck ( j - 5 );
+            if ( engine::rand::sigmaCheck ( j - 5 ) )
+            {
+                tallies [ j ] ++;
+            }
         }
     }
 
-    // todo check.
-    std::cout << "NOTE: Calculations performed, but no verification done.\n";
-    return true;
+    // do not expect more than a standard deviation in difference.
+    // if we have the majority unexpected, we fail
+    int unexpect = 0;
+    std::cout << "Rolled 11,000 times, and got these sigma-check pass/fail rates:\n";
+    for ( int i = 0; i < 11; i++ )
+    {
+        std::cout << std::fixed;
+        std::cout << "Against ";
+        std::cout << std::setprecision ( 2 );
+        std::cout << ( i - 5 );
+        std::cout << ": ";
+        std::cout << std::setprecision ( 4 );
+        std::cout << tallies [ i ] << " time" << ( tallies [ i ] == 1 ? "\n" : "s\n" );
+    }
+    if ( tallies [ 0 ] >= 10000 * pValues [ 1 ] ) unexpect++;
+    if ( tallies [ 10 ] <= 10000 * pValues [ 10 ] ) unexpect++;
+
+    for ( int i = 1; i < 10; i++ )
+    {
+        if ( tallies [ i ] <= 10000 * pValues [ i - 1 ] ) unexpect++;
+        if ( tallies [ i ] >= 10000 * pValues [ i + 1 ] ) unexpect++;
+    }
+
+    return unexpect > 5;
 }
 
 template < class CharT >
@@ -229,7 +271,7 @@ bool testCodePointSplitting ( )
     {
         // this test will remain if the compiler lets it.
         char badChars [ ] = {
-            (char)0xff,
+            ( char ) 0xff,
             0x00,
         };
 
@@ -246,8 +288,8 @@ bool testCodePointSplitting ( )
 
     bool pass = true;
     pass &= testOne ( "A" );
-    pass &= testOne ( "🅱  ");
-    pass &= testOne ( "©  ");
+    pass &= testOne ( "🅱     ");
+    pass &= testOne ( "©     ");
     pass &= testTwo ( "\u001b[37m" , '\u001b' , '?' );
     pass &= testTwo ( "\u001b]P1ff0000\u001b\\" , '\u001b' , '?' );
     pass &= testTwo ( "\u001b]Hello, World!!!!!\u001b\\" , '\u001b' , '?' );
