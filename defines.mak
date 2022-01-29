@@ -22,10 +22,6 @@ else
 	CXX = g++-10 -pthread -Wl,--no-as-needed
 endif
 
-ifeq ($(findstring --check,$(MAKEFLAGS)), --check)
-	CXXFLAGS += -DUNITTEST
-endif
-
 CXXFLAGS += $(generals) $(warnings) $(optimize) $(defines)
 
 windows_exec_name = videogame.exe

@@ -19,6 +19,8 @@
 #include <sstream>
 #include <streambuf>
 
+#include <io/base/unistring.h++>
+
 namespace io::base
 {
     template < class CharT , class Traits , class Allocator >
@@ -157,7 +159,7 @@ namespace io::base
                 if ( stream )
                 {
                     stream->sputn ( buffer.c_str ( ) , buffer.size ( ) );
-                    buffer = buffer.substr ( 0 , 0 );
+                    buffer = emptyString < CharT , Traits , Allocator > ( );
                     result = true;
                     if ( !stream->pubsync ( ) ) {
                         result &= true;
@@ -266,7 +268,7 @@ namespace io::base
 
         std::streamsize xsputn ( Traits::char_type const *s , std::streamsize count ) override
         {
-            std::basic_string < CharT , Traits , Allocator > str = buffer.substr ( 0 , 0 );
+            std::basic_string < CharT , Traits , Allocator > str = emptyString < CharT , Traits , Allocator > ( );
             for ( std::streamsize i = 0; i < count; i++ )
             {
                 str += s [ i ];

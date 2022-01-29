@@ -21,8 +21,8 @@
  // here, we include all of our header files.
 #include <engine/rand/random.h++>
 #include <io/base/syncstream.h++>
+#include <io/base/unistring.h++>
 #include <io/console/manip/stringfunctions.h++>
-
 
 struct Unittest
 {
@@ -85,121 +85,75 @@ bool testSigmaCheck ( )
     return true;
 }
 
-// basic testing environment for both char and wchar_t
 template < class CharT >
 bool basicSyncstreambufTest ( )
 {
-    std::atomic_int counter = 4;
-    std::basic_string < CharT > spaces;
-    std::basic_string < CharT > lshade;
-    std::basic_string < CharT > mshade;
-    std::basic_string < CharT > hshade;
-
-    std::basic_stringstream < CharT > _spaces;
-    std::basic_stringstream < CharT > _lshade;
-    std::basic_stringstream < CharT > _mshade;
-    std::basic_stringstream < CharT > _hshade;
-
-    for ( int i = 0; i < 50; i++ )
+    std::basic_stringstream < CharT > stream;
+    CharT options [ 4 ] = {
+        ( CharT ) 'A',
+        ( CharT ) 'B',
+        ( CharT ) 'C',
+        ( CharT ) 'D',
+    };
+    std::basic_string < CharT > expects [ 4 ] = {
+        io::base::emptyString < CharT > ( ),
+        io::base::emptyString < CharT > ( ),
+        io::base::emptyString < CharT > ( ),
+        io::base::emptyString < CharT > ( ),
+    };
+    for ( int i = 0; i < 4; i++ )
     {
-        _spaces << " ";
-        _lshade << "░";
-        _mshade << "▒";
-        _hshade << "▓";
-    }
-    spaces = _spaces.str();
-    lshade = _lshade.str();
-    mshade = _mshade.str();
-    hshade = _hshade.str();
-
-    auto sendFunction = [ & ] ( int id , std::basic_ostream < CharT > &os )
-    {
-        std::basic_stringstream < CharT > chosen;
-        switch ( id )
+        for ( int j = 0; j < 50; j++ )
         {
-        case 0:
-            chosen << "░";
-            break;
-        case 1:
-            chosen << "▒";
-            break;
-        case 2:
-            chosen << "▓";
-            break;
-        case 3:
-        default:
-            chosen << " ";
+            CharT temp [ 2 ] = { ( CharT ) options [ i ] , ( CharT ) 0 };
+            expects [ i ] += temp;
         }
-
+    }
+    std::atomic_int latch = 4;
+    auto demonstrate = [ & ] ( int id , std::basic_ostream < CharT > &os )
+    {
+        CharT temp [ 2 ] = { options [ id & 3 ] , ( CharT ) 0 };
         for ( int i = 0; i < 50; i++ )
         {
-            os << chosen.str ( );
+            os << temp;
         }
         os << "\n";
-        counter.fetch_sub ( 1 );
+        latch.fetch_sub ( 1 );
     };
-    std::basic_stringstream < CharT > cout;
 
-    io::base::basic_syncstreambuf < CharT > buffer1 ( cout.rdbuf ( ) );
-    io::base::basic_syncstreambuf < CharT > buffer2 ( cout.rdbuf ( ) );
+    io::base::basic_syncstreambuf < CharT > buf ( io::base::get_cout < CharT > ( ).rdbuf ( ) );
+    buf.set_emit_on_sync ( true );
+    std::basic_ostream < CharT > sync ( &buf );
+    std::basic_ostream < CharT > cout ( io::base::get_cout < CharT > ( ).rdbuf ( ) );
 
-    std::basic_ostream < CharT > o1 ( &buffer1 );
-    std::basic_ostream < CharT > o2 ( &buffer1 );
-    std::basic_ostream < CharT > o3 ( &buffer2 );
-    std::basic_ostream < CharT > o4 ( &buffer2 );
-
-    std::thread t1 ( [ & ] ( ) {sendFunction ( 0 , o1 ); } );
-    std::thread t2 ( [ & ] ( ) {sendFunction ( 1 , o2 ); } );
-    std::thread t3 ( [ & ] ( ) {sendFunction ( 2 , o3 ); } );
-    std::thread t4 ( [ & ] ( ) {sendFunction ( 3 , o4 ); } );
-
-    t1.detach ( );
-    t2.detach ( );
-    t3.detach ( );
-    t4.detach ( );
-
-    while ( counter.load ( ) > 0 )
+    auto run = [ & ] ( std::basic_ostream < CharT > &use )
     {
-        std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
-    }
+        latch.store ( 4 );
+        std::jthread jobs [ 4 ] = {
+            std::jthread ( [ & ] ( ) {demonstrate ( 0 , use ); } ) ,
+            std::jthread ( [ & ] ( ) {demonstrate ( 1 , use ); } ) ,
+            std::jthread ( [ & ] ( ) {demonstrate ( 2 , use ); } ) ,
+            std::jthread ( [ & ] ( ) {demonstrate ( 3 , use ); } ) ,
+        };
 
-    std::basic_string < CharT > string = cout.str ( );
-    if ( !string.find ( spaces.c_str ( ) ) )
-    {
-        std::cout << "The channel sending spaces was interrupted for CharT = ";
-        std::cout << ( sizeof ( CharT ) == sizeof ( char ) ? "char" : "wchar_t" );
-        std::cout << std::endl;
-        return false;
-    }
-    if ( !string.find ( lshade.c_str ( ) ) )
-    {
-        std::cout << "The channel sending light shade was interrupted for CharT = ";
-        std::cout << ( sizeof ( CharT ) == sizeof ( char ) ? "char" : "wchar_t" );
-        std::cout << std::endl;
-        return false;
-    }
-    if ( !string.find ( mshade.c_str ( ) ) )
-    {
-        std::cout << "The channel sending medium shade was interrupted for CharT = ";
-        std::cout << ( sizeof ( CharT ) == sizeof ( char ) ? "char" : "wchar_t" );
-        std::cout << std::endl;
-        return false;
-    }
-    if ( !string.find ( hshade.c_str ( ) ) )
-    {
-        std::cout << "The channel sending heavy shade was interrupted for CharT = ";
-        std::cout << ( sizeof ( CharT ) == sizeof ( char ) ? "char" : "wchar_t" );
-        std::cout << std::endl;
-        return false;
-    }
+        for ( int i = 0; i < 4; i++ ) jobs [ i ].detach ( );
+        while ( latch.load ( ) ) std::this_thread::sleep_for ( std::chrono::milliseconds ( 100 ) );
+    };
+
+    std::cout << "Synchronized Output should have no interference:\n";
+    run ( sync );
+    buf.emit ( );
+    std::cout << "Unsyncrhonized Output may have interference:\n";
+    run ( cout );
     return true;
 }
+
 
 bool testBasicSyncstreambuf ( )
 {
     bool result = true;
-    result &= basicSyncstreambufTest < char > ( );
-    result &= basicSyncstreambufTest < wchar_t > ( );
+    basicSyncstreambufTest < char > ( );
+    basicSyncstreambufTest < wchar_t > ( );
     return result;
 }
 
