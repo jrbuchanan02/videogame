@@ -50,8 +50,8 @@ widescreen effect.
 ## Roadmap:
 Here are the steps in our roadmap. As Videogame gets more complete, the roadmap
 will become more fleshed out. However, the basic todo-list has taken shape. Items
-marked with [x] are incomplete, items marked with a [~] are in progress, and items
-without an [x] or [~] are complete.
+marked with \[x] are incomplete, items marked with a [~] are in progress, and items
+without an \[x] or [~] are complete.
 
 1. [~] The Console Window
    - [~] The ability to output text at a specified rate with the following 
