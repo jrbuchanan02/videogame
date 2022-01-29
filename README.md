@@ -50,36 +50,36 @@ widescreen effect.
 ## Roadmap:
 Here are the steps in our roadmap. As Videogame gets more complete, the roadmap
 will become more fleshed out. However, the basic todo-list has taken shape. Items
-marked with \[x] are incomplete, items marked with a [~] are in progress, and items
-without an \[x] or [~] are complete.
+marked with x are incomplete, items marked with a ~ are in progress, and items
+without an x or ~ are complete.
 
-1. [~] The Console Window
-   - [~] The ability to output text at a specified rate with the following 
+1. [ ] The Console Window
+   - [ ] The ability to output text at a specified rate with the following 
    control over it in addition to the control provided by the Terminal Sequences:
-      + [x] Exact color of the eight indexed colors and their movements over 
+      + [ ] Exact color of the eight indexed colors and their movements over 
       a specified time.
          * Movements must allow multiple sweeps to both directly specified (rgb-value)
          colors and to indirectly specified (other colors we're potentially changing
          through time) colors. These sweeps should include a sinusoidal function, 
          linear sweep, and more.
-      + [~] The text justification
-   - [~] The ability to output text that the user sees while modifying the 
+      + [ ] The text justification
+   - [ ] The ability to output text that the user sees while modifying the 
    attributes of all text onscreen.
-   - [x] The ability to programmatically determine the console window's operating
+   - [ ] The ability to programmatically determine the console window's operating
    environment and to properly set the Console Window into a known, default state.
-2. [x] The Serialization / Deserialization
-   - [x] The ability to programmatically detect which data files are available for
+2. [ ] The Serialization / Deserialization
+   - [ ] The ability to programmatically detect which data files are available for
    loading, including the ability to ignore or repair corrupted data files.
-   - [x] The ability to load all localization data from data-files, correctly 
+   - [ ] The ability to load all localization data from data-files, correctly 
    determine back-up locales (ex, en-US for en-UK), and correctly "internalize"
    strings.
-   - [x] The ability to both load and save all data about what objects are in 
+   - [ ] The ability to both load and save all data about what objects are in 
    the game, including their current states, interactions, and locations.
-3. [~] The Engine Functionality
-   - [x] The ability to interpret the commands from the player and determine 
+3. [ ] The Engine Functionality
+   - [ ] The ability to interpret the commands from the player and determine 
    what to do with them.
-   - [~] Intricate Pseudo-random number generation which takes two flavors: one 
+   - [x] Intricate Pseudo-random number generation which takes two flavors: one 
    flavor where the player, if so skilled, may manipulate it, and another which
    brings randomness into seemingly completely certain game-events.
-   - [x] Multiple engine states including a menu, cutscene, tutorial, and in-game
+   - [ ] Multiple engine states including a menu, cutscene, tutorial, and in-game
    state.
