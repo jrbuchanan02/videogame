@@ -63,7 +63,7 @@ without an x or ~ are complete.
          through time) colors. These sweeps should include a sinusoidal function, 
          linear sweep, and more.
       + [ ] The text justification
-   - [ ] The ability to output text that the user sees while modifying the 
+   - [x] The ability to output text that the user sees while modifying the 
    attributes of all text onscreen.
    - [ ] The ability to programmatically determine the console window's operating
    environment and to properly set the Console Window into a known, default state.
