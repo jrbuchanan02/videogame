@@ -1,0 +1,119 @@
+---
+Language: Cpp
+# we don't want any indent or outdent of access modifiers
+AccessModifierOffset: 0
+# we want alignment on the open bracket, but with block indentation
+AlignAfterOpenBracket: true
+# My version of clang-format is too old for this one
+# AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Right
+AlignOperands: true
+AlignTrailingComments: true
+# My version of clang-format is too old for this one
+# AllowAllArgmentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+# My version of clang-format is too old for these
+# AllowShortBlocksOnSingleLine: Never
+# AllowShortCaseLabelsOnSingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: MultiLine
+AttributeMacros: ['__used', '__attribute__']
+BinPackArguments: false
+BinPackParameters: false
+BitFieldColonSpacing: Both
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeConceptDeclarations: true
+BreakBeforeTernaryOperators: true
+# Does not work on my clang-format
+# BreakConstructors: AfterColon
+# BreakInheritanceList: AfterComma
+BreakStringLiterals: true
+ColumnLimit: 80
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth: 8
+Cpp11BracedListStyle: true
+DeriveLineEnding: true
+DerivePointerAlignment: false
+# My version of clang-format seems to be too old
+# EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Never
+FixNamespaceComments: true
+IncludeBlocks: Regroup
+# My version of clang-format is too old
+# IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: true
+IndentGotoLabels: false
+IndentPPDirectives: AfterHash
+IndentRequires: false
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+# LambdaBodyIndentation: Signature
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All
+# PPIndentWidth: 1
+# PackConstructorInitializers: BinPack
+PointerAlignment: Right
+# QualifierAlignment: Custom
+# QualifierOrder: ['inline', 'static', 'virtual', 'type', 'const', 'volatile']
+ReflowComments: true
+# RemoveBracesLLVM: false
+# SeparateDefinitionBlocks: Always
+SortIncludes: true
+SortUsingDeclarations: true
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: After
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: Always
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: true
+SpaceInEmptyBlock: true
+SpaceInEmptyParentheses: true
+SpacesBeforeTrailingComments: 1
+# SpacesInAngles: true
+SpacesInCStyleCastParentheses: true
+SpacesInConditionalStatement: true
+SpacesInContainerLiterals: true
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
+Standard: c++20
+TabWidth: 4
+UseTab: AlignWithSpaces

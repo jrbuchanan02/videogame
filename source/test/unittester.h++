@@ -5,7 +5,8 @@
  * @version 1
  * @date 2022-01-26
  *
- * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed above.
+ * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed
+ * above.
  *
  */
 #pragma once
@@ -14,5 +15,5 @@
 
 namespace test
 {
-    void runUnittests ( std::ostream & );
+	void runUnittests ( std::ostream & );
 }

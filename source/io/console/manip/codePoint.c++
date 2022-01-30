@@ -1,222 +1,178 @@
 /**
- * @file codePoint.c++
+ * @file codepoint.c++
  * @author Joshua Buchanan (joshuarobertbuchanan@gmail.com)
- * @brief CodePoint processing implementation for stringfunctions
+ * @brief Implementation of the CodePointManager constructor
  * @version 1
- * @date 2022-01-26
+ * @date 2022-01-30
  *
- * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed above.
+ * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed
+ * above.
  *
  */
-#include <io/console/manip/stringfunctions.h++>
 
-#include <stdexcept>
+#include <io/console/manip/codepoint.h++>
+#include <list>
+#include <memory>
 #include <string>
-#include <vector>
-using namespace io::console::manip;
 
-
-constexpr char bit80 = '\x80';
-constexpr char bit40 = '\x40';
-constexpr char bit20 = '\x20';
-constexpr char bit10 = '\x10';
-constexpr char bit08 = '\x08';
-
-constexpr char maxControlCharacter = '\x1f';
-
-constexpr char del = '\x7f';
-
-
-#ifdef SUPER_DEBUG
-constexpr char esc [ ] = "\\u001b";
-constexpr char bsl [ ] = "\\\\";
-#else
-constexpr char esc [ ] = "\u001b";
-constexpr char bsl [ ] = "\\";
-#endif
-
-enum CodePointType
+io::console::manip::CodePointManager::CodePointManager ( )
 {
-    TERMINAL , // ansi escape sequence or control character, [0x00 - 0x20]
-    UTF1BYTE , // one byte utf-8 starts with [0x20 - 0x7f]
-    UTF2BYTE , // two byte utf-8 starts with [0xC0 - 0xDF]
-    UTF3BYTE , // three byte utf-8 starts with [0xE0 - 0xEf]
-    UTF4BYTE , // four byte utf-8 starts with [0xF0 - 0xF8]
-    UTFNBYTE , // unknown, but it's probably unicode? perhaps 5-byte?
-    INVALID_ , // we know we errored out and found a character we know to be invalid
-};
+	// all of our ranges.
+	auto range = [ & ] ( CodePoint s, CodePoint e, CodePointAttributes c )
+			-> std::shared_ptr<CodePointRange> {
+		return ( CodePointRange ( s, e, c ) ).shared_from_this ( );
+	};
+	CodePointAttributes enus = {
+			1, 1, 0 }; // en-US, characters that I normally see
+	CodePointAttributes ctrl = { 0, 0, 1 }; // control characters
+	CodePointAttributes mark = { 0, 1, 0 }; // combining marks
+	// CodePointAttributes wide = { 2, 1, 0 }; // wide characters (eg, CJK
+	// characters and emoji)
 
-CodePointType identifyFirst ( std::string const &string )
-{
-    auto front = string.front ( );
-    if ( front & bit80 ) // is the highest bit set?
-    {
-        // multi-byte unicode
-        if ( front & bit40 ) // highest + second highest
-        {
-            if ( front & bit20 ) // highest three
-            {
-                if ( front & bit10 ) // highest four
-                {
-                    if ( front & bit08 ) // highest five
-                    {
-                        // if the highest five are set, we don't know what
-                        // the character is, but, since it's matching this
-                        // unicode pattern, we'll assume it's some new 
-                        // version of unicode and indicate as such.
-                        //
-                        // this return value still indicates an error
-                        return UTFNBYTE;
-                    } else
-                    {
-                        // highest four and not fifth highest
-                        return UTF4BYTE;
-                    }
-                } else
-                {
-                    // highest three and not fourth highest
-                    return UTF3BYTE;
-                }
-            } else
-            {
-                // highest two and not third highest
-                return UTF2BYTE;
-            }
-        } else
-        {
-            return INVALID_; // We found the following byte in a multi-byte
-                             // unicode sequence. This is an error.
-        }
-    } else
-    {
-        // terminal / single byte
-        if ( front <= maxControlCharacter ) // is this a control character?
-        {
-            return TERMINAL;
-        } else return UTF1BYTE;
-    }
+	// C0 Control Characters. By Default, these are
+	// invisible, offensive, and 0 width.
+	ranges.push_back (
+			range ( CodePoint ( "\0" ), CodePoint ( "\u001f" ), ctrl ) );
+	// ASCII (excl, C0 and DEL). By default, these
+	// are visible, friendly, and 1 width.
+	// Nightmare in words?
+	// All non-whitespace, non-punctuation characters grouped below are
+	// valid variable-names.
+	ranges.push_back ( range ( CodePoint ( " " ), CodePoint ( "~" ), enus ) );
+	// Latin Extended A. By Default, these have the
+	// exact same attributes as ASCII
+	ranges.push_back ( range ( CodePoint ( "Ā" ), CodePoint ( "ſ" ), enus ) );
+	// Latin Extended B. Literally Latin Extended A but
+	// more chracters.
+	ranges.push_back ( range ( CodePoint ( "ƀ" ), CodePoint ( "ɏ" ), enus ) );
+	// IPA Extensions. Believe it or not, but ʣ is only one
+	// column wide.
+	ranges.push_back ( range ( CodePoint ( "ɐ" ), CodePoint ( "ʯ" ), enus ) );
+	// Spacing Modifier Letters. Despite the name, it seems that
+	// these characters are all single width.
+	ranges.push_back ( range ( CodePoint ( "ʰ" ), CodePoint ( "˿" ), enus ) );
+	// for obvious reasons, we can't just place the combining marks
+	// all willy nilly around our code. What if the compiler thinks we mean
+	// to add the mark to the quotations!
+	ranges.push_back (
+			range ( CodePoint ( "\u0300" ), CodePoint ( "\u036F" ), mark ) );
+	// Greek and Coptic have multiple sections where the Unicode standard
+	// keeps no visible character assigned. Their code charts do not indicate
+	// what these characters are, so they will go unassigned.
+	{
+		CodePoint starts [ 6 ] = {
+				CodePoint ( "Ͱ" ),
+				CodePoint ( "ͺ" ),
+				CodePoint ( "΄" ),
+				CodePoint ( "Ό" ),
+				CodePoint ( "Ύ" ),
+				CodePoint ( "Σ" ),
+		};
+		CodePoint ends [ 6 ] = {
+				CodePoint ( "ͷ" ),
+				CodePoint ( "Ϳ" ),
+				CodePoint ( "Ί" ),
+				CodePoint ( "Ό" ),
+				CodePoint ( "Ρ" ),
+				CodePoint ( "Ͽ" ),
+		};
+
+		for ( int i = 0; i < 6; i++ )
+		{
+			ranges.push_back ( range ( starts [ i ], ends [ i ], enus ) );
+		}
+	}
+	// Cyrillic has a section where there are accents added.
+	{
+		// not accent -> 0, 2
+		// accent -> 1
+		CodePoint starts [ 3 ] = {
+				CodePoint ( "Ѐ" ),
+				CodePoint ( "\u0483" ),
+				CodePoint ( "Ҋ" ),
+		};
+		CodePoint ends [ 3 ] = {
+				CodePoint ( "҂" ),
+				CodePoint ( "\u0489" ),
+				CodePoint ( "ӿ" ),
+		};
+		ranges.push_back ( range ( starts [ 0 ], ends [ 0 ], enus ) );
+		ranges.push_back ( range ( starts [ 1 ], ends [ 1 ], mark ) );
+		ranges.push_back ( range ( starts [ 2 ], ends [ 2 ], enus ) );
+	}
+	// Cyrillic supplement
+	ranges.push_back ( range ( CodePoint ( "Ԁ" ), CodePoint ( "ԯ" ), enus ) );
+	// Armenian has multiple sections where no characters are defined.
+	{
+		CodePoint starts [ 3 ] = {
+				CodePoint ( "Ա" ),
+				CodePoint ( "ՙ" ),
+				CodePoint ( "֍" ),
+		};
+		CodePoint ends [ 3 ] = {
+				CodePoint ( "Ֆ" ),
+				CodePoint ( "֊" ),
+				CodePoint ( "֏" ),
+		};
+		for ( int i = 0; i < 3; i++ )
+		{
+			ranges.push_back ( range ( starts [ i ], ends [ i ], enus ) );
+		}
+	}
+	// Hebrew has four sections
+	{
+		CodePoint starts [ 4 ] = {
+				CodePoint ( "\u0591" ),
+				CodePoint ( "׆" ),
+				CodePoint ( "\u05C7" ),
+				CodePoint ( "א" ),
+		};
+		CodePoint ends [ 4 ] = {
+				CodePoint ( "\u05C5" ),
+				CodePoint ( "׆" ),
+				CodePoint ( "\u05C7" ),
+				CodePoint ( "״" ),
+		};
+		for ( int i = 0; i < 4; i++ )
+		{
+			ranges.push_back ( range (
+					starts [ i ], ends [ i ], ( i & 1 ? enus : mark ) ) );
+		}
+	}
+	// Arabic has multiple sections. This is due to the frequent switching
+	// between combining marks and non-combining marks in the code-page.
+	{
+		CodePoint starts [ 16 ] = {
+				CodePoint ( "\u0600" ),
+				CodePoint ( "؆" ),
+				CodePoint ( "\u0610" ),
+				CodePoint ( "؛" ),
+				CodePoint ( "\u061E" ),
+				CodePoint ( "\u061D" ),
+				CodePoint ( "\u064C" ),
+				CodePoint ( "٠" ),
+				CodePoint ( "\u0670" ),
+				CodePoint ( "ٱ" ),
+				CodePoint ( "\u06D6" ),
+				CodePoint ( "۞" ),
+				CodePoint ( "\u06DF" ),
+				CodePoint ( "۩" ),
+				CodePoint ( "\u06EA" ),
+				CodePoint ( "ۮ" ),
+		};
+	}
 }
 
-bool endsVariableLengthCode ( char const &character )
+std::shared_ptr<io::console::manip::CodePointManager::CodePointRange>
+		io::console::manip::CodePointManager::getRangeFor (
+				CodePoint const &cp )
 {
-    if ( character < bit08 || character > del )
-    {
-        return true;
-    } else if ( character < bit20 && character > '\x0d' )
-    {
-        return true;
-    } else
-    {
-        return false;
-    }
-}
-
-bool endsCSI ( char const &character )
-{
-    return character >= '@' && character < del;
-}
-
-
-std::string grabCodePoint ( std::string &string )
-{
-    std::string result = "";
-    std::string errorMessage = "Unknown (UTF-8?) Sequence!";
-    switch ( identifyFirst ( string ) )
-    {
-    case INVALID_:
-        errorMessage = "Invalid Character Sequence!";
-    case UTFNBYTE:
-        throw std::runtime_error ( errorMessage );
-    case TERMINAL:
-        result += string.front ( );
-        string = string.substr ( 1 );
-        // check for an escape sequence.
-        if ( result.starts_with ( esc ) )
-        {
-            result += string.front ( );
-            string = string.substr ( 1 );
-            // what type of sequence do we have?
-            // some are only two bytes long (incl. esc)
-            // others can be infinitely long.
-            switch ( result.back ( ) )
-            {
-                // SS2 and SS3 require one more character
-            case 'N': // ss2
-            case 'O': // ss3
-                result += string.front ( );
-                string = string.substr ( 1 );
-                break;
-                // PU1 and PU2 are subject to prior agreement on meaning between
-                // us and the terminal. We can't know the length here without
-                // more documentation on the windows / linux terminals.
-            case 'Q':
-            case 'R':
-                throw std::runtime_error ( "Private use Sequence!" );
-                // these four commands are terminated by the string terminator 
-                // (or, on xterm and windows terminal, BEL), and can contain the 
-                // character in the range [\x08, \x0D] U [\x20, \x7E]
-            case 'P': // DCS
-            case ']': // OSC
-            case '^': // PM
-            case '_': // APC
-                do
-                {
-                    if ( string.empty ( ) ) break;
-                    result += string.front ( );
-                    string = string.substr ( 1 );
-                } while ( !result.ends_with ( std::string ( esc ) + bsl ) && !string.empty ( ) && !endsVariableLengthCode ( result.back ( ) ) );
-                break;
-                // SOS is different from the four above in that it only ends with
-                // either SOS or ST
-            case 'X': // SOS
-                do
-                {
-                    if ( string.empty ( ) ) break;
-                    result += string.front ( );
-                    string = string.substr ( 1 );
-                } while ( !result.ends_with ( std::string ( esc ) + "X" ) && !result.ends_with ( std::string ( esc ) + bsl ) && !string.empty ( ) );
-                break;
-            case '[': // CSI
-                // CSI can be terminated by a byte in the range [0x40, 0x7E]
-                // the sequences that use a control character in this 
-                // range have undefined behavior, so we'll assume that we 
-                // know what we're doing and not terminate the sequence.
-                do
-                {
-                    if ( string.empty ( ) ) break;
-                    result += string.front ( );
-                    string = string.substr ( 1 );
-                } while ( !endsCSI ( result.back ( ) ) && !string.empty ( ) );
-                break;
-            default:
-                break;
-            }
-        }
-        break;
-    case UTF4BYTE:
-        result += string.front ( );
-        string = string.substr ( 1 );
-    case UTF3BYTE:
-        result += string.front ( );
-        string = string.substr ( 1 );
-    case UTF2BYTE:
-        result += string.front ( );
-        string = string.substr ( 1 );
-    case UTF1BYTE:
-        result += string.front ( );
-        string = string.substr ( 1 );
-    default:
-        break;
-    }
-    return result;
-}
-
-std::vector < std::string > io::console::manip::splitByCodePoint ( std::string string )
-{
-    std::vector < std::string > result = {};
-    while ( !string.empty ( ) )
-    {
-        result.push_back ( grabCodePoint ( string ) );
-    }
-    return result;
+	for ( auto &range : ranges )
+	{
+		if ( cp >= range->start && cp <= range->end )
+		{
+			return range;
+		}
+	}
+	throw std::runtime_error ( "Unknown codepoint: " + ( std::string ) cp );
 }
