@@ -4,12 +4,12 @@
  * @brief Random number generation
  * @version 1
  * @date 2022-01-25
- * 
- * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed above.
- * 
+ *
+ * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed
+ * above.
+ *
  */
 #pragma once
-
 
 namespace engine::rand
 {
@@ -17,10 +17,11 @@ namespace engine::rand
 
     /**
      * @brief Performs a check against a given z-score.
-     * @note If the internally generated value defies all odds and has an absolute
-     * value >= 10, the check succeeds since that's so stupidly unlikely.
+     * @note If the internally generated value defies all odds and has an
+     * absolute value >= 10, the check succeeds since that's so stupidly
+     * unlikely.
      * @note We use the following values for reference:
-     * 
+     *
      * - against <= -5 -> Certain Success (still slightly random)
      * - against <= -4 -> Almost Certain Success
      * - against <= -3 -> Highly Likely
@@ -32,7 +33,7 @@ namespace engine::rand
      * - against >= 3  -> Highly Unlikely
      * - against >= 4  -> Almost Certain Failure
      * - against >= 5  -> Certain Failure (still slightly random)
-     * 
+     *
      * @param against The required value to pass the probability check
      * @return true success
      * @return false failure
@@ -41,8 +42,8 @@ namespace engine::rand
 
     /**
      * @brief Generates a Pseudorandom Number.
-     * 
-     * @return RandomNumber 
+     *
+     * @return RandomNumber
      */
     RandomNumber generatePRandom ( );
-}
+} // namespace engine::rand

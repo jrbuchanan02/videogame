@@ -23,15 +23,11 @@ no warranty, neither express nor implied, of any kind.
 
 ## System Requirements:
 ### Base
-1. Around 7 MB RAM free. This requirement will change as Videogame gets more
-complete. I apologize to those still attempting to game on a 286.
+1. Around 0.4 MB RAM free[^1]. This requirement will change as Videogame gets more
+complete. If your computer cannot meet this requirement, the advice is: get a 
+computer less than 37 years old.
 2. Any version of Linux or Windows 10 20H1 or later (20H2 or any version of 
-Windows 11).
-   - In other words, any version / flavor of linux where Videogame will build
-   supports running Videogame.
-   - On unsupported versions of Windows, Videogame will put garbage on the screen. 
-   This is because unsupported versions of Windows do not speak UTF-8. Perhaps
-   that will be fixed in the future, but there are currently no plans to do so.
+Windows 11).[^2]
 3. A display capable of rendering CGA graphics (or equivalent) or later.
    - Almost every modern device passes this requirement. It is just here for 
    completion / humor purposes.
@@ -46,6 +42,18 @@ with Videogame such as setting the font, setting the starting-window size, and
 more.
 2. A display capable of housing 120 columns onscreen at once. I just like the
 widescreen effect.
+
+[^1]: This measurement comes from measuring my own computer while Videogame is 
+running. It is most accurate to Windows 11 Home running on a x64-style processor
+and this number does *not* include the standard library and operating system 
+features that Videogame automatically loads. The actual number is likely much
+higher than 0.4 MB.
+
+[^2]: If you are on the most recent version of windows available for your PC and
+you have Windows 10 or Windows 11, then you meet this requirement. This requirement
+is for the commands that Videogame sends to the console. While these commands 
+should function properly on every version of Linux, only the more recent
+feature-updates to windows provde support for these commands.
 
 ## Roadmap:
 Here are the steps in our roadmap. As Videogame gets more complete, the roadmap
