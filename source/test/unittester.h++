@@ -15,5 +15,5 @@
 
 namespace test
 {
-	void runUnittests ( std::ostream & );
+    void runUnittests ( std::ostream & );
 }

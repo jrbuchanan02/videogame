@@ -116,4 +116,4 @@ SpacesInParentheses: true
 SpacesInSquareBrackets: true
 Standard: c++20
 TabWidth: 4
-UseTab: AlignWithSpaces
+UseTab: Never
