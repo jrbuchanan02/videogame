@@ -1,7 +1,7 @@
 ---
 Language: Cpp
 # we don't want any indent or outdent of access modifiers
-AccessModifierOffset: 0
+AccessModifierOffset: -4
 # we want alignment on the open bracket, but with block indentation
 AlignAfterOpenBracket: true
 # My version of clang-format is too old for this one
