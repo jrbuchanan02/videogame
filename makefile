@@ -7,7 +7,7 @@ object_files = $(source_files:%.c++=%.o)
 
 define compile
 	@echo Compiling file $@ with flags $(CXXFLAGS)
-	$(CXX) $(CXXFLAGS) -DUNITTEST $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(patsubst %.o,%.c++,$@) -c -o $@
+	@$(CXX) $(CXXFLAGS) -DUNITTEST $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(patsubst %.o,%.c++,$@) -c -o $@
 endef
 
 
