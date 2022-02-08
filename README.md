@@ -11,8 +11,7 @@ no warranty, neither express nor implied, of any kind.
  built into the operating system.
  2. Create an entertaining RPG experience that takes a theoretical minimum of 
  one hour to complete.
- 3. Achieve the above two goals using only the standard library and, where 
- necessary, the Windows API.
+ 3. Achieve the above two goals using minimal external dependencies.
 
  As of the time of writing, Videogame is nowhere near reaching either goal. The
  game is not even currently playable. However, you can run the unit-tests for 
@@ -23,11 +22,20 @@ no warranty, neither express nor implied, of any kind.
 
 ## System Requirements:
 ### Base
-1. Around 0.4 MB RAM free[^1]. This requirement will change as Videogame gets more
+1. Around 1.5 MB RAM free[^1]. This requirement will change as Videogame gets more
 complete. If your computer cannot meet this requirement, the advice is: get a 
 computer less than 37 years old.
 2. Any version of Linux or Windows 10 20H1 or later (20H2 or any version of 
 Windows 11).[^2]
+   - If it becomes possible, I would take interest in porting Videogame to retro
+   systems which support the necessary terminal commands. If you know such a 
+   retro system well enough, feel free to make a contribution!
+   - Unfortunately, because of how Videogame will manipulate some colors on the 
+   screen, it may not ever work on Mac OS. Both Windows and Linux use (similar)
+   proprietary commands for this specific color manipulation. Mac OS, as far as
+   I know, does not support this command. This does not mean that Videogame will
+   *never* run on a Darwin-based system, but that Videogame would lose a fundamental
+   component of its engine when running on a Darwin-based system.
 3. A display capable of rendering CGA graphics (or equivalent) or later.
    - Almost every modern device passes this requirement. It is just here for 
    completion / humor purposes.
@@ -91,3 +99,22 @@ without an x or ~ are complete.
    brings randomness into seemingly completely certain game-events.
    - [ ] Multiple engine states including a menu, cutscene, tutorial, and in-game
    state.
+## Dependencies
+Videogame intends on having minimal dependencies. All external code is currently
+contained within the `extern` folder. The complete list of all program contents
+which are not the intellectual property of Videogame's creators are down below:
+
+- The Unicode Character Database, copyright 2021[^3] Unicode Inc.[^4].
+ Videogame uses the UCD version 14.0, which is licensed under the open-source
+Unicode License. You can read the unicode license [here](https://www.unicode.org/license.txt),
+or, at https://www.unicode.org/license.txt (the link points there).
+- Rapidxml, copyright 2006, 2007 Marcin Kalicinski. Videogame uses Rapidxml 
+version 1.13, which is copyright under the open-source Boost Software License. 
+You can read the Boost Software license [here](./extern/rapidxml-1.13/license.txt),
+or in the file ./extern/rapidxml-1.13/license.txt (the link points there).
+
+[^3]: I may have the year off on the UCD 14.0's copyright date. However, we can
+infer from the age of Unicode version 14.0 to know that the copyright year listed
+is around that time.
+
+[^4]: Unicode Inc. is the name of the organization as listed in the license.

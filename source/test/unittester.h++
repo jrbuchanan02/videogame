@@ -15,5 +15,11 @@
 
 namespace test
 {
-    void runUnittests ( std::ostream & );
-}
+    /**
+     * @brief Runs the unittests, outputting information on their pass/fail
+     * rates to the specified stream.
+     *
+     * @param stream the stream to output information to.
+     */
+    void runUnittests ( std::ostream &stream );
+} // namespace test

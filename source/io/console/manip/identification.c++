@@ -45,6 +45,13 @@ enum CodePointType
               // invalid
 };
 
+/**
+ * @brief Identifies what CodePointType the first character of a sequence is
+ * @note This function might need to be removed? Lots of changes happened
+ * recently in the IO system.
+ * @param string the string
+ * @return A CodePointType corresponding to the code point.
+ */
 CodePointType identifyFirst ( std::string const &string )
 {
     auto front = string.front ( );
@@ -93,29 +100,68 @@ CodePointType identifyFirst ( std::string const &string )
         {
             return TERMINAL;
         } else
+        {
             return UTF1BYTE;
+        }
     }
 }
-
+/**
+ * @brief Whether a character ends a variable-length ESC sequence.
+ * @note the variable length sequences are:
+ *  - SOS (Start Of String)
+ *  - OSC (Operating System Command)
+ *  - APC (Application Program Command)
+ *  - PM ( Privacy Message).
+ * However, this function should only be dealing with OSC, as most of
+ * our sequences are Control Sequences or an Operating System Command to change
+ * the pallette
+ * @param character the character to check against
+ * @return true when the character ends the sequence
+ * @return false when the character does not end the sequence
+ */
 bool endsVariableLengthCode ( char const &character )
 {
+    // if the character is outside the range [0x09, 0x7E]
+    // NOTE: check on the lower bounds here!
     if ( character < bit08 || character > del )
     {
         return true;
+        // if the character is a control character and greater than 0x0D
     } else if ( character < bit20 && character > '\x0d' )
     {
         return true;
     } else
     {
+        // if the character satisfies none of the requirements, it does not end
+        // the sequence
         return false;
     }
 }
-
+/**
+ * @brief If the character ends specifically a CSI sequence.
+ *
+ * @param character the character to check against
+ * @return true ends a CSI sequence
+ * @return false does not end a CSI sequence
+ */
 bool endsCSI ( char const &character )
 {
+    // if our character is an alphabetic character
+    // or one if @, [, ], _, /, etc.
     return character >= '@' && character < del;
 }
 
+/**
+ * @brief (Destructively) Grabs the first code point of a given string
+ * @note Takes at least one character. Given the nature of terminal sequences, 
+ * there is no upper bound on the amount of characters  taken.
+ * @throw std::runtime_error if the sequence seems to be a unicode sequence, but
+ * has an indication of being longer than four bytes
+ * @throw std::runtime_error if the character sequence is invalid.
+ * @throw std::runtime_error if the sequence is a private-use sequence
+ * @param string the string to grab from
+ * @return the first code point
+ */
 std::string grabCodePoint ( std::string &string )
 {
     std::string result       = "";
@@ -204,6 +250,7 @@ std::string grabCodePoint ( std::string &string )
                 }
             }
             break;
+            // use implicit fallthroughs to get the right amount of characters.
         case UTF4BYTE:
             result += string.front ( );
             string = string.substr ( 1 );

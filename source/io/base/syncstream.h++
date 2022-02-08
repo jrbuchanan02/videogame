@@ -29,6 +29,14 @@ namespace io::base
     template <class CharT, class Traits, class Allocator>
     class basic_osyncstream;
 
+    /**
+     * @brief An implementation for basic_syncstreambuf
+     * @note while this class is internal, it is documented so that
+     * people reading the code can better understand what it does.
+     * @tparam CharT the character type
+     * @tparam Traits the traits of the character type
+     * @tparam Allocator the allocator
+     */
     template <class CharT, class Traits, class Allocator>
     class SynchronizedStreamBufferImplementation
     {
@@ -60,7 +68,7 @@ namespace io::base
          * @param action the action
          */
         void doAtomically ( std::basic_streambuf<CharT, Traits> *const &buf,
-                            std::function<void ( )> const &             action )
+                            std::function<void ( )> const              &action )
         {
             std::scoped_lock<std::mutex> lock ( *locks [ buf ] );
             action ( );
@@ -72,17 +80,47 @@ namespace io::base
             SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>>
             container = nullptr;
 
+    /**
+     * @brief Synchronized stream buffer.
+     * @note basic_syncstreambuf does not technically comply with the C++20
+     * standard. For one, it does not use the allocator given to it. However,
+     * off the top of my head, that is the only nonstandard aspect (other than
+     * the name being basic_syncstreambuf instead of basic_syncbuf).
+     * @note Some terms:
+     *  - the "one-at-a-time" guarantee means that this class guarantees that
+     * only one thread at a time will modify some shared data.
+     *  - near-pure passthrough means that a function behaves as if it were a
+     * member of a wrapped object with only a few hints that there is anything
+     * other than a pure passthrough happening (such as blocking a thread for
+     * longer than usual)
+     * @tparam CharT the character type
+     * @tparam Traits the traits type
+     * @tparam Allocator the allocator type.
+     */
     template <class CharT,
               class Traits    = std::char_traits<CharT>,
               class Allocator = std::allocator<CharT>>
     class basic_syncstreambuf : public std::basic_streambuf<CharT, Traits>
     {
+        // todo: switch to using *this* container rather than the one in the
+        // namespace. Since I'm committing this code directly to main, I'm not
+        // willing to make that change just now.
+        static inline SynchronizedStreamBufferImplementation<CharT,
+                                                             Traits,
+                                                             Allocator>
+                                                    _container;
         std::mutex                                  bufferMutex;
         std::mutex                                  streamMutex;
-        std::basic_streambuf<CharT, Traits> *       stream;
+        std::basic_streambuf<CharT, Traits>        *stream;
         std::basic_string<CharT, Traits, Allocator> buffer;
         std::atomic_bool                            emitOnSync = false;
 
+        /**
+         * @brief Generic move operation
+         * @note Since this routine is meant to be called during the move
+         * constructor, it does not emit *this*.
+         * @param that the basic_syncstreambuf to move
+         */
         void move ( basic_syncstreambuf &&that )
         {
             that.emit ( );
@@ -94,7 +132,10 @@ namespace io::base
             that.stream = nullptr;
             that.emitOnSync.store ( false );
         }
-
+        /**
+         * @brief Basic destruction routine
+         *
+         */
         void destruct ( )
         {
             emit ( );
@@ -102,7 +143,7 @@ namespace io::base
             buffer = std::basic_string<CharT, Traits, Allocator> ( );
             emitOnSync.store ( false );
         }
-        public:
+    public:
         basic_syncstreambuf ( ) : basic_syncstreambuf ( nullptr )
         {
             if ( !container<CharT, Traits, Allocator> )
@@ -133,7 +174,7 @@ namespace io::base
             container<CharT, Traits, Allocator>->doRegister ( obuf );
         }
         basic_syncstreambuf ( std::basic_streambuf<CharT, Traits> *obuf,
-                              Allocator const &                    a )
+                              Allocator const                     &a )
                 : basic_syncstreambuf ( obuf )
         { }
         basic_syncstreambuf ( basic_syncstreambuf &&that ) { move ( that ); }
@@ -144,7 +185,15 @@ namespace io::base
             move ( that );
             return *this;
         }
-
+        /**
+         * @brief Swaps two basic_syncstreambufs
+         * @note Per the standard, both this and other emit the contents of
+         * their respective buffers before swapping.
+         * @note this function prevents both this syncstreambuf and other from
+         * accessing any information about themselves until they finish the
+         * swapping routine.
+         * @param other the basic_syncstreambuf to swap with.
+         */
         void swap ( basic_syncstreambuf &other )
         {
             emit ( );
@@ -173,6 +222,17 @@ namespace io::base
             { }
         }
 
+        /**
+         * @brief Sends the contents of an internal buffer out to the globally
+         * maintained, thread-shared buffer.
+         * @note this command will effect all basic_syncstreambuf's attached to
+         * the same basic_streambuf (as in, it will prevent them from modifying
+         * the underlying buffer). This function is considered part of the
+         * "one-at-a-time" guarantee.
+         * @return true we successfully sent all characters.
+         * @return false either there were no characters to send or we did not
+         * successfully send all characters.
+         */
         bool emit ( )
         {
             bool result;
@@ -198,15 +258,49 @@ namespace io::base
             return result;
         }
 
+        /**
+         * @brief Obtains a raw pointer to the wrapped basic_streambuf
+         * @note This pointer does **not** have the thread safety guarantees
+         * of this class.
+         *
+         * @return std::basic_streambuf<CharT, Traits>* the wrapped buffer
+         */
         std::basic_streambuf<CharT, Traits> *get_wrapped ( ) const noexcept
         {
             return stream;
         }
 
+        /**
+         * @brief Get a default-constructed allocator of the same type as the
+         * allocator we were told to use.
+         * @note This function is nonstandard as we are actually supposed to use
+         * the allocator given to us.
+         * @return Allocator the allocator.
+         */
         Allocator get_allocator ( ) const noexcept { return Allocator ( ); }
 
+        /**
+         * @brief Enables or disables the setting to emit when we receive the
+         * sync command.
+         * @note Since the flag is internally implemented as a std::atomic_bool,
+         * this function is not part of the "one-at-a-time" guarantee, since
+         * std::atomic_bool makes that guarantee.
+         * @param b the new state. True says to emit when we receive a call to
+         * sync.
+         */
         void set_emit_on_sync ( bool b ) noexcept { emitOnSync.store ( b ); }
-        protected:
+    protected:
+        /**
+         * @brief Synchronize with the internal buffer. In reality, this only
+         * does anything if we are set to emit on sync, since we use the
+         * presence of text in the buffer as an indication that a sync is
+         * pending. (Another instance of nonstandard behavior)
+         * @note This function is not considered part of the "one-at-a-time"
+         * guarantee since it does nothing when we do not emit on sync, and
+         * emit() handles that guarantee when we do emit on sync.
+         * @return 0 the call succeedeed.
+         * @return -1 the call failed.
+         */
         int sync ( ) override
         {
             if ( emitOnSync.load ( ) )
@@ -216,6 +310,13 @@ namespace io::base
             return 0;
         }
 
+        /**
+         * @brief Imbues with the given locale.
+         * @note This command affects *all* basic_syncstreambuf's attached to
+         * the same internal basic_streambuf. This command is considered part of
+         * the "one-at-a-time" guarantee.
+         * @param loc the new locale.
+         */
         void imbue ( std::locale const &loc ) override
         {
             auto imbuement = [ & ] ( ) {
@@ -226,7 +327,18 @@ namespace io::base
             container<CharT, Traits, Allocator>->doAtomically (
                     stream, [ & ] ( ) { imbuement ( ); } );
         }
-
+        /**
+         * @brief Changes the underlying buffer to a user defined array
+         * @note This function acts as a near-pure passthrough. The only hint
+         * is that it will block until it obtains exclusive access to the
+         * underlying buffer.
+         * @note This function is considered part of the "one-at-a-time"
+         * guarantee since it modifies the underlying streambuf.
+         * @param s the user defined array
+         * @param n the size of the user defined array
+         * @return std::basic_streambuf<CharT, Traits>* the value returned from
+         * the underlying streambuf
+         */
         std::basic_streambuf<CharT, Traits> *
                 setbuf ( CharT *s, std::streamsize n ) override
         {
@@ -241,6 +353,19 @@ namespace io::base
             return result;
         }
 
+        /**
+         * @brief Seeks to a specific offset.
+         * @note this function acts as a near-pure passthrough. The only hint is
+         * that it will block until it obtains exclusive access to  the
+         * underlying buffer.
+         * @note This function is part of the "one-at-a-time" guarantee.
+         * @param off the offset
+         * @param dir the direction
+         * @param which which part of the buffer to move. (by default, all
+         * streambuf's are in and out).
+         * @return Traits::pos_type the value returnede from the underlying 
+         * buffer.
+         */
         Traits::pos_type seekoff (
                 Traits::off_type        off,
                 std::ios_base::seekdir  dir,
@@ -272,7 +397,6 @@ namespace io::base
             return result;
         }
 
-        // returns 0 since this stream can only output data.
         std::streamsize showmanyc ( ) override { return -1; }
 
         Traits::int_type underflow ( ) override { return Traits::eof ( ); }
@@ -301,6 +425,14 @@ namespace io::base
         }
     };
 
+    /**
+     * @brief basic_osyncstream
+     * @bug Does not work, we know that the bug likely resides within the stream
+     * since basic_syncstreambuf works normally with a std::basic_ostream.
+     * @tparam CharT 
+     * @tparam Traits 
+     * @tparam Allocator 
+     */
     template <class CharT,
               class Traits    = std::char_traits<CharT>,
               class Allocator = std::allocator<CharT>>
@@ -317,16 +449,16 @@ namespace io::base
             buffer      = std::move ( that.buffer );
             that.buffer = nullptr;
         }
-        public:
+    public:
         basic_osyncstream ( std::basic_streambuf<CharT, Traits> *buf,
-                            Allocator const &                    a )
+                            Allocator const                     &a )
                 : basic_osyncstream ( buf )
         { }
         explicit basic_osyncstream ( std::basic_streambuf<CharT, Traits> *buf )
                 : buffer ( new basic_syncstreambuf ( buf ) )
         { }
         basic_osyncstream ( std::basic_ostream<CharT, Traits> &os,
-                            Allocator const &                  a )
+                            Allocator const                   &a )
                 : basic_osyncstream ( os.rdbuf ( ), a )
         { }
         basic_osyncstream ( basic_osyncstream &&that ) noexcept
