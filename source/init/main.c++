@@ -9,8 +9,8 @@
  * above.
  *
  */
+#include <io/unicode/character.h++>
 #include <iostream>
-
 #ifdef UNITTEST
 #    include <test/unittester.h++>
 #endif
@@ -27,14 +27,9 @@ int main ( int const argc, char const *const *const argv )
     SetConsoleOutputCP ( 65001 );
 #endif
     dumpInformation ( argc, argv );
-
-#ifdef UNITTEST
-    std::cout << "Beginning Unittests...\n";
-    test::runUnittests ( std::cout );
-    std::cout << "Unittests complete.\n";
-#else
-    std::cout << "No unittests to run.\n";
-#endif
+    std::cout << "According to the properties, 🅱 takes up ";
+    auto columns = io::unicode::characterProperties ( ).at ( U'🅱' ).columns;
+    std::cout << ( 1 + columns ) << " columns.\n";
     std::cin.get ( );
     return 0;
 }
