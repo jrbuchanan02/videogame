@@ -57,6 +57,8 @@
         "stdexcept": "cpp",
         "stop_token": "cpp",
         "typeinfo": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "forward_list": "cpp",
+        "fstream": "cpp"
     }
 }

@@ -11,7 +11,24 @@
  */
 #pragma once
 
+#include <streambuf>
+
+namespace io::base
+{
+    template <class CharT,
+              class Traits    = std::char_traits<CharT>,
+              class Allocator = std::allocator<CharT>>
+    class basic_syncstreambuf;
+
+    template <class CharT,
+              class Traits    = std::char_traits<CharT>,
+              class Allocator = std::allocator<CharT>>
+    class basic_osyncstream;
+} // namespace io::base
+
 #include <atomic>
+#include <defines/macros.h++>
+#include <defines/types.h++>
 #include <functional>
 #include <io/base/unistring.h++>
 #include <list>
@@ -19,16 +36,9 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include <streambuf>
 
 namespace io::base
 {
-    template <class CharT, class Traits, class Allocator>
-    class basic_syncstreambuf;
-
-    template <class CharT, class Traits, class Allocator>
-    class basic_osyncstream;
-
     /**
      * @brief An implementation for basic_syncstreambuf
      * @note while this class is internal, it is documented so that
@@ -74,12 +84,6 @@ namespace io::base
             action ( );
         }
     };
-
-    template <class CharT, class Traits, class Allocator>
-    std::unique_ptr<
-            SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>>
-            container = nullptr;
-
     /**
      * @brief Synchronized stream buffer.
      * @note basic_syncstreambuf does not technically comply with the C++20
@@ -97,9 +101,7 @@ namespace io::base
      * @tparam Traits the traits type
      * @tparam Allocator the allocator type.
      */
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
+    template <class CharT, class Traits, class Allocator>
     class basic_syncstreambuf : public std::basic_streambuf<CharT, Traits>
     {
         // todo: switch to using *this* container rather than the one in the
@@ -108,7 +110,7 @@ namespace io::base
         static inline SynchronizedStreamBufferImplementation<CharT,
                                                              Traits,
                                                              Allocator>
-                                                    _container;
+                                                    container;
         std::mutex                                  bufferMutex;
         std::mutex                                  streamMutex;
         std::basic_streambuf<CharT, Traits>        *stream;
@@ -144,34 +146,12 @@ namespace io::base
             emitOnSync.store ( false );
         }
     public:
-        basic_syncstreambuf ( ) : basic_syncstreambuf ( nullptr )
-        {
-            if ( !container<CharT, Traits, Allocator> )
-            {
-                container<CharT, Traits, Allocator> = std::make_unique<
-                        SynchronizedStreamBufferImplementation<CharT,
-                                                               Traits,
-                                                               Allocator>> (
-                        SynchronizedStreamBufferImplementation<CharT,
-                                                               Traits,
-                                                               Allocator> ( ) );
-            }
-        }
+        basic_syncstreambuf ( ) : basic_syncstreambuf ( nullptr ) { }
         explicit basic_syncstreambuf (
                 std::basic_streambuf<CharT, Traits> *obuf )
                 : stream ( obuf )
         {
-            if ( !container<CharT, Traits, Allocator> )
-            {
-                container<CharT, Traits, Allocator> = std::make_unique<
-                        SynchronizedStreamBufferImplementation<CharT,
-                                                               Traits,
-                                                               Allocator>> (
-                        SynchronizedStreamBufferImplementation<CharT,
-                                                               Traits,
-                                                               Allocator> ( ) );
-            }
-            container<CharT, Traits, Allocator>->doRegister ( obuf );
+            container.doRegister ( obuf );
         }
         basic_syncstreambuf ( std::basic_streambuf<CharT, Traits> *obuf,
                               Allocator const                     &a )
@@ -253,8 +233,7 @@ namespace io::base
                 }
                 result = false;
             };
-            container<CharT, Traits, Allocator>->doAtomically (
-                    stream, [ & ] ( ) { emission ( ); } );
+            container.doAtomically ( stream, [ & ] ( ) { emission ( ); } );
             return result;
         }
 
@@ -324,8 +303,7 @@ namespace io::base
                 stream->pubimbue ( loc );
             };
 
-            container<CharT, Traits, Allocator>->doAtomically (
-                    stream, [ & ] ( ) { imbuement ( ); } );
+            container.doAtomically ( stream, [ & ] ( ) { imbuement ( ); } );
         }
         /**
          * @brief Changes the underlying buffer to a user defined array
@@ -348,8 +326,7 @@ namespace io::base
                 result = stream->pubsetbuf ( s, n );
             };
 
-            container<CharT, Traits, Allocator>->doAtomically (
-                    stream, [ & ] ( ) { bufferset ( ); } );
+            container.doAtomically ( stream, [ & ] ( ) { bufferset ( ); } );
             return result;
         }
 
@@ -363,7 +340,7 @@ namespace io::base
          * @param dir the direction
          * @param which which part of the buffer to move. (by default, all
          * streambuf's are in and out).
-         * @return Traits::pos_type the value returnede from the underlying 
+         * @return Traits::pos_type the value returnede from the underlying
          * buffer.
          */
         Traits::pos_type seekoff (
@@ -377,8 +354,7 @@ namespace io::base
                 std::scoped_lock<std::mutex> streamLock ( streamMutex );
                 result = stream->pubseekoff ( off, dir, which );
             };
-            container<CharT, Traits, Allocator>->doAtomically (
-                    stream, [ & ] ( ) { offseek ( ); } );
+            container.doAtomically ( stream, [ & ] ( ) { offseek ( ); } );
             return result;
         }
 
@@ -392,8 +368,7 @@ namespace io::base
                 std::scoped_lock<std::mutex> streamLock ( streamMutex );
                 result = stream->pubseekpos ( pos, which );
             };
-            container<CharT, Traits, Allocator>->doAtomically (
-                    stream, [ & ] ( ) { posseek ( ); } );
+            container.doAtomically ( stream, [ & ] ( ) { posseek ( ); } );
             return result;
         }
 
@@ -429,13 +404,11 @@ namespace io::base
      * @brief basic_osyncstream
      * @bug Does not work, we know that the bug likely resides within the stream
      * since basic_syncstreambuf works normally with a std::basic_ostream.
-     * @tparam CharT 
-     * @tparam Traits 
-     * @tparam Allocator 
+     * @tparam CharT
+     * @tparam Traits
+     * @tparam Allocator
      */
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
+    template <class CharT, class Traits, class Allocator>
     class basic_osyncstream : public std::basic_ostream<CharT, Traits>
     {
         // locks when accessing buffer to prevent us from
