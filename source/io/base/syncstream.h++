@@ -11,21 +11,6 @@
  */
 #pragma once
 
-#include <streambuf>
-
-namespace io::base
-{
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_syncstreambuf;
-
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_osyncstream;
-} // namespace io::base
-
 #include <atomic>
 #include <defines/macros.h++>
 #include <defines/types.h++>
@@ -36,6 +21,7 @@ namespace io::base
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <streambuf>
 #include <test/unittester.h++>
 #include <thread>
 namespace io::base
@@ -59,31 +45,49 @@ namespace io::base
                       "SynchronizedStreamBufferImplementation where "
                       "sizeof(CharT) = "
                    << sizeof ( CharT ) << ".\n";
-            stream << "Testing race conditions...\n";
-            SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
-                    test;
-            test.locks.emplace ( nullptr, new std::mutex ( ) );
-            std::size_t        counter      = 0;
-            std::atomic_size_t latch        = 1 << 10;
-            auto               raceFunction = [ & ] ( ) {
-                test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
-                latch.fetch_sub ( 1 );
-            };
-
-            for ( int i = 0; i < 1 << 10; i++ )
+            stream << "Ensuring that registration works...\n";
             {
-                std::thread ( raceFunction ).detach ( );
+                SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
+                        test;
+                test.doRegister ( nullptr );
+                try
+                {
+                    std::scoped_lock<std::mutex> testLock (
+                            *test.locks.at ( nullptr ) );
+                } catch ( std::range_error &error )
+                {
+                    stream << "Threw range error, which indicates that the "
+                              "registration process did not register.\n";
+                    return false;
+                }
             }
-            while ( latch.load ( ) )
-            { }
-            if ( counter != 1 << 10 )
             {
-                stream << "Race condition failed, and the function is not "
-                          "atomic.\n";
-                return false;
-            } else
-            {
-                return true;
+                stream << "Testing race conditions...\n";
+                SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
+                        test;
+                test.locks.emplace ( nullptr, new std::mutex ( ) );
+                std::size_t        counter      = 0;
+                std::atomic_size_t latch        = 1 << 10;
+                auto               raceFunction = [ & ] ( ) {
+                    test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
+                    latch.fetch_sub ( 1 );
+                };
+
+                for ( int i = 0; i < 1 << 10; i++ )
+                {
+                    std::thread ( raceFunction ).detach ( );
+                }
+                while ( latch.load ( ) )
+                { }
+                if ( counter != 1 << 10 )
+                {
+                    stream << "Race condition failed, and the function is not "
+                              "atomic.\n";
+                    return false;
+                } else
+                {
+                    return true;
+                }
             }
         }
 
@@ -154,16 +158,89 @@ namespace io::base
         std::basic_string<CharT, Traits, Allocator> buffer;
         std::atomic_bool                            emitOnSync = false;
 
-        static inline bool test ( std::ostream &stream )
+        static inline bool selfTest ( std::ostream &stream )
         {
             stream << "Beginning test for basic_syncstreambuf with "
                       "sizeof(CharT) = "
                    << sizeof ( CharT ) << "\n";
+            stream << "Ensuring that giving two syncbuf's the same output "
+                      "stream gives them the same underlying buffer...\n";
+            std::basic_stringstream<CharT, Traits, Allocator> testStream;
+            basic_syncstreambuf<CharT, Traits, Allocator>     test1, test2;
+            test1 = basic_syncstreambuf<CharT, Traits, Allocator> (
+                    testStream.rdbuf ( ) );
+            test2 = basic_syncstreambuf<CharT, Traits, Allocator> (
+                    testStream.rdbuf ( ) );
+            if ( test1.stream != test2.stream )
+            {
+                stream << "The two syncbufs ended up with different streams!\n";
+                return false;
+            }
+            stream << "Ensuring that outputting to the two syncbufs do not go "
+                      "through until calls to emit...\n";
+            std::basic_ostream<CharT, Traits> stream1 ( &test1 );
+            std::basic_ostream<CharT, Traits> stream2 ( &test2 );
 
-            stream << "Since this test is not yet implemented, returning "
-                      "true.\n";
+            static CharT text [] = {
+                    'S',
+                    'o',
+                    'm',
+                    'e',
+                    ' ',
+                    't',
+                    'e',
+                    'x',
+                    't',
+                    '!',
+                    '\n',
+                    '\0',
+            };
+            static CharT text2 [] = {
+                    'S', 'o', 'm',  'e', ' ', 't',  'e',  'x',
+                    't', '!', '\n', 'S', 'o', 'm',  'e',  ' ',
+                    't', 'e', 'x',  't', '!', '\n', '\0',
+            };
+            stream1 << text;
+            stream2 << text;
+            if ( !testStream.str ( ).empty ( ) )
+            {
+                stream << "The stringstream received text (or already had "
+                          "it)!\n";
+            }
+            stream << "Ensuring that emitting at around the same time will not "
+                      "garble output...\n";
+            std::atomic_size_t ready = 2;
+            std::atomic_size_t done  = 0;
+            std::atomic_bool   go    = false;
+
+            auto sendInformationOn =
+                    [ & ] ( basic_syncstreambuf<CharT, Traits, Allocator>
+                                    *alloc ) {
+                        ready.fetch_sub ( 1 );
+                        while ( !go.load ( ) )
+                        { }
+                        alloc->emit ( );
+                        done.fetch_add ( 1 );
+                    };
+            std::thread ( std::bind_front ( sendInformationOn, &test1 ) )
+                    .detach ( );
+            std::thread ( std::bind_front ( sendInformationOn, &test2 ) )
+                    .detach ( );
+            while ( ready.load ( ) )
+            { }
+            go.store ( true );
+            while ( done.load ( ) < 2 )
+            { }
+            if ( testStream.str ( ).find ( text2 ) == std::string::npos )
+            {
+                stream << "Could not find the text within the stream. "
+                          "Indicates a failure.\n";
+                return false;
+            }
             return true;
         }
+
+        static inline test::Unittest unittest = { &selfTest };
 
         /**
          * @brief Generic move operation
@@ -175,9 +252,9 @@ namespace io::base
         {
             that.emit ( );
 
-            stream     = std::move ( that.stream );
-            buffer     = std::move ( that.buffer );
-            emitOnSync = std::move ( that.emitOnSync );
+            stream = std::move ( that.stream );
+            buffer = std::move ( that.buffer );
+            emitOnSync.store ( that.emitOnSync.load ( ) );
 
             that.stream = nullptr;
             that.emitOnSync.store ( false );
@@ -205,12 +282,15 @@ namespace io::base
                               Allocator const                     &a )
                 : basic_syncstreambuf ( obuf )
         { }
-        basic_syncstreambuf ( basic_syncstreambuf &&that ) { move ( that ); }
+        basic_syncstreambuf ( basic_syncstreambuf &&that )
+        {
+            move ( std::move ( that ) );
+        }
 
         basic_syncstreambuf &operator= ( basic_syncstreambuf &&that )
         {
             destruct ( );
-            move ( that );
+            move ( std::move ( that ) );
             return *this;
         }
         /**
@@ -461,8 +541,107 @@ namespace io::base
     {
         // locks when accessing buffer to prevent us from
         // modifying during a write.
-        std::mutex                                     modifyBuffer;
+        std::mutex modifyBuffer;
+
         basic_syncstreambuf<CharT, Traits, Allocator> *buffer;
+
+        static inline bool selfTest ( std::ostream &stream )
+        {
+            stream << "Beginning test for basic_osyncstream for sizeof(CharT) "
+                      "= "
+                   << sizeof ( CharT ) << "\n";
+            stream << "Ensuring that osyncstream ... well ... works.\n";
+            std::basic_stringstream<CharT, Traits, Allocator> sstream;
+            static CharT text [] = { 'A', 'B', 'C', 'D', 'E', 'F', '\0' };
+            basic_syncstreambuf<CharT, Traits, Allocator> *buffers =
+                    new basic_syncstreambuf<
+                            CharT,
+                            Traits,
+                            Allocator>[ std::thread::hardware_concurrency ( ) ];
+            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
+                  i++ )
+            {
+                buffers [ i ] = basic_syncstreambuf<CharT, Traits, Allocator> (
+                        sstream.rdbuf ( ) );
+            }
+            basic_osyncstream<CharT, Traits, Allocator> *streams =
+                    new basic_osyncstream<
+                            CharT,
+                            Traits,
+                            Allocator>[ std::thread::hardware_concurrency ( ) ];
+            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
+                  i++ )
+            {
+                streams [ i ] = basic_osyncstream ( &buffers [ i ] );
+            }
+
+            std::atomic_size_t latch = std::thread::hardware_concurrency ( );
+            auto               send  = [ & ] ( unsigned id ) {
+                for ( int i = 0; i < 2; i++ )
+                {
+                    streams [ i ] << text;
+                }
+                latch.fetch_sub ( 1 );
+            };
+            std::thread *threads =
+                    new std::thread [ std::thread::hardware_concurrency ( ) ];
+            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
+                  i++ )
+            {
+                threads [ i ] = std::thread ( std::bind_front ( send, i ) );
+            }
+            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
+                  i++ )
+            {
+                threads [ i ].detach ( );
+            }
+
+            while ( latch.load ( ) )
+            { }
+
+            // since we haven't destructed anything, we should still have a
+            // clear string
+            if ( !sstream.str ( ).empty ( ) )
+            {
+                stream << "Some of the streams sent output when emit_on_sync "
+                          "was false and they were not destroyed.\n";
+                delete [] streams;
+                delete [] buffers;
+                delete [] threads;
+                return false;
+            }
+            stream << "Testing what happens when the streams are now "
+                      "destroyed...\n";
+            delete [] streams;
+            delete [] buffers;
+            std::basic_string<CharT, Traits, Allocator> testString = text;
+            for ( unsigned i = 1; i < std::thread::hardware_concurrency ( );
+                  i++ )
+            {
+                testString += text;
+            }
+            // since we sent out all information twice, double the length of
+            // testString
+            testString = testString + testString;
+            if ( sstream.str ( ).find ( testString ) == std::string::npos )
+            {
+                stream << "The values sent to the string were not the values "
+                          "expected!\n";
+                if ( sstream.str ( ).empty ( ) )
+                {
+                    stream << "In fact! Nothing was sent!!\n";
+                }
+                delete [] threads;
+                return false;
+            } else
+            {
+                delete [] threads;
+            }
+
+            return true;
+        }
+
+        static inline test::Unittest unittest = { &selfTest };
 
         void move ( basic_osyncstream &&that )
         {
@@ -470,6 +649,12 @@ namespace io::base
             buffer      = std::move ( that.buffer );
             that.buffer = nullptr;
         }
+
+        // default constructor, may make public some day
+        basic_osyncstream ( )
+                : basic_osyncstream (
+                        new basic_syncstreambuf<CharT, Traits, Allocator> ( ) )
+        { }
     public:
         basic_osyncstream ( std::basic_streambuf<CharT, Traits> *buf,
                             Allocator const                     &a )
@@ -484,12 +669,12 @@ namespace io::base
         { }
         basic_osyncstream ( basic_osyncstream &&that ) noexcept
         {
-            move ( that );
+            move ( std::move ( that ) );
         }
 
         basic_osyncstream &operator= ( basic_osyncstream &&that ) noexcept
         {
-            move ( that );
+            move ( std::move ( that ) );
             return *this;
         }
 
@@ -502,7 +687,7 @@ namespace io::base
 
         std::basic_streambuf<CharT, Traits> *get_wrapped ( ) const noexcept
         {
-            std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
+            // std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
             if ( buffer )
             {
                 return buffer->get_wrapped ( );
@@ -513,9 +698,42 @@ namespace io::base
         void emit ( )
         {
             std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
-            if ( buffer ) buffer->emit ( );
+            if ( buffer )
+            {
+                if ( !buffer->emit ( ) )
+                {
+                    std::cout << "emission failed.\n";
+                }
+            }
         }
     };
+
+    template class basic_syncstreambuf<defines::ChrChar>;
+    template class basic_syncstreambuf<defines::U08Char>;
+    template class basic_syncstreambuf<defines::U16Char>;
+    template class basic_syncstreambuf<defines::U32Char>;
+
+    template class basic_osyncstream<defines::ChrChar>;
+    template class basic_osyncstream<defines::U08Char>;
+    template class basic_osyncstream<defines::U16Char>;
+    template class basic_osyncstream<defines::U32Char>;
+
+    template class SynchronizedStreamBufferImplementation<
+            defines::ChrChar,
+            std::char_traits<defines::ChrChar>,
+            std::allocator<defines::ChrChar>>;
+    template class SynchronizedStreamBufferImplementation<
+            defines::U08Char,
+            std::char_traits<defines::U08Char>,
+            std::allocator<defines::U08Char>>;
+    template class SynchronizedStreamBufferImplementation<
+            defines::U16Char,
+            std::char_traits<defines::U16Char>,
+            std::allocator<defines::U16Char>>;
+    template class SynchronizedStreamBufferImplementation<
+            defines::U32Char,
+            std::char_traits<defines::U32Char>,
+            std::allocator<defines::U32Char>>;
 
     using syncbuf      = basic_syncstreambuf<char>;
     using wsyncbuf     = basic_syncstreambuf<wchar_t>;

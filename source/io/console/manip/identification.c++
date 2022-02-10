@@ -488,19 +488,10 @@ bool testIdentification ( std::ostream &stream )
                << std::endl;
         for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
         {
-            stream << "Following byte 1: 0x" << std::hex
-                   << std::uint32_t ( ( unsigned char ) j) << std::dec
-                   << std::endl;
             for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
             {
-                stream << "Following byte 2: 0x" << std::hex
-                       << std::uint32_t ( ( unsigned char ) k ) << std::dec
-                       << std::endl;
                 for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
                 {
-                    stream << "Following byte 3: 0x" << std::hex
-                           << std::uint32_t ( ( unsigned char ) m ) << std::dec
-                           << std::endl;
                     defines::ChrString test ( { i, j, k, m, 0 } );
                     if ( identifyFirst ( test ) != UTF4BYTE )
                     {
@@ -553,6 +544,7 @@ bool testIdentification ( std::ostream &stream )
             }
         }
     }
+    stream << "Four byte, out of range characters:\n";
     for ( char i = ( char ) 0xF5; i < ( char ) 0xF7; i++ )
     {
         for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
@@ -573,42 +565,7 @@ bool testIdentification ( std::ostream &stream )
             }
         }
     }
-    // five byte characters then six-byte characters.
-    // all should be invalid
-    for ( char i = ( char ) 0xF8; i < ( char ) 0xFE; i++ )
-    {
-        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
-        {
-            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
-            {
-                for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
-                {
-                    for ( char n = ( char ) 0x80; n < ( char ) 0xC0; n++ )
-                    {
-                        for ( char p = ( char ) 0x80; p < ( char ) 0xC0; p++ )
-                        {
-                            defines::ChrString test ( { i, j, k, m, n, p, 0 } );
-                            if ( identifyFirst ( test ) != INVALID_
-                                 && identifyFirst ( test ) != UTFNBYTE )
-                            {
-                                stream << "Invalid result: way out of bounds "
-                                          "sequence";
-                                stream << std::hex;
-                                for ( auto &c : test )
-                                {
-                                    stream << " " << std::uint32_t ( c );
-                                }
-                                stream << std::dec
-                                       << ", was interpreted as a valid "
-                                          "sequence!\n";
-                                return false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    
     return true;
 }
 

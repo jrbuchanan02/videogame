@@ -12,6 +12,7 @@
 #include <io/unicode/character.h++>
 #include <iostream>
 #include <test/unittester.h++>
+#include <io/base/syncstream.h++>
 
 #ifdef WINDOWS
 #    include "windows.h"
