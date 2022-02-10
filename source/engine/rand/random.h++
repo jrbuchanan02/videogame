@@ -11,9 +11,10 @@
  */
 #pragma once
 
+#include <defines/types.h++>
+
 namespace engine::rand
 {
-    using RandomNumber = long double;
 
     /**
      * @brief Performs a check against a given z-score.
@@ -38,12 +39,12 @@ namespace engine::rand
      * @return true success
      * @return false failure
      */
-    bool sigmaCheck ( RandomNumber const against );
+    bool sigmaCheck ( defines::RandomNumber const against );
 
     /**
      * @brief Generates a Pseudorandom Number.
      *
      * @return RandomNumber
      */
-    RandomNumber generatePRandom ( );
+    defines::RandomNumber generatePRandom ( );
 } // namespace engine::rand

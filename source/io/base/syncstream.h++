@@ -36,7 +36,8 @@ namespace io::base
 #include <memory>
 #include <mutex>
 #include <sstream>
-
+#include <test/unittester.h++>
+#include <thread>
 namespace io::base
 {
     /**
@@ -51,6 +52,42 @@ namespace io::base
     class SynchronizedStreamBufferImplementation
     {
         friend class basic_syncstreambuf<CharT, Traits, Allocator>;
+
+        static inline bool unittest ( std::ostream &stream )
+        {
+            stream << "Beginning unittest for "
+                      "SynchronizedStreamBufferImplementation where "
+                      "sizeof(CharT) = "
+                   << sizeof ( CharT ) << ".\n";
+            stream << "Testing race conditions...\n";
+            SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
+                    test;
+            test.locks.emplace ( nullptr, new std::mutex ( ) );
+            std::size_t        counter      = 0;
+            std::atomic_size_t latch        = 1 << 10;
+            auto               raceFunction = [ & ] ( ) {
+                test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
+                latch.fetch_sub ( 1 );
+            };
+
+            for ( int i = 0; i < 1 << 10; i++ )
+            {
+                std::thread ( raceFunction ).detach ( );
+            }
+            while ( latch.load ( ) )
+            { }
+            if ( counter != 1 << 10 )
+            {
+                stream << "Race condition failed, and the function is not "
+                          "atomic.\n";
+                return false;
+            } else
+            {
+                return true;
+            }
+        }
+
+        static inline test::Unittest test = { &unittest };
 
         std::map<std::basic_streambuf<CharT, Traits> *,
                  std::unique_ptr<std::mutex>>
@@ -116,6 +153,17 @@ namespace io::base
         std::basic_streambuf<CharT, Traits>        *stream;
         std::basic_string<CharT, Traits, Allocator> buffer;
         std::atomic_bool                            emitOnSync = false;
+
+        static inline bool test ( std::ostream &stream )
+        {
+            stream << "Beginning test for basic_syncstreambuf with "
+                      "sizeof(CharT) = "
+                   << sizeof ( CharT ) << "\n";
+
+            stream << "Since this test is not yet implemented, returning "
+                      "true.\n";
+            return true;
+        }
 
         /**
          * @brief Generic move operation

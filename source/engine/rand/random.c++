@@ -19,7 +19,7 @@ using namespace engine::rand;
 // global random number generator for the normal distribution
 std::mt19937_64 generator { std::random_device ( ) ( ) };
 // random number generator for the sigma-checks
-std::normal_distribution<RandomNumber> distribution ( 0, 1 );
+std::normal_distribution<defines::RandomNumber> distribution ( 0, 1 );
 // function that seeds the random number table with hardware-entropy
 void seedTable ( );
 // function that grabs a random number from the table.
@@ -32,7 +32,7 @@ std::uint64_t grabFromTable ( );
  * @param against the sigma value required to pass.
  * @return whether the check succeeds.
  */
-bool engine::rand::sigmaCheck ( RandomNumber const against )
+bool engine::rand::sigmaCheck ( defines::RandomNumber const against )
 {
     auto roll = distribution ( generator );
     if ( roll * roll >= 100 )
@@ -54,7 +54,7 @@ std::uint64_t table [] = {
 
 /**
  * @brief Seeds the random table with hardware entropy (if available)
- * 
+ *
  */
 void seedTable ( )
 {
@@ -65,8 +65,8 @@ void seedTable ( )
 
 /**
  * @brief Grabs a number from the table, seeding if there was a repetition
- * 
- * @return std::uint64_t 
+ *
+ * @return std::uint64_t
  */
 std::uint64_t grabFromTable ( )
 {
@@ -76,4 +76,9 @@ std::uint64_t grabFromTable ( )
         seedTable ( );
     }
     return result;
+}
+
+defines::RandomNumber engine::rand::generatePRandom ( )
+{
+    return ( defines::RandomNumber ) ( grabFromTable ( ) );
 }

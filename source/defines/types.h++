@@ -11,7 +11,20 @@
  */
 #pragma once
 
-#include <io/base/syncstream.h++>
+//#include <io/base/syncstream.h++>
+#include <streambuf>
+namespace io::base
+{
+    template <class CharT,
+              class Traits    = std::char_traits<CharT>,
+              class Allocator = std::allocator<CharT>>
+    class basic_syncstreambuf;
+    template <class CharT,
+              class Traits    = std::char_traits<CharT>,
+              class Allocator = std::allocator<CharT>>
+    class basic_osyncstream;
+} // namespace io::base
+
 #include <rapidxml-1.13/rapidxml.hpp>
 #include <string>
 
