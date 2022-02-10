@@ -11,9 +11,8 @@
  */
 #include <io/unicode/character.h++>
 #include <iostream>
-#ifdef UNITTEST
-#    include <test/unittester.h++>
-#endif
+#include <test/unittester.h++>
+#include <io/base/syncstream.h++>
 
 #ifdef WINDOWS
 #    include "windows.h"
@@ -27,9 +26,13 @@ int main ( int const argc, char const *const *const argv )
     SetConsoleOutputCP ( 65001 );
 #endif
     dumpInformation ( argc, argv );
+    // todo: move to a unittest.
     std::cout << "According to the properties, 🅱 takes up ";
     auto columns = io::unicode::characterProperties ( ).at ( U'🅱' ).columns;
     std::cout << ( 1 + columns ) << " columns.\n";
+
+    test::runUnittests ( std::cout );
+    // if we're on an actual terminal, wait for user input to exit.
     std::cin.get ( );
     return 0;
 }

@@ -27,11 +27,15 @@ namespace io::base
         return std::basic_string<CharT, Traits, Allocator> ( temp );
     }
 
-    template <class CharT> std::basic_ostream<CharT> &get_cout ( ) noexcept;
+    template <class CharT>
+    inline std::basic_ostream<CharT> &get_cout ( ) noexcept;
 
-    template <> std::ostream &get_cout<char> ( ) noexcept { return std::cout; }
+    template <> inline std::ostream &get_cout<char> ( ) noexcept
+    {
+        return std::cout;
+    }
 
-    template <> std::wostream &get_cout<wchar_t> ( ) noexcept
+    template <> inline std::wostream &get_cout<wchar_t> ( ) noexcept
     {
         return std::wcout;
     }

@@ -12,6 +12,7 @@
 #include <io/console/manip/stringfunctions.h++>
 #include <stdexcept>
 #include <string>
+#include <test/unittester.h++>
 #include <vector>
 using namespace io::console::manip;
 
@@ -42,7 +43,7 @@ enum CodePointType
     UTF4BYTE, // four byte utf-8 starts with [0xF0 - 0xF8]
     UTFNBYTE, // unknown, but it's probably unicode? perhaps 5-byte?
     INVALID_, // we know we errored out and found a character we know to be
-              // invalid
+              // invalid. includes characters outside the range of unicode.
 };
 
 /**
@@ -54,55 +55,128 @@ enum CodePointType
  */
 CodePointType identifyFirst ( std::string const &string )
 {
-    auto front = string.front ( );
-    if ( front & bit80 ) // is the highest bit set?
+    std::uint32_t total  = 0;
+    unsigned      length = 1;
+    unsigned char front  = string.front ( );
+    if ( front < 0x80 )
     {
-        // multi-byte unicode
-        if ( front & bit40 ) // highest + second highest
+        total += front;
+    } else
+    {
+        if ( front < 0xBF )
         {
-            if ( front & bit20 ) // highest three
+            return INVALID_;
+        } else if ( front < 0xC2 )
+        {
+            return INVALID_;
+        } else if ( front < 0xE0 )
+        {
+            length = 2;
+            if ( string.size ( ) < 2 )
             {
-                if ( front & bit10 ) // highest four
-                {
-                    if ( front & bit08 ) // highest five
-                    {
-                        // if the highest five are set, we don't know what
-                        // the character is, but, since it's matching this
-                        // unicode pattern, we'll assume it's some new
-                        // version of unicode and indicate as such.
-                        //
-                        // this return value still indicates an error
-                        return UTFNBYTE;
-                    } else
-                    {
-                        // highest four and not fifth highest
-                        return UTF4BYTE;
-                    }
-                } else
-                {
-                    // highest three and not fourth highest
-                    return UTF3BYTE;
-                }
+                return INVALID_;
             } else
             {
-                // highest two and not third highest
-                return UTF2BYTE;
+                total += front & ~0xC0;
+                front = string.at ( 1 );
+                if ( front > 0xBF || front < 0x80 )
+                {
+                    return INVALID_;
+                } else
+                {
+                    total <<= 6;
+                    total += front & ~0x80;
+                }
+            }
+        } else if ( front < 0xF0 )
+        {
+            length = 3;
+            if ( string.size ( ) < length )
+            {
+                return INVALID_;
+            } else
+            {
+                total += front & ~0xE0;
+                for ( int i = 1; i < 3; i++ )
+                {
+                    front = string.at ( i );
+                    if ( front > 0xBF || front < 0x80 )
+                    {
+                        return INVALID_;
+                    } else
+                    {
+                        total <<= 6;
+                        total += front & ~0x80;
+                    }
+                }
             }
         } else
         {
-            return INVALID_; // We found the following byte in a multi-byte
-                             // unicode sequence. This is an error.
+            length = 4;
+            if ( string.size ( ) < length )
+            {
+                return INVALID_;
+            } else
+            {
+                total += front & ~0xF0;
+                for ( int i = 1; i < 4; i++ )
+                {
+                    front = string.at ( i );
+                    if ( front > 0xBF || front < 0x80 )
+                    {
+                        return INVALID_;
+                    } else
+                    {
+                        total <<= 6;
+                        total += front & ~0x80;
+                    }
+                }
+            }
         }
-    } else
+    }
+
+    switch ( length )
     {
-        // terminal / single byte
-        if ( front <= maxControlCharacter ) // is this a control character?
-        {
-            return TERMINAL;
-        } else
-        {
-            return UTF1BYTE;
-        }
+        case 1:
+            if ( total < 0x20 )
+            {
+                return TERMINAL;
+            } else
+            {
+                return UTF1BYTE;
+            }
+        case 2:
+            if ( total < 0x80 )
+            {
+                return INVALID_;
+            } else
+            {
+                return UTF2BYTE;
+            }
+        case 3:
+            if ( total < 0x800 )
+            {
+                return INVALID_;
+            } else if ( total >= 0xD800 && total <= 0xDFFF )
+            {
+                return INVALID_;
+            } else
+            {
+                return UTF3BYTE;
+            }
+        case 4:
+            if ( total < 0x10000 )
+            {
+                return INVALID_;
+            } else if ( total >= 0x10FFFE )
+            {
+                return INVALID_;
+            } else
+            {
+                return UTF4BYTE;
+            }
+        default:
+            return INVALID_;
     }
 }
 /**
@@ -153,7 +227,7 @@ bool endsCSI ( char const &character )
 
 /**
  * @brief (Destructively) Grabs the first code point of a given string
- * @note Takes at least one character. Given the nature of terminal sequences, 
+ * @note Takes at least one character. Given the nature of terminal sequences,
  * there is no upper bound on the amount of characters  taken.
  * @throw std::runtime_error if the sequence seems to be a unicode sequence, but
  * has an indication of being longer than four bytes
@@ -279,3 +353,220 @@ std::vector<std::string>
     }
     return result;
 }
+
+bool testIdentification ( std::ostream &stream )
+{
+    stream << "Beginning identification unittest.\n";
+    stream << "Ensuring that all characters can be identified properly...\n";
+
+    stream << "One byte characters:\n";
+
+    for ( char i = 0; i <= maxControlCharacter; i++ )
+    {
+        defines::ChrString test ( { i, 0 } );
+        if ( identifyFirst ( test ) != TERMINAL )
+        {
+            stream << "Invalid result: U+" << std::hex << std::uint32_t ( i )
+                   << std::dec << " was not marked as a control character!\n";
+            return false;
+        }
+    }
+    for ( char i = ' '; i < ( char ) 0x80; i++ )
+    {
+        defines::ChrString test ( { ( char ) i, 0 } );
+        if ( identifyFirst ( test ) != UTF1BYTE )
+        {
+            stream << "Invalid result: U+" << std::hex << std::uint32_t ( i )
+                   << std::dec
+                   << " was not marked as a one-byte unicode character!\n";
+            return false;
+        }
+    }
+
+    stream << "Two-byte unicode characters:\n";
+    for ( char i = ( char ) 0xC2; i < ( char ) 0xE0; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            defines::ChrString test ( { i, j, 0 } );
+            if ( identifyFirst ( test ) != UTF2BYTE )
+            {
+                std::uint32_t translated = 0;
+                translated += ( ( unsigned char ) i ) & ~0xC0;
+                translated <<= 6;
+                translated += ( ( unsigned char ) j ) & ~0x80;
+
+                stream << "Invalid result: U+" << std::hex << translated
+                       << std::dec
+                       << " was not marked as a two-byte unicode character.\n";
+                return false;
+            }
+        }
+    }
+    for ( char i = ( char ) 0xC0; i < ( char ) 0xC2; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            defines::ChrString test ( { i, j, 0 } );
+            if ( identifyFirst ( test ) != INVALID_ )
+            {
+                std::uint32_t translated = 0;
+                translated += ( ( unsigned char ) i ) & ~0xC0;
+                translated <<= 6;
+                translated += ( ( unsigned char ) j ) & ~0x80;
+
+                stream << "Invalid result: U+" << std::hex << translated
+                       << std::dec
+                       << ", encoded overlong, was not marked as an invalid "
+                          "character (the range "
+                          "starting with bytes 0xC0 and 0xC1 are not valid "
+                          "UTF-8.\n";
+                return false;
+            }
+        }
+    }
+
+    stream << "Three-byte unicode characters:\n";
+    for ( char i = ( char ) 0xE0; i < ( char ) 0xF0; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                defines::ChrString test ( { i, j, k, 0 } );
+                if ( identifyFirst ( test ) != UTF3BYTE )
+                {
+                    std::uint32_t translated = 0;
+                    translated += ( ( unsigned char ) i ) & ~0xE0;
+                    translated <<= 6;
+                    translated += ( ( unsigned char ) j ) & ~0x80;
+                    translated <<= 6;
+                    translated += ( ( unsigned char ) k ) & ~0x80;
+                    if ( translated >= 0xD800 && translated <= 0xDFFF )
+                    {
+                        if ( identifyFirst ( test ) != INVALID_ )
+                        {
+                            stream << "Invalid result: U+" << std::hex
+                                   << translated << std::dec
+                                   << " was not marked as invalid.\n";
+                            return false;
+                        } else
+                        {
+                            continue;
+                        }
+                    }
+                    if ( translated < 0x800 )
+                    {
+                        if ( identifyFirst ( test ) != INVALID_ )
+                        {
+                            stream << "Invalid result: U+" << std::hex
+                                   << translated << std::dec
+                                   << " was written as an overlong encoding "
+                                      "and treated as valid.\n";
+                            return false;
+                        } else
+                        {
+                            continue;
+                        }
+                    }
+
+                    stream << "Invalid result: U+" << std::hex << translated
+                           << std::dec
+                           << " was not marked as a 3-byte character, but "
+                              "instead type "
+                           << ( int ) identifyFirst ( test ) << "\n";
+                    return false;
+                }
+            }
+        }
+    }
+    stream << "Four-byte unicode characters:\n";
+    for ( char i = ( char ) 0xF0; i < ( char ) 0xF4; i++ )
+    {
+        stream << "Leading byte 0x" << std::hex
+               << std::uint32_t ( ( unsigned char ) i ) << std::dec
+               << std::endl;
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
+                {
+                    defines::ChrString test ( { i, j, k, m, 0 } );
+                    if ( identifyFirst ( test ) != UTF4BYTE )
+                    {
+                        std::uint32_t translated = 0;
+                        translated += ( ( unsigned char ) i ) & ~0xF0;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) j ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) k ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) m ) & ~0x80;
+
+                        // check for overlong encodings or the last two codes.
+                        if ( translated < 0x10000 )
+                        {
+                            if ( identifyFirst ( test ) != INVALID_ )
+                            {
+                                stream << "Invalid result: U+" << std::hex
+                                       << translated << std::dec
+                                       << " was encoded overlong and treated "
+                                          "as valid!\n";
+                                return false;
+                            } else
+                            {
+                                continue;
+                            }
+                        }
+                        if ( translated == 0x10FFFE || translated == 0x10FFFF )
+                        {
+                            if ( identifyFirst ( test ) != INVALID_ )
+                            {
+                                stream << "Invalid result: U+" << std::hex
+                                       << translated << std::dec
+                                       << " (a noncharacter as of version "
+                                          "14.0) was treated as valid!\n";
+                                return false;
+                            } else
+                            {
+                                continue;
+                            }
+                        }
+
+                        stream << "Invalid result: U+" << std::hex << translated
+                               << std::dec
+                               << " was not marked as a 4-byte unicode "
+                                  "character!\n";
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    stream << "Four byte, out of range characters:\n";
+    for ( char i = ( char ) 0xF5; i < ( char ) 0xF7; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
+                {
+                    defines::ChrString test ( { i, j, k, m, 0 } );
+                    if ( identifyFirst ( test ) != INVALID_ )
+                    {
+                        stream << "Invalid result: 4-byte character sequence "
+                                  "outside range of UTF-8 was treated as "
+                                  "valid!\n";
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+
+test::Unittest identification ( testIdentification );

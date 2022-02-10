@@ -16,14 +16,23 @@
 
 using namespace engine::rand;
 
+// global random number generator for the normal distribution
 std::mt19937_64 generator { std::random_device ( ) ( ) };
-
-std::normal_distribution<RandomNumber> distribution ( 0, 1 );
-
-void          seedTable ( );
+// random number generator for the sigma-checks
+std::normal_distribution<defines::RandomNumber> distribution ( 0, 1 );
+// function that seeds the random number table with hardware-entropy
+void seedTable ( );
+// function that grabs a random number from the table.
 std::uint64_t grabFromTable ( );
 
-bool engine::rand::sigmaCheck ( RandomNumber const against )
+/**
+ * @brief Checks against a random number. Quite simply, if the internally
+ * generated number exceeds the number to check against, the check succeeds
+ *
+ * @param against the sigma value required to pass.
+ * @return whether the check succeeds.
+ */
+bool engine::rand::sigmaCheck ( defines::RandomNumber const against )
 {
     auto roll = distribution ( generator );
     if ( roll * roll >= 100 )
@@ -43,6 +52,10 @@ std::uint64_t table [] = {
         4,
 };
 
+/**
+ * @brief Seeds the random table with hardware entropy (if available)
+ *
+ */
 void seedTable ( )
 {
     static std::random_device device;
@@ -50,6 +63,11 @@ void seedTable ( )
     tableSpot = tableSeed;
 }
 
+/**
+ * @brief Grabs a number from the table, seeding if there was a repetition
+ *
+ * @return std::uint64_t
+ */
 std::uint64_t grabFromTable ( )
 {
     std::uint64_t result = table [ tableSpot++ ];
@@ -58,4 +76,9 @@ std::uint64_t grabFromTable ( )
         seedTable ( );
     }
     return result;
+}
+
+defines::RandomNumber engine::rand::generatePRandom ( )
+{
+    return ( defines::RandomNumber ) ( grabFromTable ( ) );
 }

@@ -10,17 +10,22 @@
  *
  */
 #include <cstdint>
+#include <defines/macros.h++>
 #include <fstream>
 #include <io/unicode/character.h++>
 #include <iostream>
 #include <rapidxml-1.13/rapidxml.hpp>
 #include <sstream>
+#include <test/unittester.h++>
 #include <vector>
+
 using namespace io::unicode;
+using namespace defines;
 
 #define MAX_UNICODE 0x10FFFF
 #define DATA_FILE   "ucd.all.grouped.xml"
 #define DATA_PATH   "./data/unicode/"
+
 std::vector<CharacterProperties> properties = { };
 
 void initializeProperties ( );
@@ -36,114 +41,163 @@ std::vector<CharacterProperties> const &io::unicode::characterProperties ( )
 
 void initializeProperties ( )
 {
-    XMLDoc                    document;
-    std::basic_ifstream<Char> file ( DATA_PATH DATA_FILE );
-    std::basic_string<Char>   contents = "";
+    defines::EXMLDocument document;
+    defines::EFileStream  file ( DATA_PATH DATA_FILE );
+    defines::EString      contents = ES ( "" );
     while ( !file.eof ( ) )
     {
-        std::basic_string<Char> temp;
+        defines::EString temp;
         std::getline ( file, temp );
         contents += temp;
     }
     file.close ( );
-    document.parse<0> ( ( Char * ) contents.c_str ( ) );
-    XMLNode *ucd = document.first_node ( "ucd" );
-    if ( !ucd )
-    {
-        throw std::runtime_error (
-                "The file was not the unicode character database!" );
-    }
-    XMLNode *repertoire = ucd->first_node ( "repertoire" );
-    if ( !repertoire )
-    {
-        throw std::runtime_error ( "The repertoire isn't here!" );
-    }
-    XMLNode *group = repertoire->first_node ( "group" );
-    if ( !group )
-    {
-        throw std::runtime_error ( "Expected grouped XML Database!" );
-    }
-    for ( ; group; group = group->next_sibling ( ) )
-    {
-        auto getProperty = [ & ] ( XMLNode *pref,
-                                   XMLNode *back,
-                                   Char    *propName ) -> Char * {
-            if ( pref->first_attribute ( propName ) )
+    document.parse<0> ( ( defines::ECString ) contents.c_str ( ) );
+    defines::EXMLNode *group = document.first_node ( "ucd" )
+                                       ->first_node ( "repertoire" )
+                                       ->first_node ( "group" );
+    auto parseCharacterProperties = [ & ] ( defines::EXMLNode *node ) {
+        auto getField =
+                [ & ] ( defines::EXMLNode *p,
+                        defines::EXMLNode *c,
+                        defines::ECString  n ) -> defines::EXMLAttribute * {
+            if ( c->first_attribute ( n ) )
+                return c->first_attribute ( n );
+            else if ( p->first_attribute ( n ) )
+                return p->first_attribute ( n );
+            else
             {
-                return pref->first_attribute ( propName )->value ( );
-            } else if ( back->first_attribute ( propName ) )
-            {
-                return back->first_attribute ( propName )->value ( );
-            } else
-            {
-                throw std::runtime_error ( "No place to get property from!" );
+                defines::ChrString failMessage = "Missing field \"";
+                failMessage += n;
+                failMessage += "\"";
+                throw std::runtime_error ( failMessage.c_str ( ) );
             }
         };
+        CharacterProperties result;
+        defines::EString    temp = ES ( "" );
 
-        XMLNode *character = group->first_node ( );
-
-        if ( !character )
+        defines::ECString ea =
+                getField ( node->parent ( ), node, ES ( "ea" ) )->value ( );
+        temp = ea;
+        if ( temp == ES ( "A" ) || temp == ES ( "F" ) || temp == ES ( "W" ) )
         {
-            throw std::runtime_error ( "Empty Group!" );
-        }
-
-        // process as character.
-        CharacterProperties properties;
-        // only work with properties for now
-        Char *ea = getProperty ( character, group, ( Char * ) "ea" );
-        if ( ea )
-        {
-            std::string width ( ea );
-            if ( width == "A" || width == "W" || width == "F" )
-            {
-                properties.columns = 1;
-            } else
-            {
-                properties.columns = 0;
-            }
+            result.columns = 1;
         } else
         {
-            properties.columns = 0;
-        }
-        Char *emoji = getProperty ( character, group, ( Char * ) "Emoji" );
-        if ( emoji )
-        {
-            std::string width ( emoji );
-            if ( width == "Y" )
+            defines::ECString emoji =
+                    getField ( node->parent ( ), node, ES ( "Emoji" ) )
+                            ->value ( );
+            temp = emoji;
+            if ( temp == ES ( "Y" ) )
             {
-                properties.columns = 1;
+                result.columns = 1;
             }
         }
 
-        if ( character->first_attribute ( "cp" ) )
+        properties.push_back ( result );
+    };
+    while ( group )
+    {
+        defines::EXMLNode *child = group->first_node ( );
+        while ( child )
         {
-            ::properties.push_back ( properties );
-        } else
-        {
-            if ( !character->first_attribute ( "first-cp" ) )
+            if ( child->first_attribute ( "cp" ) )
             {
-                throw std::runtime_error (
-                        "Illegal Character database entry!" );
-            } else
+                // push back one character
+                parseCharacterProperties ( child );
+            } else if ( child->first_attribute ( "first-cp" ) )
             {
-                if ( !character->first_attribute ( "last-cp" ) )
+                if ( !child->first_attribute ( "last-cp" ) )
                 {
                     throw std::runtime_error (
-                            "Illegal Character database entry!" );
+                            "First code point in range exists, but no last "
+                            "code point in range!" );
                 }
-                std::basic_stringstream<Char> temp;
-                std::uint32_t                 first = 0, last = 0;
-                temp = std::basic_stringstream<Char> (
-                        character->first_attribute ( "first-cp" )->value ( ) );
-                temp >> std::hex >> first;
-                temp = std::basic_stringstream<Char> (
-                        character->first_attribute ( "last-cp" )->value ( ) );
-                temp >> std::hex >> last;
+                // parse code point
+                auto parseCodePoint =
+                        [ & ] ( defines::ECString field ) -> std::uint32_t {
+                    defines::EStringStream stream (
+                            child->first_attribute ( field )->value ( ) );
+                    std::uint32_t result = 0;
+                    stream >> std::hex >> result;
+                    return result;
+                };
+
+                std::uint32_t first, last;
+                first = parseCodePoint ( ES ( "first-cp" ) );
+                last  = parseCodePoint ( ES ( "last-cp" ) );
                 for ( std::uint32_t i = first; i <= last; i++ )
                 {
-                    ::properties.push_back ( properties );
+                    parseCharacterProperties ( child );
                 }
+            } else
+            {
+                throw std::runtime_error ( "Cannot parse node!" );
             }
+            child = child->next_sibling ( );
         }
+        group = group->next_sibling ( );
     }
 }
+
+bool propertyInitializationTest ( std::ostream &stream )
+{
+    static defines::U32String emoji =
+            U"🅱👀✔️❌🍆✔️❌👌🚺😉✔️🤷👍😄😑"
+            U"😶"
+            U"🤐"
+            U"😪";
+    static defines::U32String cjk =
+            U"これは日本語のテキストです。这是简体中文文本。這是繁體中文文本。"
+            U"이것은 한국어 텍스트입니다.";
+    static defines::U32String latin =
+            U"This is English text.Ese es texto en español.Ceci est un texte "
+            U"français.";
+    stream << "Beginning test of character properties structure...\n";
+    characterProperties ( );
+    stream << "Ensuring that the size of character properties is 0x10FFFF "
+              "characters...\n";
+    if ( characterProperties ( ).size ( ) != MAX_UNICODE + 1 )
+    {
+        stream << "Character properties has an invalid size: 0x" << std::hex
+               << characterProperties ( ).size ( );
+        stream << std::dec << "\n";
+
+        return false;
+    }
+    stream << "Ensuring that emoji have a width of two columns...\n";
+    for ( auto &u : emoji )
+    {
+        if ( !characterProperties ( ).at ( u ).columns && u > 0x7F )
+        {
+            stream << "An emoji (U+" << std::hex << std::uint32_t ( u )
+                   << std::dec << ") has a length registered as one column!\n";
+            return false;
+        }
+    }
+    stream << "Ensuring that CJK characters have a width of two columns...\n";
+    for ( auto &u : cjk )
+    {
+        if ( !characterProperties ( ).at ( u ).columns && u > 0x7F )
+        {
+            stream << "A CJK character (U+" << std::hex << std::uint32_t ( u )
+                   << std::dec << ") has a length registered as one column!\n";
+            return false;
+        }
+    }
+    stream << "Ensuring that phonetic-alphabet characters have a width of one "
+              "column...\n";
+    for ( auto &u : latin )
+    {
+        if ( characterProperties ( ).at ( u ).columns )
+        {
+            stream << "A Phonetic-alphabet character (U+" << std::hex
+                   << std::uint32_t ( u ) << std::dec
+                   << ") has a length registered as one column!\n";
+            return false;
+        }
+    }
+    stream << "No information indicates failure, returning...\n";
+    return true;
+}
+
+test::Unittest propertiesTest { &propertyInitializationTest };

@@ -11,10 +11,12 @@
  */
 #pragma once
 
+#include <defines/types.h++>
+#include <functional>
 #include <iostream>
-
 namespace test
 {
+    using namespace defines;
     /**
      * @brief Runs the unittests, outputting information on their pass/fail
      * rates to the specified stream.
@@ -22,4 +24,21 @@ namespace test
      * @param stream the stream to output information to.
      */
     void runUnittests ( std::ostream &stream );
+
+    /**
+     * @brief A unittest to run.
+     *
+     */
+    struct Unittest
+    {
+        ChrPString passMessage = "Unittest passed.";
+        ChrPString failMessage = "Unittest failed.";
+
+        std::function<bool ( std::ostream & )> test;
+
+        Unittest ( std::function<bool ( std::ostream & )> const &test,
+                   ChrPString const                             &pass = nullptr,
+                   ChrPString const &fail = nullptr );
+    };
+
 } // namespace test

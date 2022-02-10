@@ -2,7 +2,10 @@
 You can find the [license](./LICENSE) [here](./LICENSE): [link](./LICENSE)
 (all three links lead to the license). Videogame is published under the GNU GPL
 version 3.0 with the hopes that it will be entertaining, but comes "as-is" with
-no warranty, neither express nor implied, of any kind.
+no warranty, neither express nor implied. Videogame has open-source
+dependencies and databases. These are published under the Boost Software License
+and the Unicode License. All dependencies and databases also come "as-is" and 
+with no warranty, neither express nor implied.
 
  Terminal Based RPG with Good Graphics. Videogame is an ambitious project with 
  the following goals:
