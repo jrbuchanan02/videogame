@@ -11,6 +11,7 @@
  */
 #pragma once
 
+#include <defines/types.h++>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -38,5 +39,60 @@ namespace io::base
     template <> inline std::wostream &get_cout<wchar_t> ( ) noexcept
     {
         return std::wcout;
+    }
+
+    template <class ECharT,
+              class ICharT,
+              class ETraits    = std::char_traits<ECharT>,
+              class ITraits    = std::char_traits<ICharT>,
+              class IAllocator = std::allocator<ICharT>>
+    inline void printIfPossible (
+            std::basic_ostream<ECharT, ETraits> &os,
+            std::basic_string<ICharT, ITraits, IAllocator> const
+                    &str ) requires ( sizeof ( ECharT ) != sizeof ( ICharT ) )
+    { }
+
+    template <class ECharT,
+              class ICharT,
+              class ETraits    = std::char_traits<ECharT>,
+              class ITraits    = std::char_traits<ICharT>,
+              class IAllocator = std::allocator<ICharT>>
+    inline void printIfPossible (
+            std::basic_ostream<ECharT, ETraits> &os,
+            std::basic_string<ICharT, ITraits, IAllocator> const
+                    &str ) requires ( std::is_same_v<ECharT, ICharT> )
+    {
+        os << str;
+    }
+
+    /**
+     * @brief Prints if possible when the two character types are of the same
+     * size.
+     * @warning Mojibake is possible with this function. Use with caution.
+     *
+     * @tparam ECharT
+     * @tparam ICharT
+     * @tparam ETraits
+     * @tparam ITraits
+     * @tparam IAllocator
+     */
+    template <class ECharT,
+              class ICharT,
+              class ETraits    = std::char_traits<ECharT>,
+              class ITraits    = std::char_traits<ICharT>,
+              class IAllocator = std::allocator<ICharT>>
+    inline void printIfPossible (
+            std::basic_ostream<ECharT, ETraits> &os,
+            std::basic_string<ICharT, ITraits, IAllocator> const
+                    &str ) requires ( sizeof ( ICharT ) == sizeof ( ECharT )
+                                      && !std::is_same_v<ECharT, ICharT> )
+    {
+        std::basic_string<ECharT, ETraits> temp (
+                emptyString<ECharT, ETraits> ( ) );
+        for ( auto &c : str )
+        {
+            temp += ( ECharT ) c;
+        }
+        os << temp;
     }
 } // namespace io::base

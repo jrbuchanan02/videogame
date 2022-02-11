@@ -25,9 +25,12 @@ with no warranty, neither express nor implied.
 
 ## System Requirements:
 ### Base
-1. Around 1.5 MB RAM free[^1]. This requirement will change as Videogame gets more
+1. Around 50 MB RAM free[^1]. This requirement will change as Videogame gets more
 complete. If your computer cannot meet this requirement, the advice is: get a 
-computer less than 37 years old.
+computer less than 30 years old or remove the RAM intensive software from your 
+machine. There is a good chance a more skilled programmer than me could save 
+some RAM, as most of the requirement consists of loading in an
+approximately 40 MB database for processing.
 2. Any version of Linux or Windows 10 20H1 or later (20H2 or any version of 
 Windows 11).[^2]
    - If it becomes possible, I would take interest in porting Videogame to retro

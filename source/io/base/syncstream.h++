@@ -12,6 +12,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <defines/macros.h++>
 #include <defines/types.h++>
 #include <functional>
@@ -66,29 +67,39 @@ namespace io::base
                 SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
                         test;
                 test.locks.emplace ( nullptr, new std::mutex ( ) );
-                std::size_t        counter      = 0;
-                std::atomic_size_t latch        = 1 << 10;
-                auto               raceFunction = [ & ] ( ) {
+                std::uint32_t       threadCount = 1 << 10;
+                std::size_t         counter     = 0;
+                std::atomic_int64_t latch       = threadCount;
+                auto                race        = [ & ] ( ) {
                     test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
-                    latch.fetch_sub ( 1 );
+                    // if the value was somehow 0
+                    if ( !latch.fetch_sub ( 1 ) )
+                    {
+                        // store 0
+                        latch.store ( 0 );
+                    }
                 };
 
-                for ( int i = 0; i < 1 << 10; i++ )
+                for ( std::uint32_t i = 0; i < threadCount; i++ )
                 {
-                    std::thread ( raceFunction ).detach ( );
+                    std::thread ( race ).detach ( );
                 }
+
                 while ( latch.load ( ) )
-                { }
-                if ( counter != 1 << 10 )
                 {
-                    stream << "Race condition failed, and the function is not "
-                              "atomic.\n";
+                    stream << "Waiting on " << latch.load ( )
+                           << " threads to complete.\n";
+                    std::this_thread::sleep_for (
+                            std::chrono::milliseconds ( 100 ) );
+                }
+
+                if ( counter != threadCount )
+                {
+                    stream << "Race condition occurred anyways!\n";
                     return false;
-                } else
-                {
-                    return true;
                 }
             }
+            return true;
         }
 
         static inline test::Unittest test = { &unittest };
@@ -218,7 +229,10 @@ namespace io::base
                                     *alloc ) {
                         ready.fetch_sub ( 1 );
                         while ( !go.load ( ) )
-                        { }
+                        {
+                            std::this_thread::sleep_for (
+                                    std::chrono::milliseconds ( 1 ) );
+                        }
                         alloc->emit ( );
                         done.fetch_add ( 1 );
                     };
@@ -528,183 +542,184 @@ namespace io::base
         }
     };
 
-    /**
-     * @brief basic_osyncstream
-     * @bug Does not work, we know that the bug likely resides within the stream
-     * since basic_syncstreambuf works normally with a std::basic_ostream.
-     * @tparam CharT
-     * @tparam Traits
-     * @tparam Allocator
-     */
     template <class CharT, class Traits, class Allocator>
     class basic_osyncstream : public std::basic_ostream<CharT, Traits>
     {
-        // locks when accessing buffer to prevent us from
-        // modifying during a write.
-        std::mutex modifyBuffer;
+        std::mutex bufferMutex;
 
-        basic_syncstreambuf<CharT, Traits, Allocator> *buffer;
+        void move ( basic_osyncstream &&other ) noexcept
+        {
+            std::scoped_lock<std::mutex> bufferLock ( bufferMutex ),
+                    otherLock ( other.bufferMutex );
+            std::basic_ostream<CharT, Traits>::rdbuf ( other.rdbuf ( ) );
+        }
 
         static inline bool selfTest ( std::ostream &stream )
         {
-            stream << "Beginning test for basic_osyncstream for sizeof(CharT) "
+            stream << "Beginning test for basic_osyncstream with sizeof(CharT) "
                       "= "
                    << sizeof ( CharT ) << "\n";
-            stream << "Ensuring that osyncstream ... well ... works.\n";
-            std::basic_stringstream<CharT, Traits, Allocator> sstream;
-            static CharT text [] = { 'A', 'B', 'C', 'D', 'E', 'F', '\0' };
-            basic_syncstreambuf<CharT, Traits, Allocator> *buffers =
-                    new basic_syncstreambuf<
-                            CharT,
-                            Traits,
-                            Allocator>[ std::thread::hardware_concurrency ( ) ];
-            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
-                  i++ )
-            {
-                buffers [ i ] = basic_syncstreambuf<CharT, Traits, Allocator> (
-                        sstream.rdbuf ( ) );
-            }
-            basic_osyncstream<CharT, Traits, Allocator> *streams =
-                    new basic_osyncstream<
-                            CharT,
-                            Traits,
-                            Allocator>[ std::thread::hardware_concurrency ( ) ];
-            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
-                  i++ )
-            {
-                streams [ i ] = basic_osyncstream ( &buffers [ i ] );
-            }
+            stream << "Ensuring that osyncstream emits output...\n";
 
-            std::atomic_size_t latch = std::thread::hardware_concurrency ( );
-            auto               send  = [ & ] ( unsigned id ) {
-                for ( int i = 0; i < 2; i++ )
-                {
-                    streams [ i ] << text;
-                }
-                latch.fetch_sub ( 1 );
+            static CharT test [] = {
+                    'H',
+                    'e',
+                    'l',
+                    'l',
+                    'o',
+                    ',',
+                    ' ',
+                    'w',
+                    'o',
+                    'r',
+                    'l',
+                    'd',
+                    '!',
+                    '\n',
             };
-            std::thread *threads =
-                    new std::thread [ std::thread::hardware_concurrency ( ) ];
-            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
-                  i++ )
+            std::basic_stringstream<CharT, Traits, Allocator> out;
+            basic_osyncstream<CharT, Traits, Allocator>       ostream ( out );
+            ostream << test;
+            if ( !out.str ( ).empty ( ) )
             {
-                threads [ i ] = std::thread ( std::bind_front ( send, i ) );
+                stream << "The synchronized output stream sent information "
+                          "before the call to emit!\n";
+                return false;
             }
-            for ( unsigned i = 0; i < std::thread::hardware_concurrency ( );
-                  i++ )
+            ostream.emit ( );
+            if ( out.str ( ).find ( test ) == std::string::npos )
             {
+                stream << "The synchronized output stream did not give the "
+                          "string!\n";
+
+                return false;
+            }
+            stream << "Testing that text does not get garbled...\n";
+
+            out = std::basic_stringstream<CharT, Traits, Allocator> ( );
+            unsigned           con      = 16;
+            std::atomic_size_t ready    = con;
+            std::atomic_size_t passd    = con;
+            std::atomic_bool   go       = false;
+            std::atomic_bool   ret      = false;
+            std::atomic_size_t retd     = con;
+            CharT ( *strings ) [ 8001 ] = new CharT [ con ][ 8001 ];
+            std::thread *threads        = new std::thread [ con ];
+
+            auto run = [ & ] ( unsigned id ) {
+                ready.fetch_sub ( 1 );
+                while ( !go.load ( ) )
+                {
+                    std::this_thread::sleep_for (
+                            std::chrono::milliseconds ( 1 ) );
+                }
+                basic_osyncstream<CharT, Traits, Allocator> ostream ( out );
+                ostream << strings [ id ];
+                CharT temp [] = { ( CharT ) '\n', 0 };
+                ostream << temp;
+                ostream.emit ( );
+                passd.fetch_sub ( 1 );
+                while ( !ret.load ( ) )
+                {
+                    std::this_thread::sleep_for (
+                            std::chrono::milliseconds ( 1 ) );
+                }
+                retd.fetch_sub ( 1 );
+            };
+            for ( unsigned i = 0; i < con; i++ )
+            {
+                for ( unsigned j = 0; j < 8000; j++ )
+                {
+                    strings [ i ][ j ] = ( CharT ) ( 64 + i );
+                }
+                strings [ i ][ 8000 ] = 0;
+                threads [ i ]         = std::move (
+                        std::thread ( [ =, &run ] ( ) { run ( i ); } ) );
                 threads [ i ].detach ( );
             }
 
-            while ( latch.load ( ) )
-            { }
-
-            // since we haven't destructed anything, we should still have a
-            // clear string
-            if ( !sstream.str ( ).empty ( ) )
+            while ( ready.load ( ) )
             {
-                stream << "Some of the streams sent output when emit_on_sync "
-                          "was false and they were not destroyed.\n";
-                delete [] streams;
-                delete [] buffers;
-                delete [] threads;
-                return false;
+                std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
             }
-            stream << "Testing what happens when the streams are now "
-                      "destroyed...\n";
-            delete [] streams;
-            delete [] buffers;
-            std::basic_string<CharT, Traits, Allocator> testString = text;
-            for ( unsigned i = 1; i < std::thread::hardware_concurrency ( );
-                  i++ )
+            go.store ( true );
+            while ( passd.load ( ) )
             {
-                testString += text;
+                std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
             }
-            // since we sent out all information twice, double the length of
-            // testString
-            testString = testString + testString;
-            if ( sstream.str ( ).find ( testString ) == std::string::npos )
+            for ( unsigned i = 0; i < con; i++ )
             {
-                stream << "The values sent to the string were not the values "
-                          "expected!\n";
-                if ( sstream.str ( ).empty ( ) )
+                if ( out.str ( ).find ( strings [ i ] ) == std::string::npos )
                 {
-                    stream << "In fact! Nothing was sent!!\n";
+                    stream << "Thread " << i + 1
+                           << " failed to emit information correctly! It was "
+                              "either garbled or did not emit!\n";
+                    return false;
                 }
-                delete [] threads;
-                return false;
-            } else
+            }
+            ret.store ( true );
+            while ( retd.load ( ) )
             {
-                delete [] threads;
+                std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
             }
 
+            // delete [] strings;
+            delete [] threads;
             return true;
         }
 
         static inline test::Unittest unittest = { &selfTest };
-
-        void move ( basic_osyncstream &&that )
-        {
-            std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
-            buffer      = std::move ( that.buffer );
-            that.buffer = nullptr;
-        }
-
-        // default constructor, may make public some day
-        basic_osyncstream ( )
-                : basic_osyncstream (
-                        new basic_syncstreambuf<CharT, Traits, Allocator> ( ) )
-        { }
     public:
-        basic_osyncstream ( std::basic_streambuf<CharT, Traits> *buf,
-                            Allocator const                     &a )
+        using char_type      = CharT;
+        using traits_type    = Traits;
+        using int_type       = typename Traits::int_type;
+        using pos_type       = typename Traits::pos_type;
+        using allocator_type = Allocator;
+        using streambuf_type = std::basic_streambuf<CharT, Traits>;
+        using syncbuf_type   = basic_syncstreambuf<CharT, Traits, Allocator>;
+
+        basic_osyncstream ( streambuf_type *buf, Allocator const &a )
                 : basic_osyncstream ( buf )
         { }
-        explicit basic_osyncstream ( std::basic_streambuf<CharT, Traits> *buf )
-                : buffer ( new basic_syncstreambuf ( buf ) )
-        { }
+        explicit basic_osyncstream ( streambuf_type *buf )
+        {
+            std::basic_ostream<CharT, Traits>::rdbuf (
+                    new syncbuf_type ( buf ) );
+        }
         basic_osyncstream ( std::basic_ostream<CharT, Traits> &os,
                             Allocator const                   &a )
                 : basic_osyncstream ( os.rdbuf ( ), a )
         { }
-        basic_osyncstream ( basic_osyncstream &&that ) noexcept
+        explicit basic_osyncstream ( std::basic_ostream<CharT, Traits> &os )
+                : basic_osyncstream ( os.rdbuf ( ) )
+        { }
+        basic_osyncstream ( basic_osyncstream &&other ) noexcept
         {
-            move ( std::move ( that ) );
+            move ( std::move ( other ) );
         }
-
-        basic_osyncstream &operator= ( basic_osyncstream &&that ) noexcept
+        basic_osyncstream &operator= ( basic_osyncstream &&other )
         {
-            move ( std::move ( that ) );
+            emit ( );
+            move ( std::move ( other ) );
             return *this;
         }
 
         ~basic_osyncstream ( ) { emit ( ); }
 
-        basic_syncstreambuf<CharT, Traits> *rdbuf ( ) const noexcept
+        syncbuf_type *rdbuf ( ) const noexcept
         {
-            return buffer;
+            return ( syncbuf_type * )
+                    std::basic_ostream<CharT, Traits>::rdbuf ( );
         }
-
-        std::basic_streambuf<CharT, Traits> *get_wrapped ( ) const noexcept
+        streambuf_type *get_wrapped ( ) const noexcept
         {
-            // std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
-            if ( buffer )
-            {
-                return buffer->get_wrapped ( );
-            } else
-                return nullptr;
+            return rdbuf ( )->get_wrapped ( );
         }
 
         void emit ( )
         {
-            std::scoped_lock<std::mutex> modifyLock ( modifyBuffer );
-            if ( buffer )
-            {
-                if ( !buffer->emit ( ) )
-                {
-                    std::cout << "emission failed.\n";
-                }
-            }
+            std::scoped_lock<std::mutex> bufferLock ( bufferMutex );
+            rdbuf ( )->emit ( );
         }
     };
 
