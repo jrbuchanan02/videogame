@@ -67,32 +67,39 @@ namespace io::base
                 SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
                         test;
                 test.locks.emplace ( nullptr, new std::mutex ( ) );
-                std::size_t        counter      = 0;
-                std::atomic_size_t latch        = 1 << 10;
-                auto               raceFunction = [ & ] ( ) {
+                std::uint32_t       threadCount = 1 << 10;
+                std::size_t         counter     = 0;
+                std::atomic_int64_t latch       = threadCount;
+                auto                race        = [ & ] ( ) {
                     test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
-                    latch.fetch_sub ( 1 );
+                    // if the value was somehow 0
+                    if ( !latch.fetch_sub ( 1 ) )
+                    {
+                        // store 0
+                        latch.store ( 0 );
+                    }
                 };
 
-                for ( int i = 0; i < 1 << 10; i++ )
+                for ( std::uint32_t i = 0; i < threadCount; i++ )
                 {
-                    std::thread ( raceFunction ).detach ( );
+                    std::thread ( race ).detach ( );
                 }
+
                 while ( latch.load ( ) )
                 {
+                    stream << "Waiting on " << latch.load ( )
+                           << " threads to complete.\n";
                     std::this_thread::sleep_for (
-                            std::chrono::milliseconds ( 1 ) );
+                            std::chrono::milliseconds ( 100 ) );
                 }
-                if ( counter != 1 << 10 )
+
+                if ( counter != threadCount )
                 {
-                    stream << "Race condition failed, and the function is not "
-                              "atomic.\n";
+                    stream << "Race condition occurred anyways!\n";
                     return false;
-                } else
-                {
-                    return true;
                 }
             }
+            return true;
         }
 
         static inline test::Unittest test = { &unittest };
@@ -590,14 +597,14 @@ namespace io::base
             stream << "Testing that text does not get garbled...\n";
 
             out = std::basic_stringstream<CharT, Traits, Allocator> ( );
-            unsigned           con     = std::thread::hardware_concurrency ( );
-            std::atomic_size_t ready   = con;
-            std::atomic_size_t passd   = con;
-            std::atomic_bool   go      = false;
-            std::atomic_bool   ret     = false;
-            std::atomic_size_t retd    = con;
-            CharT            **strings = new CharT *[ con ];
-            std::thread       *threads = new std::thread [ con ];
+            unsigned           con      = 16;
+            std::atomic_size_t ready    = con;
+            std::atomic_size_t passd    = con;
+            std::atomic_bool   go       = false;
+            std::atomic_bool   ret      = false;
+            std::atomic_size_t retd     = con;
+            CharT ( *strings ) [ 8001 ] = new CharT [ con ][ 8001 ];
+            std::thread *threads        = new std::thread [ con ];
 
             auto run = [ & ] ( unsigned id ) {
                 ready.fetch_sub ( 1 );
@@ -621,11 +628,13 @@ namespace io::base
             };
             for ( unsigned i = 0; i < con; i++ )
             {
-                CharT temp [] = { ( CharT ) ( ( 'A' + i ) % 0x80 ), 0 };
-                std::basic_string<CharT, Traits, Allocator> str ( temp );
-                strings [ i ] = ( CharT * ) str.c_str ( );
-                threads [ i ] = std::move (
-                        std::thread ( std::bind_front ( run, i ) ) );
+                for ( unsigned j = 0; j < 8000; j++ )
+                {
+                    strings [ i ][ j ] = ( CharT ) ( 64 + i );
+                }
+                strings [ i ][ 8000 ] = 0;
+                threads [ i ]         = std::move (
+                        std::thread ( [ =, &run ] ( ) { run ( i ); } ) );
                 threads [ i ].detach ( );
             }
 
@@ -653,8 +662,8 @@ namespace io::base
             {
                 std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
             }
-            
-            //delete [] strings;
+
+            // delete [] strings;
             delete [] threads;
             return true;
         }
