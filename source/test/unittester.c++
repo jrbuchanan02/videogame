@@ -35,20 +35,10 @@ test::Unittest::Unittest ( std::function<bool ( std::ostream & )> const &test,
         throw std::runtime_error ( "Previous unittest did not add to vector!" );
     }
     count++;
-    std::cout << "Found one more unittest to run, bringing the total to "
-              << count << " from " << count - 1 << ". There are accordingly "
-              << TestRunner::unittests->size ( ) << " test"
-              << ( TestRunner::unittests->size ( ) == 1 ? "" : "s" )
-              << " in the vector.\n";
 }
 
 void test::runUnittests ( std::ostream &stream )
 {
-    stream << "Found " << count << " unittest" << ( count == 1 ? "" : "s" )
-           << " to run.\n";
-    stream << "Accordingly, the unittest vector contains "
-           << TestRunner::unittests->size ( ) << " element"
-           << ( TestRunner::unittests->size ( ) == 1 ? "" : "s" ) << "\n";
     if ( !count )
     {
         throw std::runtime_error ( "Found no unittests!" );
@@ -76,4 +66,8 @@ void test::runUnittests ( std::ostream &stream )
            << " tests passed.\n";
     stream << failCount << " / " << TestRunner::unittests->size ( )
            << " tests failed.\n";
+    stream << "Cleaning up after unittests...\n";
+    TestRunner::unittests->clear ( );
+    delete TestRunner::unittests;
+    TestRunner::unittests = nullptr;
 }
