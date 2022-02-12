@@ -9,6 +9,7 @@
  * above.
  *
  */
+#include <defines/macros.h++>
 #include <io/console/manip/stringfunctions.h++>
 #include <stdexcept>
 #include <string>
@@ -354,6 +355,17 @@ std::vector<std::string>
     return result;
 }
 
+#define INCORRECT_SEQUENCE( TRANS, EXPECT, ... )                               \
+    CHAR_UNITTEST_FAIL ( stream,                                               \
+                         "Incorrect Labeling",                                 \
+                         "U+",                                                 \
+                         std::uint32_t ( TRANS ),                              \
+                         "Was not marked as a(n) ",                            \
+                         EXPECT,                                               \
+                         " Sequence. Its byte representation is:" __VA_OPT__ ( \
+                                 , "0x", ( unsigned char ) ) __VA_ARGS__ )     \
+    END_UNIT_FAIL ( stream )
+
 bool testIdentification ( std::ostream &stream )
 {
     stream << "Beginning identification unittest.\n";
@@ -366,9 +378,7 @@ bool testIdentification ( std::ostream &stream )
         defines::ChrString test ( { i, 0 } );
         if ( identifyFirst ( test ) != TERMINAL )
         {
-            stream << "Invalid result: U+" << std::hex << std::uint32_t ( i )
-                   << std::dec << " was not marked as a control character!\n";
-            return false;
+            INCORRECT_SEQUENCE ( ( unsigned char ) i, "Terminal", i )
         }
     }
     for ( char i = ' '; i < ( char ) 0x80; i++ )
@@ -376,10 +386,7 @@ bool testIdentification ( std::ostream &stream )
         defines::ChrString test ( { ( char ) i, 0 } );
         if ( identifyFirst ( test ) != UTF1BYTE )
         {
-            stream << "Invalid result: U+" << std::hex << std::uint32_t ( i )
-                   << std::dec
-                   << " was not marked as a one-byte unicode character!\n";
-            return false;
+            INCORRECT_SEQUENCE ( ( unsigned char ) i, "1-byte UTF-8", i )
         }
     }
 
@@ -396,10 +403,7 @@ bool testIdentification ( std::ostream &stream )
                 translated <<= 6;
                 translated += ( ( unsigned char ) j ) & ~0x80;
 
-                stream << "Invalid result: U+" << std::hex << translated
-                       << std::dec
-                       << " was not marked as a two-byte unicode character.\n";
-                return false;
+                INCORRECT_SEQUENCE ( translated, "2-byte UTF-8", i, j )
             }
         }
     }
@@ -415,13 +419,7 @@ bool testIdentification ( std::ostream &stream )
                 translated <<= 6;
                 translated += ( ( unsigned char ) j ) & ~0x80;
 
-                stream << "Invalid result: U+" << std::hex << translated
-                       << std::dec
-                       << ", encoded overlong, was not marked as an invalid "
-                          "character (the range "
-                          "starting with bytes 0xC0 and 0xC1 are not valid "
-                          "UTF-8.\n";
-                return false;
+                INCORRECT_SEQUENCE ( translated, "Invalid", i, j )
             }
         }
     }
@@ -446,10 +444,8 @@ bool testIdentification ( std::ostream &stream )
                     {
                         if ( identifyFirst ( test ) != INVALID_ )
                         {
-                            stream << "Invalid result: U+" << std::hex
-                                   << translated << std::dec
-                                   << " was not marked as invalid.\n";
-                            return false;
+                            INCORRECT_SEQUENCE (
+                                    translated, "Invalid", i, j, k )
                         } else
                         {
                             continue;
@@ -459,23 +455,15 @@ bool testIdentification ( std::ostream &stream )
                     {
                         if ( identifyFirst ( test ) != INVALID_ )
                         {
-                            stream << "Invalid result: U+" << std::hex
-                                   << translated << std::dec
-                                   << " was written as an overlong encoding "
-                                      "and treated as valid.\n";
-                            return false;
+                            INCORRECT_SEQUENCE (
+                                    translated, "Invalid", i, j, k )
                         } else
                         {
                             continue;
                         }
                     }
 
-                    stream << "Invalid result: U+" << std::hex << translated
-                           << std::dec
-                           << " was not marked as a 3-byte character, but "
-                              "instead type "
-                           << ( int ) identifyFirst ( test ) << "\n";
-                    return false;
+                    INCORRECT_SEQUENCE ( translated, "3-byte UTF-8", i, j, k )
                 }
             }
         }
@@ -509,11 +497,8 @@ bool testIdentification ( std::ostream &stream )
                         {
                             if ( identifyFirst ( test ) != INVALID_ )
                             {
-                                stream << "Invalid result: U+" << std::hex
-                                       << translated << std::dec
-                                       << " was encoded overlong and treated "
-                                          "as valid!\n";
-                                return false;
+                                INCORRECT_SEQUENCE (
+                                        translated, "Invalid", i, j, k, m )
                             } else
                             {
                                 continue;
@@ -523,22 +508,16 @@ bool testIdentification ( std::ostream &stream )
                         {
                             if ( identifyFirst ( test ) != INVALID_ )
                             {
-                                stream << "Invalid result: U+" << std::hex
-                                       << translated << std::dec
-                                       << " (a noncharacter as of version "
-                                          "14.0) was treated as valid!\n";
-                                return false;
+                                INCORRECT_SEQUENCE (
+                                        translated, "Invalid", i, j, k, m )
                             } else
                             {
                                 continue;
                             }
                         }
 
-                        stream << "Invalid result: U+" << std::hex << translated
-                               << std::dec
-                               << " was not marked as a 4-byte unicode "
-                                  "character!\n";
-                        return false;
+                        INCORRECT_SEQUENCE (
+                                translated, "4-byte UTF-8", i, j, k, m )
                     }
                 }
             }
@@ -556,16 +535,21 @@ bool testIdentification ( std::ostream &stream )
                     defines::ChrString test ( { i, j, k, m, 0 } );
                     if ( identifyFirst ( test ) != INVALID_ )
                     {
-                        stream << "Invalid result: 4-byte character sequence "
-                                  "outside range of UTF-8 was treated as "
-                                  "valid!\n";
-                        return false;
+                        std::uint32_t translated = 0;
+                        translated += ( ( unsigned char ) i ) & ~0xF0;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) j ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) k ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) m ) & ~0x80;
+                        INCORRECT_SEQUENCE ( translated, "Invalid", i, j, k, m )
                     }
                 }
             }
         }
     }
-    
+
     return true;
 }
 
