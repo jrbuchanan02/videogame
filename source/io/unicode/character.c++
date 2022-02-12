@@ -108,9 +108,8 @@ void initializeProperties ( )
             {
                 if ( !child->first_attribute ( "last-cp" ) )
                 {
-                    throw std::runtime_error (
-                            "First code point in range exists, but no last "
-                            "code point in range!" );
+                    RUNTIME_ERROR ( "Found the first code point, but the last "
+                                    "code point is missing!" )
                 }
                 // parse code point
                 auto parseCodePoint =
@@ -131,7 +130,8 @@ void initializeProperties ( )
                 }
             } else
             {
-                throw std::runtime_error ( "Cannot parse node!" );
+                RUNTIME_ERROR ( "Cannot parse node: it's not a single "
+                                "character nor a range of them!" )
             }
             child = child->next_sibling ( );
         }
@@ -158,20 +158,27 @@ bool propertyInitializationTest ( std::ostream &stream )
               "characters...\n";
     if ( characterProperties ( ).size ( ) != MAX_UNICODE + 1 )
     {
-        stream << "Character properties has an invalid size: 0x" << std::hex
-               << characterProperties ( ).size ( );
-        stream << std::dec << "\n";
-
-        return false;
+        CHAR_UNITTEST_FAIL ( stream,
+                             "Missing or extra characters detected",
+                             "Character properties has invalid size: 0x",
+                             characterProperties ( ).size ( ),
+                             " which indicates a Unicode range of [U+0, U+",
+                             characterProperties ( ).size ( ) - 1,
+                             "] instead of the expected range [U+0, U+",
+                             MAX_UNICODE )
+        END_UNIT_FAIL ( stream )
     }
     stream << "Ensuring that emoji have a width of two columns...\n";
     for ( auto &u : emoji )
     {
         if ( !characterProperties ( ).at ( u ).columns && u > 0x7F )
         {
-            stream << "An emoji (U+" << std::hex << std::uint32_t ( u )
-                   << std::dec << ") has a length registered as one column!\n";
-            return false;
+            CHAR_UNITTEST_FAIL ( stream,
+                                 "Invalid Column width detected",
+                                 "An emoji, U+",
+                                 std::uint32_t ( u ),
+                                 " was marked as one column wide!" )
+            END_UNIT_FAIL ( stream )
         }
     }
     stream << "Ensuring that CJK characters have a width of two columns...\n";
@@ -179,9 +186,12 @@ bool propertyInitializationTest ( std::ostream &stream )
     {
         if ( !characterProperties ( ).at ( u ).columns && u > 0x7F )
         {
-            stream << "A CJK character (U+" << std::hex << std::uint32_t ( u )
-                   << std::dec << ") has a length registered as one column!\n";
-            return false;
+            CHAR_UNITTEST_FAIL ( stream,
+                                 "Invalid Column width detected",
+                                 "A CJK character, U+",
+                                 std::uint32_t ( u ),
+                                 " was marked as one column wide!" )
+            END_UNIT_FAIL ( stream )
         }
     }
     stream << "Ensuring that phonetic-alphabet characters have a width of one "
@@ -190,10 +200,13 @@ bool propertyInitializationTest ( std::ostream &stream )
     {
         if ( characterProperties ( ).at ( u ).columns )
         {
-            stream << "A Phonetic-alphabet character (U+" << std::hex
-                   << std::uint32_t ( u ) << std::dec
-                   << ") has a length registered as one column!\n";
-            return false;
+            CHAR_UNITTEST_FAIL (
+                    stream,
+                    "Invalid Column width detected",
+                    "A Phonetic-derivative (i.e., Latin) character, U+",
+                    std::uint32_t ( u ),
+                    " was marked as two columns wide!" )
+            END_UNIT_FAIL ( stream )
         }
     }
     stream << "No information indicates failure, returning...\n";

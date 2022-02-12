@@ -12,7 +12,9 @@
 #include "random.h++"
 
 #include <cstdlib>
+#include <defines/macros.h++>
 #include <random>
+#include <test/unittester.h++>
 
 using namespace engine::rand;
 
@@ -82,3 +84,40 @@ defines::RandomNumber engine::rand::generatePRandom ( )
 {
     return ( defines::RandomNumber ) ( grabFromTable ( ) );
 }
+
+bool sigmaCheckTest ( std::ostream &os )
+{
+    os << "Beginning self test for the sigmaCheck algorithm.\n";
+    std::uint64_t       counters [ 11 ] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    static std::int64_t checks [ 11 ]   = {
+            -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 };
+    constexpr std::uint64_t samples = 1000000;
+    for ( std::uint64_t i = 0; i < samples; i++ )
+    {
+#pragma GCC unroll 11
+        for ( std::size_t j = 0; j < 11; j++ )
+        {
+            if ( engine::rand::sigmaCheck ( checks [ j ] ) )
+            {
+                counters [ j ]++;
+            }
+        }
+    }
+
+    for ( std::size_t i = 0; i < 10; i++ )
+    {
+        if ( counters [ i ] < counters [ i + 1 ] )
+        {
+            BEGIN_UNIT_FAIL ( os, "Really weird randomness" )
+            os << "Despite " << samples << " samples, the sigma check against "
+               << checks [ i ] << " passed less less often than those against "
+               << checks [ i + 1 ]
+               << ". While this is theoretically not an error, the sample size "
+                  "is so large that this test fails!";
+            END_UNIT_FAIL ( os )
+        }
+    }
+    return true;
+}
+
+test::Unittest sigmaTest = { &sigmaCheckTest };

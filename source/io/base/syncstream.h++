@@ -57,9 +57,10 @@ namespace io::base
                             *test.locks.at ( nullptr ) );
                 } catch ( std::range_error &error )
                 {
-                    stream << "Threw range error, which indicates that the "
-                              "registration process did not register.\n";
-                    return false;
+                    BASIC_UNIT_FAIL (
+                            stream,
+                            "Accessing with bounds checking threw range_error. "
+                            "Proof that no registration occurred!" )
                 }
             }
             {
@@ -71,7 +72,10 @@ namespace io::base
                 std::size_t         counter     = 0;
                 std::atomic_int64_t latch       = threadCount;
                 auto                race        = [ & ] ( ) {
-                    test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
+                    for ( std::uint32_t i = 0; i < threadCount; i++ )
+                    {
+                        test.doAtomically ( nullptr, [ & ] ( ) { counter++; } );
+                    }
                     // if the value was somehow 0
                     if ( !latch.fetch_sub ( 1 ) )
                     {
@@ -93,10 +97,10 @@ namespace io::base
                             std::chrono::milliseconds ( 100 ) );
                 }
 
-                if ( counter != threadCount )
+                if ( counter != threadCount * threadCount )
                 {
-                    stream << "Race condition occurred anyways!\n";
-                    return false;
+                    BASIC_UNIT_FAIL ( stream,
+                                      "Race condition occurred anyways!" )
                 }
             }
             return true;
@@ -184,8 +188,9 @@ namespace io::base
                     testStream.rdbuf ( ) );
             if ( test1.stream != test2.stream )
             {
-                stream << "The two syncbufs ended up with different streams!\n";
-                return false;
+                BASIC_UNIT_FAIL (
+                        stream,
+                        "The two syncbufs ended up with different streams!" )
             }
             stream << "Ensuring that outputting to the two syncbufs do not go "
                       "through until calls to emit...\n";
@@ -247,9 +252,9 @@ namespace io::base
             { }
             if ( testStream.str ( ).find ( text2 ) == std::string::npos )
             {
-                stream << "Could not find the text within the stream. "
-                          "Indicates a failure.\n";
-                return false;
+                BASIC_UNIT_FAIL ( stream,
+                                  "Could not find text in the stream because "
+                                  "it's either missing or garbled." )
             }
             return true;
         }
@@ -582,17 +587,16 @@ namespace io::base
             ostream << test;
             if ( !out.str ( ).empty ( ) )
             {
-                stream << "The synchronized output stream sent information "
-                          "before the call to emit!\n";
-                return false;
+                BASIC_UNIT_FAIL ( stream,
+                                  "The osyncstream sent information before a "
+                                  "call to emit" )
             }
             ostream.emit ( );
             if ( out.str ( ).find ( test ) == std::string::npos )
             {
-                stream << "The synchronized output stream did not give the "
-                          "string!\n";
-
-                return false;
+                BASIC_UNIT_FAIL (
+                        stream,
+                        "The osyncstream gave no output when it emitted." )
             }
             stream << "Testing that text does not get garbled...\n";
 
@@ -651,10 +655,11 @@ namespace io::base
             {
                 if ( out.str ( ).find ( strings [ i ] ) == std::string::npos )
                 {
+                    BEGIN_UNIT_FAIL ( stream, "Race Condition Detected" )
                     stream << "Thread " << i + 1
                            << " failed to emit information correctly! It was "
-                              "either garbled or did not emit!\n";
-                    return false;
+                              "either garbled or did not emit!";
+                    END_UNIT_FAIL ( stream )
                 }
             }
             ret.store ( true );

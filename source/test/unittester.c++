@@ -9,10 +9,11 @@
  * above.
  *
  */
+#include <defines/macros.h++>
 #include <defines/types.h++>
+#include <sstream>
 #include <test/unittester.h++>
 #include <vector>
-
 struct TestRunner
 {
     static inline std::vector<test::Unittest> *unittests { nullptr };
@@ -32,7 +33,9 @@ test::Unittest::Unittest ( std::function<bool ( std::ostream & )> const &test,
     TestRunner::unittests->push_back ( *this );
     if ( count && TestRunner::unittests->size ( ) == 1 )
     {
-        throw std::runtime_error ( "Previous unittest did not add to vector!" );
+        RUNTIME_ERROR ( "Previous unittest did not add to vector!" )
+        // throw std::runtime_error ( "Previous unittest did not add to vector!"
+        // );
     }
     count++;
 }
@@ -41,15 +44,15 @@ void test::runUnittests ( std::ostream &stream )
 {
     if ( !count )
     {
-        throw std::runtime_error ( "Found no unittests!" );
+        RUNTIME_ERROR ( "Found no unittests! There's one in this file!!!" )
     }
     if ( count != TestRunner::unittests->size ( ) )
     {
-        throw std::runtime_error ( "Invalid unittest count!" );
+        RUNTIME_ERROR ( "Invalid unittest count!" )
     }
     std::size_t passCount = 0;
     std::size_t failCount = 0;
-    for ( auto &test : *TestRunner::unittests )
+    FOREACH ( test, *TestRunner::unittests )
     {
         if ( test.test ( stream ) )
         {
@@ -71,3 +74,55 @@ void test::runUnittests ( std::ostream &stream )
     delete TestRunner::unittests;
     TestRunner::unittests = nullptr;
 }
+
+static bool testRuntimeErrorMacro ( std::ostream &os )
+{
+    os << "Testing that the runtime error macro gets the correct lines...\n";
+    int         aroundHere = 0;
+    std::string file       = __FILE__;
+    try
+    {
+        aroundHere = __LINE__;
+        RUNTIME_ERROR ( "Testing... ", "1, 2, 3" )
+    } catch ( std::runtime_error &rt )
+    {
+        std::stringstream parser ( rt.what ( ) );
+        if ( parser.str ( ).find ( file ) == std::string::npos )
+        {
+            BEGIN_UNIT_FAIL ( os, "Could not find file" )
+            os << "Expected to find " << __FILE__ << " in " << parser.str ( );
+            os << " but could not!";
+            END_UNIT_FAIL ( os )
+        }
+        bool found = false;
+        for ( int i = aroundHere - 5; i < aroundHere + 6; i++ )
+        {
+            std::stringstream temp;
+            temp << i;
+            if ( parser.str ( ).find ( temp.str ( ) ) != std::string::npos )
+            {
+                found = true;
+                break;
+            }
+        }
+        if ( !found )
+        {
+            BEGIN_UNIT_FAIL ( os, "Could not find line number" )
+            os << "Expected to find " << aroundHere
+               << " or any other number on the range [" << aroundHere - 5
+               << ", " << aroundHere + 5
+               << "], but could not while searching within " << parser.str ( );
+            END_UNIT_FAIL ( os )
+        }
+        return true;
+    } catch ( ... )
+    {
+        BEGIN_UNIT_FAIL ( os, "Got a different exception than expected" )
+        os << "Expeccted a std::runtime_error, or subclass of it, but did not "
+              "get that!";
+        END_UNIT_FAIL ( os )
+    }
+    return false;
+}
+
+test::Unittest rtErrorMacro = { &testRuntimeErrorMacro };

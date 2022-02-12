@@ -21,7 +21,7 @@ namespace io::base
     template <class CharT,
               class Traits    = std::char_traits<CharT>,
               class Allocator = std::allocator<CharT>>
-    std::basic_string<CharT, Traits, Allocator>
+    inline std::basic_string<CharT, Traits, Allocator>
             emptyString ( CharT const terminator = ( CharT ) 0 )
     {
         CharT temp [ 1 ] = { terminator };
@@ -89,10 +89,7 @@ namespace io::base
     {
         std::basic_string<ECharT, ETraits> temp (
                 emptyString<ECharT, ETraits> ( ) );
-        for ( auto &c : str )
-        {
-            temp += ( ECharT ) c;
-        }
+        FOREACH ( c, str ) { temp += ( ECharT ) c; }
         os << temp;
     }
 } // namespace io::base
