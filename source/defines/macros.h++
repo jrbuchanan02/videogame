@@ -92,5 +92,8 @@
 #    define END_UNIT_FAIL( S )                                                 \
         S << std::endl;                                                        \
         return false;
+#    define BASIC_UNIT_FAIL( S, WHY )                                          \
+        BEGIN_UNIT_FAIL ( S, "" ) S << WHY;                                    \
+        END_UNIT_FAIL ( S )
 
 #endif // ifndef SOURCE_DEFINES_MACROS
