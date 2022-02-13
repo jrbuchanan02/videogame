@@ -11,15 +11,20 @@
  */
 #pragma once
 
+#include <defines/constants.h++>
+#include <defines/macros.h++>
 #include <defines/types.h++>
+#include <io/console/internal/channel.h++>
 #include <io/console/manip/stringfunctions.h++>
+
 #include <memory>
+
 namespace io::console
 {
     class Console
     {
         struct impl_s;
-        std::unique_ptr<impl_s> pimpl;
+        std::unique_ptr< impl_s > pimpl;
     public:
         Console ( );
         Console ( Console const & );

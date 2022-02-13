@@ -11,22 +11,21 @@
  */
 #pragma once
 
-//#include <io/base/syncstream.h++>
 #include <streambuf>
-namespace io::base
-{
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_syncstreambuf;
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_osyncstream;
-} // namespace io::base
+#include <string>
 
 #include <rapidxml-1.13/rapidxml.hpp>
-#include <string>
+namespace io::base
+{
+    template < class CharT,
+               class Traits    = std::char_traits< CharT >,
+               class Allocator = std::allocator< CharT > >
+    class basic_syncstreambuf;
+    template < class CharT,
+               class Traits    = std::char_traits< CharT >,
+               class Allocator = std::allocator< CharT > >
+    class basic_osyncstream;
+} // namespace io::base
 
 // syntactic sugar to prevent each define from being enclosed with
 // an #ifndef DEFINE ... #endif // #ifndef DEFINE
@@ -101,12 +100,12 @@ namespace defines
         using UTF32 ( Name )    = UTF32 ( Expr );                              \
         using _CHAR ( Name )    = _CHAR ( Expr );
 #    define CHARACTER_TEMPLATE_USING( Name, Template )                         \
-        using INTERNAL ( Name ) = Template<INTERNAL ( Char )>;                 \
-        using EXTERNAL ( Name ) = Template<EXTERNAL ( Char )>;                 \
-        using UTF08 ( Name )    = Template<UTF08 ( Char )>;                    \
-        using UTF16 ( Name )    = Template<UTF16 ( Char )>;                    \
-        using UTF32 ( Name )    = Template<UTF32 ( Char )>;                    \
-        using _CHAR ( Name )    = Template<_CHAR ( Char )>;
+        using INTERNAL ( Name ) = Template< INTERNAL ( Char ) >;               \
+        using EXTERNAL ( Name ) = Template< EXTERNAL ( Char ) >;               \
+        using UTF08 ( Name )    = Template< UTF08 ( Char ) >;                  \
+        using UTF16 ( Name )    = Template< UTF16 ( Char ) >;                  \
+        using UTF32 ( Name )    = Template< UTF32 ( Char ) >;                  \
+        using _CHAR ( Name )    = Template< _CHAR ( Char ) >;
 
     CHARACTER_USING ( CString, Char * )
     CHARACTER_USING ( PString, Char const * )

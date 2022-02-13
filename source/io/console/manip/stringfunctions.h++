@@ -10,7 +10,11 @@
  *
  */
 #pragma once
+
+#include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/types.h++>
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -24,7 +28,7 @@ namespace io::console::manip
      * point.
      * @return std::vector < std::string >
      */
-    std::vector<std::string> splitByCodePoint ( std::string );
+    std::vector< std::string > splitByCodePoint ( std::string );
 
     /**
      * @brief Takes a C-string and widens it to a UTF-32 character sequence.

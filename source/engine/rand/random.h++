@@ -11,11 +11,12 @@
  */
 #pragma once
 
+#include <defines/constants.h++>
+#include <defines/macros.h++>
 #include <defines/types.h++>
 
 namespace engine::rand
 {
-
     /**
      * @brief Performs a check against a given z-score.
      * @note If the internally generated value defies all odds and has an

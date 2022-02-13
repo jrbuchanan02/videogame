@@ -11,24 +11,27 @@
  */
 #include <defines/macros.h++>
 #include <defines/types.h++>
-#include <sstream>
 #include <test/unittester.h++>
+
+#include <sstream>
 #include <vector>
 struct TestRunner
 {
-    static inline std::vector<test::Unittest> *unittests { nullptr };
+    static inline std::vector< test::Unittest > *unittests { nullptr };
 };
 static std::size_t count = 0;
-test::Unittest::Unittest ( std::function<bool ( std::ostream & )> const &test,
-                           defines::ChrPString const                    &pass,
-                           defines::ChrPString const                    &fail )
-        : test ( test )
+test::Unittest::Unittest ( std::function< bool ( std::ostream & ) > const &test,
+                           defines::ChrPString const &                     pass,
+                           defines::ChrPString const &fail ) :
+        test ( test )
 {
-    if ( pass ) passMessage = pass;
-    if ( fail ) failMessage = fail;
+    if ( pass )
+        passMessage = pass;
+    if ( fail )
+        failMessage = fail;
     if ( !TestRunner::unittests )
     {
-        TestRunner::unittests = new std::vector<test::Unittest> ( );
+        TestRunner::unittests = new std::vector< test::Unittest > ( );
     }
     TestRunner::unittests->push_back ( *this );
     if ( count && TestRunner::unittests->size ( ) == 1 )

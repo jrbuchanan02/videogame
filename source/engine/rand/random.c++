@@ -9,23 +9,26 @@
  * above.
  *
  */
-#include "random.h++"
+#include <engine/rand/random.h++>
+
+#include <defines/constants.h++>
+#include <defines/macros.h++>
+#include <defines/types.h++>
+#include <test/unittester.h++>
 
 #include <cstdlib>
-#include <defines/macros.h++>
 #include <random>
-#include <test/unittester.h++>
 
 using namespace engine::rand;
 
 // global random number generator for the normal distribution
 std::mt19937_64 generator { std::random_device ( ) ( ) };
 // random number generator for the sigma-checks
-std::normal_distribution<defines::RandomNumber> distribution ( 0, 1 );
+std::normal_distribution< defines::RandomNumber > distribution ( 0, 1 );
 // function that seeds the random number table with hardware-entropy
-void seedTable ( );
+void                                              seedTable ( );
 // function that grabs a random number from the table.
-std::uint64_t grabFromTable ( );
+std::uint64_t                                     grabFromTable ( );
 
 /**
  * @brief Checks against a random number. Quite simply, if the internally
@@ -41,13 +44,15 @@ bool engine::rand::sigmaCheck ( defines::RandomNumber const against )
     {
         return true;
     } else
+    {
         return roll > against;
+    }
 }
 
 std::uint32_t tableSeed = 0;
 std::uint32_t tableSpot = 0;
 // random table, fill with values more random than this soon.
-std::uint64_t table [] = {
+std::uint64_t table []  = {
         1,
         2,
         3,
@@ -88,16 +93,13 @@ defines::RandomNumber engine::rand::generatePRandom ( )
 bool sigmaCheckTest ( std::ostream &os )
 {
     os << "Beginning self test for the sigmaCheck algorithm.\n";
-    std::uint64_t       counters [ 11 ] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    static std::int64_t checks [ 11 ]   = {
-            -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 };
-    constexpr std::uint64_t samples = 1000000;
-    for ( std::uint64_t i = 0; i < samples; i++ )
+    std::uint64_t counters [ 11 ] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    for ( std::uint64_t i = 0; i < defines::sigmaTestSamples; i++ )
     {
 #pragma GCC unroll 11
         for ( std::size_t j = 0; j < 11; j++ )
         {
-            if ( engine::rand::sigmaCheck ( checks [ j ] ) )
+            if ( engine::rand::sigmaCheck ( defines::sigmaCheckValues [ j ] ) )
             {
                 counters [ j ]++;
             }
@@ -109,9 +111,11 @@ bool sigmaCheckTest ( std::ostream &os )
         if ( counters [ i ] < counters [ i + 1 ] )
         {
             BEGIN_UNIT_FAIL ( os, "Really weird randomness" )
-            os << "Despite " << samples << " samples, the sigma check against "
-               << checks [ i ] << " passed less less often than those against "
-               << checks [ i + 1 ]
+            os << "Despite " << defines::sigmaTestSamples
+               << " samples, the sigma check against "
+               << defines::sigmaCheckValues [ i ]
+               << " passed less less often than those against "
+               << defines::sigmaCheckValues [ i + 1 ]
                << ". While this is theoretically not an error, the sample size "
                   "is so large that this test fails!";
             END_UNIT_FAIL ( os )

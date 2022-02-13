@@ -9,10 +9,14 @@
  * above.
  *
  */
-#include <io/unicode/character.h++>
-#include <iostream>
-#include <test/unittester.h++>
+#include <defines/constants.h++>
+#include <defines/macros.h++>
+#include <defines/types.h++>
 #include <io/base/syncstream.h++>
+#include <io/unicode/character.h++>
+#include <test/unittester.h++>
+
+#include <iostream>
 
 #ifdef WINDOWS
 #    include "windows.h"

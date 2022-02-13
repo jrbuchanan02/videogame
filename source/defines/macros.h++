@@ -11,6 +11,7 @@
  */
 #pragma once
 #include <defines/types.h++>
+
 #ifndef SOURCE_DEFINES_MACROS
 #    define SOURCE_DEFINES_MACROS
 
