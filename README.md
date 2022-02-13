@@ -17,8 +17,12 @@ creating the most versatile engine for whatever that plot will be.
  1. Create unbelievably intricate graphics using only the terminal emulator 
  built into the operating system.
  2. Create an entertaining RPG experience that takes a theoretical minimum of 
- one hour to complete.
+ one hour to complete (similar to how drag-race for the Atari 2600 cannot be
+ completed in less than 5.51 seconds).
  3. Achieve the above two goals using minimal external dependencies.
+ 4. Generate a truly portable experience: if someone removes videogame, the 
+ system is left in the exact state that it was in prior to the install
+ (excluding any changes other than those Videogame may have made).
 
  As of the time of writing, Videogame is nowhere near reaching either goal. The
  game is not even currently playable. However, you can run the unit-tests for 
