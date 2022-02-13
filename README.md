@@ -24,8 +24,8 @@ creating the most versatile engine for whatever that plot will be.
  system is left in the exact state that it was in prior to the install
  (excluding any changes other than those Videogame may have made).
 
- As of the time of writing, Videogame is nowhere near reaching either goal. The
- game is not even currently playable. However, you can run the unit-tests for 
+ As of the time of writing, Videogame is nowhere near reaching either goal 1 or 2.
+ The game is not even currently playable. However, you can run the unit-tests for 
  the engine. Videogame compiles against g++ version 10.3 and uses the C++ 20 
  standard. However, aside from those two requirements, Videogame should build
  and function properly on most / all Windows / Linux systems (64-bit systems).
