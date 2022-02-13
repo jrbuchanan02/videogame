@@ -7,6 +7,10 @@ dependencies and databases. These are published under the Boost Software License
 and the Unicode License. All dependencies and databases also come "as-is" and 
 with no warranty, neither express nor implied.
 
+It may seem implied, but Videogame is a working title. Since the game is not 
+currently playable, I am not concerned about figuring out a plot, but about
+creating the most versatile engine for whatever that plot will be.
+
  Terminal Based RPG with Good Graphics. Videogame is an ambitious project with 
  the following goals:
 
