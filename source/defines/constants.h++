@@ -25,4 +25,14 @@ namespace defines
     constexpr std::uint64_t sigmaTestSamples = 1000000;
     constexpr std::int64_t  sigmaCheckValues [] =
             { -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5 };
+
+#ifdef WINDOWS
+    constexpr ChrPString paletteChangePrefix = "4;";
+    constexpr ChrPString paletteChangeSpecif = ";rgb:";
+    constexpr ChrPString paletteChangeDelimt = "/";
+#else
+    constexpr ChrPString paletteChangePrefix = "P";
+    constexpr ChrPString paletteChangeSpecif = "";
+    constexpr ChrPString paletteChangeDelimt = "";
+#endif
 } // namespace defines

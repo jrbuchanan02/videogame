@@ -11,6 +11,7 @@
  */
 #pragma once
 
+#include <functional>
 #include <streambuf>
 #include <string>
 
@@ -128,6 +129,15 @@ namespace defines
 #    define BITFIELD( X ) defines::Flag X : 1 = 0;
 
     using RandomNumber = double;
-} // namespace defines
 
+    // type used internally for color math
+    using UnboundColor = double;
+    // type used internally to store a mathed-color before sending it
+    using BoundColor   = std::uint8_t;
+    // the type sent to an output stream.
+    using SentColor    = std::uint32_t;
+
+    template < class I, class O >
+    using BinaryFunction = std::function< O ( I, I ) >;
+} // namespace defines
 #endif // ifndef SOURCE_DEFINES_TYPES

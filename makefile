@@ -10,14 +10,8 @@ define compile
 	@$(CXX) $(CXXFLAGS) -DUNITTEST $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(patsubst %.o,%.c++,$@) -c -o $@
 endef
 
-define format
-	@echo Formatting file $@ with clang-format
-	@clang-format-12 -style=file -i $@
-endef
 
 formatted_source = $(source_files) $(foreach dir, $(include_dirs), $(wildcard $(dir)/*.h++))
-$(formatted_source): $(source_files)
-	$(format)
 
 $(object_files) : $(source_files)
 	$(compile)
@@ -33,7 +27,7 @@ clean: $(source_files)
 
 all: build $(object_files)
 	@echo Performing final linkage...
-	$(CXX) $(CXXFLAGS) $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(object_files) -o $(exec_name)
+	@$(CXX) $(CXXFLAGS) $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(object_files) -o $(exec_name)
 	@echo Built the following source files and included the following directories.
 	@echo $(source_files)
 	@echo $(include_dirs)
@@ -42,4 +36,5 @@ check: all
 	$(exec_name)
 
 do_format: $(formatted_source)
-	@echo Finished formatting.
+	@echo Formatting...
+	$(clang_format) -style=file -i $(formatted_source)
