@@ -35,9 +35,8 @@ creating the most versatile engine for whatever that plot will be.
 ### Base
 1. Around 50 MB RAM free[^1]. This requirement will change as Videogame gets more
 complete. If your computer cannot meet this requirement, the advice is: get a 
-computer less than 30 years old or remove the RAM intensive software from your 
-machine. There is a good chance a more skilled programmer than me could save 
-some RAM, as most of the requirement consists of loading in an
+better computer. There is a good chance a more skilled programmer than me could 
+save some RAM, as most of the requirement consists of loading in an
 approximately 40 MB database for processing.
 2. Any version of Linux or Windows 10 20H1 or later (20H2 or any version of 
 Windows 11).[^2]
@@ -69,7 +68,7 @@ widescreen effect.
 running. It is most accurate to Windows 11 Home running on a x64-style processor
 and this number does *not* include the standard library and operating system 
 features that Videogame automatically loads. The actual number is likely much
-higher than 0.4 MB.
+higher than the number listed in the minimum requirements.
 
 [^2]: If you are on the most recent version of windows available for your PC and
 you have Windows 10 or Windows 11, then you meet this requirement. This requirement
