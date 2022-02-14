@@ -12,6 +12,9 @@
 #include <io/console/console.h++>
 
 #include <io/base/syncstream.h++>
+#include <io/console/colors/color.h++>
+#include <io/console/colors/direct.h++>
+#include <io/console/colors/indirect.h++>
 #include <io/console/internal/channel.h++>
 
 #include <atomic>
@@ -48,7 +51,22 @@ struct io::console::Console::impl_s
     std::stack< CursorPosition > positionStack;
     void                         pushCursorPosition ( );
     void                         pullCursorPosition ( );
-    
+    // data for managing the command channel
+
+    // colors onscreen.
+    std::shared_ptr< colors::IColor >              screen [ 8 ];
+    // colors used for calculating those onscreen.
+    std::list< std::shared_ptr< colors::IColor > > colors;
+    // "now" so-to-speak.
+    double                                         time;
+    // thread which feeds the cmd channel with the commands.
+    std::jthread                                   commands;
+    // boolean to tell the jthread that it's time to shut down when
+    // the console is destructed
+    std::atomic_bool                               stopSignal = false;
+    // the function which performs the text-feeding. Internally uses the same
+    // delay between ticks as the cmd channel
+    void                                           commandGenerator ( );
 };
 
 std::chrono::milliseconds
