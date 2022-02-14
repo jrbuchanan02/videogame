@@ -12,6 +12,7 @@
 #include <io/console/console.h++>
 
 #include <io/base/syncstream.h++>
+#include <io/console/internal/channel.h++>
 
 #include <atomic>
 #include <chrono>
@@ -47,8 +48,7 @@ struct io::console::Console::impl_s
     std::stack< CursorPosition > positionStack;
     void                         pushCursorPosition ( );
     void                         pullCursorPosition ( );
-    // data for managing the command channel.
-    // color data. Eight colors in a static array
+    
 };
 
 std::chrono::milliseconds

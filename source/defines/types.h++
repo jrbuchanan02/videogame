@@ -69,7 +69,7 @@ namespace defines
 
 #    if INTERNAL( _CHAR_SIZE ) == 1
     using INTERNAL ( Char ) = ChrChar;
-#        define IS( X ) ( ( ChrChar * ) X )
+#        define IS( X ) ( ( defines::ChrChar * ) X )
 #    elif INTERNAL( _CHAR_SIZE ) == 2
     using INTERNAL ( Char ) = Char16;
 #        define IS( X ) L##X
@@ -82,7 +82,7 @@ namespace defines
 
 #    if EXTERNAL( _CHAR_SIZE ) == 1
     using EXTERNAL ( Char ) = ChrChar;
-#        define ES( X ) ( ( ChrChar * ) X )
+#        define ES( X ) ( ( defines::ChrChar * ) X )
 #    elif EXTERNAL( _CHAR_SIZE ) == 2
     using EXTERNAL ( Char ) = Char16;
 #        define ES( X ) L##X

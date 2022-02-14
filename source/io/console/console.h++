@@ -21,6 +21,7 @@
 
 namespace io::console
 {
+
     class Console
     {
         struct impl_s;
@@ -35,5 +36,6 @@ namespace io::console
         void          setCols ( std::uint32_t const &value ) noexcept;
         std::uint32_t getRows ( ) const noexcept;
         void          setRows ( std::uint32_t const &value ) noexcept;
+
     };
 } // namespace io::console

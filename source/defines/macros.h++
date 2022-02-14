@@ -97,4 +97,11 @@
         BEGIN_UNIT_FAIL ( S, "" ) S << WHY;                                    \
         END_UNIT_FAIL ( S )
 
+#    define POLYMORPHIC_IDENTIFIER( CLASS )                                    \
+        static inline defines::IString identifier = IS ( #CLASS );             \
+        virtual defines::IString const getIdentifier ( ) const noexcept        \
+        {                                                                      \
+            return identifier;                                                 \
+        }
+
 #endif // ifndef SOURCE_DEFINES_MACROS
