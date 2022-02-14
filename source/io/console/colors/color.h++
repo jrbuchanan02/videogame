@@ -20,7 +20,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace io::console::internal::colors
+namespace io::console::colors
 {
     static inline constexpr defines::BoundColor const &
             bind ( defines::UnboundColor const color ) noexcept

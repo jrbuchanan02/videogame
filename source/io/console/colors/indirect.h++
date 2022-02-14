@@ -11,8 +11,8 @@
  */
 #pragma once
 
-#include <io/console/internal/colors/color.h++>
-#include <io/console/internal/colors/direct.h++>
+#include <io/console/colors/color.h++>
+#include <io/console/colors/direct.h++>
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
@@ -25,7 +25,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace io::console::internal::colors
+namespace io::console::colors
 {
     namespace blend_functions
     {
