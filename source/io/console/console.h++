@@ -60,12 +60,5 @@ namespace io::console
             send ( temp.str ( ) );
             return *this;
         }
-
-        template < class T >
-        Console &operator<< ( T const &t ) requires (
-                std::is_same_v< T, char8_t > )
-        {
-            return ( *this ) << ( char ) t;
-        }
     };
 } // namespace io::console

@@ -11,6 +11,9 @@
  */
 #include <io/console/console.h++>
 
+#include <defines/constants.h++>
+#include <defines/macros.h++>
+#include <defines/types.h++>
 #include <io/base/syncstream.h++>
 #include <io/console/colors/color.h++>
 #include <io/console/colors/direct.h++>
@@ -112,4 +115,76 @@ void io::console::Console::impl_s::pullCursorPosition ( )
     std::cout.flush ( );
     positionStack.pop ( );
     readySignal.store ( true );
+}
+
+void io::console::Console::impl_s::commandGenerator ( )
+{
+    using namespace std::chrono_literals;
+    while ( !this->stopSignal.load ( ) )
+    {
+        this->time += 0.1;
+        std::stringstream command;
+        auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
+            std::stringstream            result;
+            defines::UnboundColor const *rawColor =
+                    this->screen [ color ]->rgba ( time );
+            defines::BoundColor bound [ 4 ] = {
+                    colors::bind ( rawColor [ 0 ] ),
+                    colors::bind ( rawColor [ 1 ] ),
+                    colors::bind ( rawColor [ 2 ] ),
+                    colors::bind ( rawColor [ 3 ] ),
+            };
+            delete [] rawColor;
+            defines::SentColor sent [ 4 ] = {
+                    defines::SentColor ( bound [ 0 ] ),
+                    defines::SentColor ( bound [ 1 ] ),
+                    defines::SentColor ( bound [ 2 ] ),
+                    defines::SentColor ( bound [ 3 ] ),
+            };
+            result << "\u001b]" << defines::paletteChangePrefix << std::hex;
+            result << color << defines::paletteChangeSpecif;
+            for ( std::size_t i = 0; i < 2; i++ )
+            {
+                result << sent [ i ] << defines::paletteChangeDelimt;
+            }
+            result << sent [ 2 ] << "\u001b\\";
+            return result.str ( );
+        };
+
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            command << generateCommand ( i );
+        }
+        this->cmd.pushString ( command.str ( ) );
+
+        auto now   = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
+        auto start = now ( );
+        while ( now ( ) - start > operator""ms ( this->cmd.getDelay ( ) ) )
+        {
+            if ( this->stopSignal.load ( ) )
+            {
+                return;
+            } else
+            {
+                std::this_thread::sleep_for ( 1ms );
+            }
+        }
+        // wait again, but this time for the ready signal, if that is low
+        // choosing to wait here ensures that we have a buffer of around one cycle, which gives us some wiggle room.
+        while ( !this->readySignal.load ( ) )
+        {
+            auto now = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
+            auto start = now ( );
+            while ( now ( ) - start > operator""ms ( this->cmd.getDelay ( ) ) )
+            {
+                if ( this->stopSignal.load ( ) )
+                {
+                    return;
+                } else
+                {
+                    std::this_thread::sleep_for ( 1ms );
+                }
+            }
+        }
+    }
 }
