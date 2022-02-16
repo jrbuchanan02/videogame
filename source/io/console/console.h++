@@ -35,8 +35,6 @@ namespace io::console
         void send ( std::string const &str ) noexcept;
     public:
         Console ( );
-        Console ( Console const & );
-        Console ( Console && );
         virtual ~Console ( );
 
         std::uint32_t getCols ( ) const noexcept;

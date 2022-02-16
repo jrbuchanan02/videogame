@@ -38,7 +38,7 @@ namespace io::console::colors
                 defines::UnboundColor const & ) >;
 
         static inline BlendFunction defaultBlending =
-                [ = ] ( double const                &time,
+                [ ] ( double const                &time,
                         defines::UnboundColor const &basic,
                         defines::UnboundColor const &amplitude,
                         defines::UnboundColor const &frequency,
@@ -54,7 +54,7 @@ namespace io::console::colors
         };
 
         static inline BlendFunction averageAdjust =
-                [ = ] ( double const &,
+                [ ] ( double const &,
                         defines::UnboundColor const &basic,
                         defines::UnboundColor const &amplitude,
                         defines::UnboundColor const &frequency,
@@ -68,7 +68,7 @@ namespace io::console::colors
         };
 
         static inline BlendFunction fullAverage =
-                [ = ] ( double const &,
+                [ ] ( double const &,
                         defines::UnboundColor const &basic,
                         defines::UnboundColor const &amplitude,
                         defines::UnboundColor const &frequency,
@@ -101,7 +101,7 @@ namespace io::console::colors
         blend_functions::BlendFunction blender =
                 blend_functions::defaultBlending;
     protected:
-        virtual defines::UnboundColor const *const &
+        virtual defines::UnboundColor const *const 
                 rgbaRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],
@@ -110,7 +110,7 @@ namespace io::console::colors
                                this->color [ 3 ] )
                     .rgba ( );
         }
-        virtual defines::UnboundColor const *const &
+        virtual defines::UnboundColor const *const 
                 cmyaRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],
@@ -119,7 +119,7 @@ namespace io::console::colors
                                this->color [ 3 ] )
                     .cmya ( );
         }
-        virtual defines::UnboundColor const *const &
+        virtual defines::UnboundColor const *const 
                 cmykRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],

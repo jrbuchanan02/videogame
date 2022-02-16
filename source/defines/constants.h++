@@ -35,4 +35,15 @@ namespace defines
     constexpr ChrPString paletteChangeSpecif = "";
     constexpr ChrPString paletteChangeDelimt = "";
 #endif
+
+    constexpr std::uint8_t defaultConsoleColors [ 8 ][ 3 ] = {
+            { 0x00, 0x00, 0x00 },
+            { 0x7F, 0x00, 0x00 },
+            { 0x00, 0x7F, 0x00 },
+            { 0x7F, 0x7F, 0x00 },
+            { 0x00, 0x00, 0x7F },
+            { 0x7F, 0x00, 0x7F },
+            { 0x00, 0x7F, 0x7F },
+            { 0x7F, 0x7F, 0x7F },
+    };
 } // namespace defines

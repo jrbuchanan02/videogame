@@ -19,9 +19,11 @@
 #include <io/console/colors/direct.h++>
 #include <io/console/colors/indirect.h++>
 #include <io/console/internal/channel.h++>
+#include <io/console/manip/stringfunctions.h++>
 
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <queue>
 #include <stack>
 #include <string>
@@ -33,6 +35,10 @@
 
 struct io::console::Console::impl_s
 {
+    // our implementation of splitting by code point opened th door
+    // to a race condition where text may be interleaved if sent to
+    // the text channel.
+    std::mutex            sending;
     internal::TextChannel txt;
     internal::TextChannel cmd;
 
@@ -57,19 +63,52 @@ struct io::console::Console::impl_s
     // data for managing the command channel
 
     // colors onscreen.
-    std::shared_ptr< colors::IColor >              screen [ 8 ];
+    std::shared_ptr< colors::IColor >                          screen [ 8 ];
     // colors used for calculating those onscreen.
-    std::list< std::shared_ptr< colors::IColor > > colors;
+    // this value is a map to allow random access and fast addition / removal
+    // without reallocating the entire system.
+    std::map< std::size_t, std::shared_ptr< colors::IColor > > colors;
     // "now" so-to-speak.
-    double                                         time;
+    double                                                     time;
     // thread which feeds the cmd channel with the commands.
-    std::jthread                                   commands;
+    std::jthread                                               commands;
     // boolean to tell the jthread that it's time to shut down when
     // the console is destructed
-    std::atomic_bool                               stopSignal = false;
+    std::atomic_bool mutable stopSignal = false;
     // the function which performs the text-feeding. Internally uses the same
     // delay between ticks as the cmd channel
-    void                                           commandGenerator ( );
+    void commandGenerator ( );
+
+    // just some general data
+    ConsoleSize consoleSize = { 25, 80 };
+
+    impl_s ( ) noexcept
+    {
+        txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
+        cmd.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            screen [ i ] =
+                    std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
+                            defines::defaultConsoleColors [ i ][ 0 ],
+                            defines::defaultConsoleColors [ i ][ 1 ],
+                            defines::defaultConsoleColors [ i ][ 2 ],
+                            0xFF ) );
+        }
+        commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
+        commands.detach ( );
+        // TODO: insert console initialization routine.
+        // TODO: reset console
+        readySignal.store ( true );
+    }
+
+    ~impl_s ( )
+    {
+        readySignal.store ( false );
+        stopSignal.store ( true );
+        ensureStopped ( );
+        while ( commands.joinable ( ) ) { commands.join ( ); }
+    }
 };
 
 std::chrono::milliseconds
@@ -170,7 +209,8 @@ void io::console::Console::impl_s::commandGenerator ( )
             }
         }
         // wait again, but this time for the ready signal, if that is low
-        // choosing to wait here ensures that we have a buffer of around one cycle, which gives us some wiggle room.
+        // choosing to wait here ensures that we have a buffer of around one
+        // cycle, which gives us some wiggle room.
         while ( !this->readySignal.load ( ) )
         {
             auto now = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
@@ -186,5 +226,37 @@ void io::console::Console::impl_s::commandGenerator ( )
                 }
             }
         }
+    }
+}
+
+io::console::Console::Console ( ) : pimpl ( new impl_s ( ) ) { }
+io::console::Console::~Console ( ) = default;
+
+std::uint32_t io::console::Console::getCols ( ) const noexcept
+{
+    return pimpl->consoleSize.col;
+}
+
+void io::console::Console::setCols ( std::uint32_t const &value ) noexcept
+{
+    pimpl->consoleSize.col = value;
+}
+
+std::uint32_t io::console::Console::getRows ( ) const noexcept
+{
+    return pimpl->consoleSize.row;
+}
+
+void io::console::Console::setRows ( std::uint32_t const &value ) noexcept
+{
+    pimpl->consoleSize.row = value;
+}
+
+void io::console::Console::send ( std::string const &str ) noexcept
+{
+    std::scoped_lock< std::mutex > lock ( pimpl->sending );
+    for ( auto &cp : manip::splitByCodePoint ( str ) )
+    {
+        pimpl->txt.pushString ( cp );
     }
 }
