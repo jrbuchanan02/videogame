@@ -17,12 +17,13 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
 namespace io::console::colors
 {
-    static inline constexpr defines::BoundColor const 
+    static inline constexpr defines::BoundColor const
             bind ( defines::UnboundColor const color ) noexcept
     {
         if ( color > 0xff )
@@ -52,14 +53,14 @@ namespace io::console::colors
         defines::UnboundColor mutable basic [ 4 ];
         // the raw-getter functions are expected to allocate a new buffer.
         // a call to refresh always preceeds these functions.
-        virtual defines::UnboundColor const *const 
-                rgbaRaw (  ) const noexcept = 0;
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
+                rgbaRaw ( ) const noexcept = 0;
+        virtual defines::UnboundColor const *const
                 cmykRaw ( ) const noexcept = 0;
-        virtual defines::UnboundColor const *const 
-                cmyaRaw (  ) const noexcept = 0;
+        virtual defines::UnboundColor const *const
+                cmyaRaw ( ) const noexcept = 0;
 
-        static inline defines::UnboundColor const 
+        static inline defines::UnboundColor const
                 normalizeColor ( defines::UnboundColor *const &color ) noexcept
         {
             defines::UnboundColor magnitude =
@@ -74,26 +75,26 @@ namespace io::console::colors
     public:
         POLYMORPHIC_IDENTIFIER ( IColor )
 
-        IColor ( ) noexcept                = default;
-        virtual ~IColor ( )                = default;
+        IColor ( ) noexcept = default;
+        virtual ~IColor ( ) = default;
         IColor ( IColor const & ) noexcept = default;
         IColor ( IColor && ) noexcept      = default;
         IColor &operator= ( IColor const & ) noexcept = default;
         IColor &operator= ( IColor && ) noexcept = default;
 
-        defines::UnboundColor const *const 
+        defines::UnboundColor const *const
                 rgba ( double const &time = 0 ) const noexcept
         {
             refresh ( time );
             return rgbaRaw ( );
         }
-        defines::UnboundColor const *const 
+        defines::UnboundColor const *const
                 cmyk ( double const &time = 0 ) const noexcept
         {
-            refresh (time );
+            refresh ( time );
             return cmykRaw ( );
         }
-        defines::UnboundColor const *const 
+        defines::UnboundColor const *const
                 cmya ( double const &time = 0 ) const noexcept
         {
             refresh ( time );
@@ -128,5 +129,4 @@ namespace io::console::colors
         }
     };
 
-
-} // namespace io::console::internal::colors
+} // namespace io::console::colors

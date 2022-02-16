@@ -20,6 +20,7 @@
 #include <io/console/colors/indirect.h++>
 #include <io/console/internal/channel.h++>
 #include <io/console/manip/stringfunctions.h++>
+#include <io/unicode/character.h++>
 
 #include <atomic>
 #include <chrono>
@@ -83,6 +84,9 @@ struct io::console::Console::impl_s
 
     // just some general data
     ConsoleSize consoleSize = { 25, 80 };
+
+    // internal flag to block a thread until the text channel has caught up.
+    bool waitOnTextChannel = false;
 
     impl_s ( ) noexcept
     {
@@ -164,7 +168,6 @@ void io::console::Console::impl_s::commandGenerator ( )
     using namespace std::chrono_literals;
     while ( !this->stopSignal.load ( ) )
     {
-
         this->time += 0.1;
         if ( this->time > std::numbers::pi * 2 )
         {
@@ -262,10 +265,29 @@ void io::console::Console::setRows ( std::uint32_t const &value ) noexcept
 
 void io::console::Console::send ( std::string const &str ) noexcept
 {
-    std::scoped_lock< std::mutex > lock ( pimpl->sending );
-    for ( auto &cp : manip::splitByCodePoint ( str ) )
+    std::shared_ptr< bool > lastToken;
     {
-        pimpl->txt.pushString ( cp );
+        std::scoped_lock< std::mutex > lock ( pimpl->sending );
+        for ( auto &cp : manip::splitByCodePoint ( str ) )
+        {
+            // check for emoji. Their graphical representation is two columns
+            // wide on windows-systems, the cursor only moves one column across.
+            std::string temp = cp;
+            char32_t    c    = manip::widen ( temp.c_str ( ) );
+            if ( unicode::characterProperties ( ).at ( c ).emoji )
+            {
+                temp += "\u001b[C";
+            }
+
+            lastToken = pimpl->txt.pushString ( temp );
+        }
+    }
+    if ( pimpl->waitOnTextChannel )
+    {
+        while ( !*lastToken )
+        {
+            std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
+        }
     }
 }
 
@@ -313,4 +335,9 @@ std::uint64_t io::console::Console::getCmdRate ( ) const noexcept
 void io::console::Console::setCmdRate ( std::uint64_t const &value ) noexcept
 {
     pimpl->txt.setDelay ( value );
+}
+
+void io::console::Console::setWaitOnText ( bool const &value ) noexcept
+{
+    pimpl->waitOnTextChannel = value;
 }

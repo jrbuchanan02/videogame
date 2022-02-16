@@ -27,10 +27,17 @@
 
 using namespace std::chrono_literals;
 
+struct Job
+{
+    std::string             text;
+    std::shared_ptr< bool > token =
+            std::make_shared< bool > ( new bool ( false ) );
+};
+
 struct io::console::internal::TextChannel::impl_s
 {
     io::base::osyncstream                    stream { std::cout.rdbuf ( ) };
-    std::queue< std::string >                queue { };
+    std::queue< Job >                        queue { };
     // default to a bit less than 60 characters per second.
     std::atomic< std::chrono::milliseconds > delay = 17ms;
     std::jthread                             thread;
@@ -70,10 +77,12 @@ std::uint64_t const
     return this->pimpl->delay.load ( ).count ( );
 }
 
-void io::console::internal::TextChannel::pushString (
+std::shared_ptr< bool > io::console::internal::TextChannel::pushString (
         std::string const &string ) noexcept
 {
-    this->pimpl->queue.push ( string );
+    Job job { string };
+    pimpl->queue.push ( job );
+    return job.token;
 }
 
 void io::console::internal::TextChannel::setReady (
@@ -111,8 +120,9 @@ void io::console::internal::TextChannel::impl_s::send ( )
     {
         return;
     }
-    stream << queue.front ( );
+    stream << queue.front ( ).text;
     stream.emit ( );
+    *queue.front ( ).token = true;
     queue.pop ( );
 }
 

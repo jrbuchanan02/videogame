@@ -84,14 +84,18 @@ void initializeProperties ( )
             result.columns = 1;
         } else
         {
-            defines::ECString emoji =
-                    getField ( node->parent ( ), node, ES ( "Emoji" ) )
-                            ->value ( );
-            temp = emoji;
-            if ( temp == ES ( "Y" ) )
-            {
-                result.columns = 1;
-            }
+            result.columns = 0;
+        }
+
+        defines::ECString emoji =
+                getField ( node->parent ( ), node, ES ( "Emoji" ) )->value ( );
+        temp = emoji;
+        if ( temp == ES ( "Y" ) )
+        {
+            result.emoji = 1;
+        } else
+        {
+            result.emoji = 0;
         }
 
         properties.push_back ( result );
@@ -174,13 +178,13 @@ bool propertyInitializationTest ( std::ostream &stream )
     stream << "Ensuring that emoji have a width of two columns...\n";
     for ( auto &u : emoji )
     {
-        if ( !characterProperties ( ).at ( u ).columns && u > 0x7F )
+        if ( !characterProperties ( ).at ( u ).emoji && u > 0x7F )
         {
             CHAR_UNITTEST_FAIL ( stream,
-                                 "Invalid Column width detected",
+                                 "Property detected: ",
                                  "An emoji, U+",
                                  std::uint32_t ( u ),
-                                 " was marked as one column wide!" )
+                                 " was marked as a non-emoji!" )
             END_UNIT_FAIL ( stream )
         }
     }

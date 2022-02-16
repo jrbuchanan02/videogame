@@ -47,7 +47,7 @@ namespace io::console::colors
                 -> defines::UnboundColor {
             return basic
                  + amplitude
-                           * ( std::sin ( 2 * std::numbers::pi * frequency
+                           * ( std::sin ( 2 * std::numbers::pi / frequency
                                                   * time
                                           + frequencyModulation )
                                + amplitudeModulation );

@@ -40,6 +40,8 @@ namespace io::console
         Console ( );
         virtual ~Console ( );
 
+        void setWaitOnText ( bool const & ) noexcept;
+
         std::uint32_t getCols ( ) const noexcept;
         void          setCols ( std::uint32_t const &value ) noexcept;
         std::uint32_t getRows ( ) const noexcept;
@@ -67,7 +69,7 @@ namespace io::console
              && !std::is_same_v < T, char8_t > 
              && !std::is_same_v < T, char16_t > 
              && !std::is_same_v < T, char32_t > 
-             && !std::is_same_v < T, ConsoleManipulator > )
+             && !std::is_invocable_r_v< Console &, T, Console & > )
         {
             // clang-format on
             std::stringstream temp;
@@ -132,7 +134,7 @@ namespace io::console
 
         template < class T >
         Console &operator<< ( T const &t ) requires (
-                std::is_same_v< T, ConsoleManipulator > )
+                std::is_invocable_r_v< Console &, T, Console & > )
         {
             return t ( *this );
         }
