@@ -11,7 +11,9 @@
  */
 #pragma once
 
+#include <defines/macros.h++>
 #include <defines/types.h++>
+
 #include <functional>
 #include <iostream>
 namespace test
@@ -34,10 +36,10 @@ namespace test
         ChrPString passMessage = "Unittest passed.";
         ChrPString failMessage = "Unittest failed.";
 
-        std::function<bool ( std::ostream & )> test;
+        std::function< bool ( std::ostream & ) > test;
 
-        Unittest ( std::function<bool ( std::ostream & )> const &test,
-                   ChrPString const                             &pass = nullptr,
+        Unittest ( std::function< bool ( std::ostream & ) > const &test,
+                   ChrPString const &pass = nullptr,
                    ChrPString const &fail = nullptr );
     };
 

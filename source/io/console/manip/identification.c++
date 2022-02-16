@@ -9,11 +9,15 @@
  * above.
  *
  */
-#include <defines/macros.h++>
 #include <io/console/manip/stringfunctions.h++>
+
+#include <defines/constants.h++>
+#include <defines/macros.h++>
+#include <defines/types.h++>
+#include <test/unittester.h++>
+
 #include <stdexcept>
 #include <string>
-#include <test/unittester.h++>
 #include <vector>
 using namespace io::console::manip;
 
@@ -176,8 +180,7 @@ CodePointType identifyFirst ( std::string const &string )
             {
                 return UTF4BYTE;
             }
-        default:
-            return INVALID_;
+        default: return INVALID_;
     }
 }
 /**
@@ -243,10 +246,8 @@ std::string grabCodePoint ( std::string &string )
     std::string errorMessage = "Unknown (UTF-8?) Sequence!";
     switch ( identifyFirst ( string ) )
     {
-        case INVALID_:
-            errorMessage = "Invalid Character Sequence!";
-        case UTFNBYTE:
-            throw std::runtime_error ( errorMessage );
+        case INVALID_: errorMessage = "Invalid Character Sequence!";
+        case UTFNBYTE: throw std::runtime_error ( errorMessage );
         case TERMINAL:
             result += string.front ( );
             string = string.substr ( 1 );
@@ -281,9 +282,9 @@ std::string grabCodePoint ( std::string &string )
                     case ']': // OSC
                     case '^': // PM
                     case '_': // APC
-                        do
-                        {
-                            if ( string.empty ( ) ) break;
+                        do {
+                            if ( string.empty ( ) )
+                                break;
                             result += string.front ( );
                             string = string.substr ( 1 );
                         } while (
@@ -295,9 +296,9 @@ std::string grabCodePoint ( std::string &string )
                         // SOS is different from the four above in that it only
                         // ends with either SOS or ST
                     case 'X': // SOS
-                        do
-                        {
-                            if ( string.empty ( ) ) break;
+                        do {
+                            if ( string.empty ( ) )
+                                break;
                             result += string.front ( );
                             string = string.substr ( 1 );
                         } while (
@@ -312,47 +313,45 @@ std::string grabCodePoint ( std::string &string )
                         // this range have undefined behavior, so we'll assume
                         // that we know what we're doing and not terminate the
                         // sequence.
-                        do
-                        {
-                            if ( string.empty ( ) ) break;
+                        do {
+                            if ( string.empty ( ) )
+                                break;
                             result += string.front ( );
                             string = string.substr ( 1 );
                         } while ( !endsCSI ( result.back ( ) )
                                   && !string.empty ( ) );
                         break;
-                    default:
-                        break;
+                    default: break;
                 }
             }
             break;
             // use implicit fallthroughs to get the right amount of characters.
-        case UTF4BYTE:
-            result += string.front ( );
-            string = string.substr ( 1 );
-        case UTF3BYTE:
-            result += string.front ( );
-            string = string.substr ( 1 );
-        case UTF2BYTE:
-            result += string.front ( );
-            string = string.substr ( 1 );
-        case UTF1BYTE:
-            result += string.front ( );
-            string = string.substr ( 1 );
-        default:
-            break;
+        case UTF4BYTE: result += string.front ( ); string = string.substr ( 1 );
+        case UTF3BYTE: result += string.front ( ); string = string.substr ( 1 );
+        case UTF2BYTE: result += string.front ( ); string = string.substr ( 1 );
+        case UTF1BYTE: result += string.front ( ); string = string.substr ( 1 );
+        default: break;
     }
     return result;
 }
 
-std::vector<std::string>
+std::vector< std::string >
         io::console::manip::splitByCodePoint ( std::string string )
 {
-    std::vector<std::string> result = { };
+    std::vector< std::string > result = { };
     while ( !string.empty ( ) )
     {
         result.push_back ( grabCodePoint ( string ) );
     }
     return result;
+}
+
+std::vector< std::string >
+        io::console::manip::splitByCodePoint ( std::u8string str )
+{
+    std::string temp = "";
+    for ( char8_t &c : str ) { temp += ( char ) c; }
+    return splitByCodePoint ( temp );
 }
 
 #define INCORRECT_SEQUENCE( TRANS, EXPECT, ... )                               \
@@ -363,7 +362,9 @@ std::vector<std::string>
                          "Was not marked as a(n) ",                            \
                          EXPECT,                                               \
                          " Sequence. Its byte representation is:" __VA_OPT__ ( \
-                                 , "0x", ( unsigned char ) ) __VA_ARGS__ )     \
+                                 ,                                             \
+                                 "0x",                                         \
+                                 ( unsigned char ) ) __VA_ARGS__ )             \
     END_UNIT_FAIL ( stream )
 
 bool testIdentification ( std::ostream &stream )
@@ -444,8 +445,11 @@ bool testIdentification ( std::ostream &stream )
                     {
                         if ( identifyFirst ( test ) != INVALID_ )
                         {
-                            INCORRECT_SEQUENCE (
-                                    translated, "Invalid", i, j, k )
+                            INCORRECT_SEQUENCE ( translated,
+                                                 "Invalid",
+                                                 i,
+                                                 j,
+                                                 k )
                         } else
                         {
                             continue;
@@ -455,8 +459,11 @@ bool testIdentification ( std::ostream &stream )
                     {
                         if ( identifyFirst ( test ) != INVALID_ )
                         {
-                            INCORRECT_SEQUENCE (
-                                    translated, "Invalid", i, j, k )
+                            INCORRECT_SEQUENCE ( translated,
+                                                 "Invalid",
+                                                 i,
+                                                 j,
+                                                 k )
                         } else
                         {
                             continue;
@@ -497,8 +504,12 @@ bool testIdentification ( std::ostream &stream )
                         {
                             if ( identifyFirst ( test ) != INVALID_ )
                             {
-                                INCORRECT_SEQUENCE (
-                                        translated, "Invalid", i, j, k, m )
+                                INCORRECT_SEQUENCE ( translated,
+                                                     "Invalid",
+                                                     i,
+                                                     j,
+                                                     k,
+                                                     m )
                             } else
                             {
                                 continue;
@@ -508,16 +519,24 @@ bool testIdentification ( std::ostream &stream )
                         {
                             if ( identifyFirst ( test ) != INVALID_ )
                             {
-                                INCORRECT_SEQUENCE (
-                                        translated, "Invalid", i, j, k, m )
+                                INCORRECT_SEQUENCE ( translated,
+                                                     "Invalid",
+                                                     i,
+                                                     j,
+                                                     k,
+                                                     m )
                             } else
                             {
                                 continue;
                             }
                         }
 
-                        INCORRECT_SEQUENCE (
-                                translated, "4-byte UTF-8", i, j, k, m )
+                        INCORRECT_SEQUENCE ( translated,
+                                             "4-byte UTF-8",
+                                             i,
+                                             j,
+                                             k,
+                                             m )
                     }
                 }
             }

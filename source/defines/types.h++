@@ -11,22 +11,22 @@
  */
 #pragma once
 
-//#include <io/base/syncstream.h++>
+#include <functional>
 #include <streambuf>
-namespace io::base
-{
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_syncstreambuf;
-    template <class CharT,
-              class Traits    = std::char_traits<CharT>,
-              class Allocator = std::allocator<CharT>>
-    class basic_osyncstream;
-} // namespace io::base
+#include <string>
 
 #include <rapidxml-1.13/rapidxml.hpp>
-#include <string>
+namespace io::base
+{
+    template < class CharT,
+               class Traits    = std::char_traits< CharT >,
+               class Allocator = std::allocator< CharT > >
+    class basic_syncstreambuf;
+    template < class CharT,
+               class Traits    = std::char_traits< CharT >,
+               class Allocator = std::allocator< CharT > >
+    class basic_osyncstream;
+} // namespace io::base
 
 // syntactic sugar to prevent each define from being enclosed with
 // an #ifndef DEFINE ... #endif // #ifndef DEFINE
@@ -69,7 +69,7 @@ namespace defines
 
 #    if INTERNAL( _CHAR_SIZE ) == 1
     using INTERNAL ( Char ) = ChrChar;
-#        define IS( X ) ( ( ChrChar * ) X )
+#        define IS( X ) ( ( defines::ChrChar * ) X )
 #    elif INTERNAL( _CHAR_SIZE ) == 2
     using INTERNAL ( Char ) = Char16;
 #        define IS( X ) L##X
@@ -82,7 +82,7 @@ namespace defines
 
 #    if EXTERNAL( _CHAR_SIZE ) == 1
     using EXTERNAL ( Char ) = ChrChar;
-#        define ES( X ) ( ( ChrChar * ) X )
+#        define ES( X ) ( ( defines::ChrChar * ) X )
 #    elif EXTERNAL( _CHAR_SIZE ) == 2
     using EXTERNAL ( Char ) = Char16;
 #        define ES( X ) L##X
@@ -101,12 +101,12 @@ namespace defines
         using UTF32 ( Name )    = UTF32 ( Expr );                              \
         using _CHAR ( Name )    = _CHAR ( Expr );
 #    define CHARACTER_TEMPLATE_USING( Name, Template )                         \
-        using INTERNAL ( Name ) = Template<INTERNAL ( Char )>;                 \
-        using EXTERNAL ( Name ) = Template<EXTERNAL ( Char )>;                 \
-        using UTF08 ( Name )    = Template<UTF08 ( Char )>;                    \
-        using UTF16 ( Name )    = Template<UTF16 ( Char )>;                    \
-        using UTF32 ( Name )    = Template<UTF32 ( Char )>;                    \
-        using _CHAR ( Name )    = Template<_CHAR ( Char )>;
+        using INTERNAL ( Name ) = Template< INTERNAL ( Char ) >;               \
+        using EXTERNAL ( Name ) = Template< EXTERNAL ( Char ) >;               \
+        using UTF08 ( Name )    = Template< UTF08 ( Char ) >;                  \
+        using UTF16 ( Name )    = Template< UTF16 ( Char ) >;                  \
+        using UTF32 ( Name )    = Template< UTF32 ( Char ) >;                  \
+        using _CHAR ( Name )    = Template< _CHAR ( Char ) >;
 
     CHARACTER_USING ( CString, Char * )
     CHARACTER_USING ( PString, Char const * )
@@ -129,6 +129,15 @@ namespace defines
 #    define BITFIELD( X ) defines::Flag X : 1 = 0;
 
     using RandomNumber = double;
-} // namespace defines
 
+    // type used internally for color math
+    using UnboundColor = double;
+    // type used internally to store a mathed-color before sending it
+    using BoundColor   = std::uint8_t;
+    // the type sent to an output stream.
+    using SentColor    = std::uint32_t;
+
+    template < class I, class O >
+    using BinaryFunction = std::function< O ( I, I ) >;
+} // namespace defines
 #endif // ifndef SOURCE_DEFINES_TYPES

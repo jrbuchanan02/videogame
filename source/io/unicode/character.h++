@@ -11,9 +11,10 @@
  */
 #pragma once
 
-#include <cstdint>
+#include <defines/macros.h++>
 #include <defines/types.h++>
-#include <rapidxml-1.13/rapidxml.hpp>
+
+#include <cstdint>
 #include <vector>
 
 namespace io::unicode
@@ -36,5 +37,5 @@ namespace io::unicode
         inline CharacterProperties ( CharacterProperties && ) = delete;
     };
 
-    std::vector<CharacterProperties> const &characterProperties ( );
+    std::vector< CharacterProperties > const &characterProperties ( );
 } // namespace io::unicode

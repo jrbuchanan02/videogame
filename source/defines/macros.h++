@@ -11,6 +11,7 @@
  */
 #pragma once
 #include <defines/types.h++>
+
 #ifndef SOURCE_DEFINES_MACROS
 #    define SOURCE_DEFINES_MACROS
 
@@ -53,10 +54,13 @@
 
 #    define RUNTIME_ERROR( WHAT, ... )                                         \
         {                                                                      \
-            std::stringstream message ( "" );                                  \
+            _Pragma ( "GCC diagnostic push" )                                  \
+                    _Pragma ( "GCC diagnostic ignored \"-Wunused-value\"" )    \
+                            std::stringstream message ( "" );                  \
             message << "On LINE " << __LINE__ << " in FILE " << __FILE__       \
                     << ": " << WHAT __VA_OPT__ ( << ) __VA_ARGS__;             \
             throw std::runtime_error ( message.str ( ) );                      \
+            _Pragma ( "GCC diagnostic pop" )                                   \
         }
 
 #    define CATCH_AND_GIVE_LINE( Exception, ... )                              \
@@ -95,5 +99,12 @@
 #    define BASIC_UNIT_FAIL( S, WHY )                                          \
         BEGIN_UNIT_FAIL ( S, "" ) S << WHY;                                    \
         END_UNIT_FAIL ( S )
+
+#    define POLYMORPHIC_IDENTIFIER( CLASS )                                    \
+        static inline defines::IString identifier = IS ( #CLASS );             \
+        virtual defines::IString const getIdentifier ( ) const noexcept        \
+        {                                                                      \
+            return identifier;                                                 \
+        }
 
 #endif // ifndef SOURCE_DEFINES_MACROS

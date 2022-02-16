@@ -3,29 +3,28 @@ Language: Cpp
 # we don't want any indent or outdent of access modifiers
 AccessModifierOffset: -4
 # we want alignment on the open bracket, but with block indentation
-AlignAfterOpenBracket: true
-# My version of clang-format is too old for this one
+AlignAfterOpenBracket: Align
+# The latest version of clang-format that I hvae access to is 12.
+# Unfortunately, that does not jive with AlignArrayOfStructures.
 # AlignArrayOfStructures: Right
-AlignConsecutiveAssignments: Consecutive
-AlignConsecutiveBitFields: Consecutive
-AlignConsecutiveDeclarations: Consecutive
-AlignConsecutiveMacros: Consecutive
+AlignConsecutiveAssignments: AcrossComments
+AlignConsecutiveBitFields: AcrossComments
+AlignConsecutiveDeclarations: AcrossComments
+AlignConsecutiveMacros: AcrossComments
 AlignEscapedNewlines: Right
-AlignOperands: true
+AlignOperands: AlignAfterOperator
 AlignTrailingComments: true
-# My version of clang-format is too old for this one
-# AllowAllArgmentsOnNextLine: false
+AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
-# My version of clang-format is too old for these
-# AllowShortBlocksOnSingleLine: Never
-# AllowShortCaseLabelsOnSingleLine: true
-AllowShortEnumsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: MultiLine
 AttributeMacros: ['__used', '__attribute__']
 BinPackArguments: false
@@ -53,9 +52,8 @@ BraceWrapping:
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeConceptDeclarations: true
 BreakBeforeTernaryOperators: true
-# Does not work on my clang-format
-# BreakConstructors: AfterColon
-# BreakInheritanceList: AfterComma
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
 BreakStringLiterals: true
 ColumnLimit: 80
 CompactNamespaces: false
@@ -64,11 +62,13 @@ ContinuationIndentWidth: 8
 Cpp11BracedListStyle: true
 DeriveLineEnding: true
 DerivePointerAlignment: false
-# My version of clang-format seems to be too old
+# only version 13 and later. I have 12
 # EmptyLineAfterAccessModifier: Never
+# but this one is also supposed to be version 13+?
 EmptyLineBeforeAccessModifier: Never
 FixNamespaceComments: true
-IncludeBlocks: Regroup
+ForEachMacros: ['FOREACH']
+IncludeBlocks: Preserve
 # My version of clang-format is too old
 # IndentAccessModifiers: false
 IndentCaseBlocks: false
@@ -79,6 +79,7 @@ IndentPPDirectives: AfterHash
 IndentRequires: false
 IndentWidth: 4
 IndentWrappedFunctionNames: true
+# InsertTrailingCommas: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 # LambdaBodyIndentation: Signature
 MaxEmptyLinesToKeep: 1
@@ -108,7 +109,7 @@ SpaceBeforeSquareBrackets: true
 SpaceInEmptyBlock: true
 SpaceInEmptyParentheses: true
 SpacesBeforeTrailingComments: 1
-# SpacesInAngles: true
+SpacesInAngles: true
 SpacesInCStyleCastParentheses: true
 SpacesInConditionalStatement: true
 SpacesInContainerLiterals: true

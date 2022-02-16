@@ -11,20 +11,26 @@
  */
 #pragma once
 
-#include <atomic>
-#include <chrono>
+#include <defines/constants.h++>
 #include <defines/macros.h++>
 #include <defines/types.h++>
-#include <functional>
 #include <io/base/unistring.h++>
+#include <test/unittester.h++>
+
+#include <atomic>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <sstream>
 #include <streambuf>
-#include <test/unittester.h++>
 #include <thread>
+
 namespace io::base
 {
     /**
@@ -35,10 +41,10 @@ namespace io::base
      * @tparam Traits the traits of the character type
      * @tparam Allocator the allocator
      */
-    template <class CharT, class Traits, class Allocator>
+    template < class CharT, class Traits, class Allocator >
     class SynchronizedStreamBufferImplementation
     {
-        friend class basic_syncstreambuf<CharT, Traits, Allocator>;
+        friend class basic_syncstreambuf< CharT, Traits, Allocator >;
 
         static inline bool unittest ( std::ostream &stream )
         {
@@ -48,12 +54,14 @@ namespace io::base
                    << sizeof ( CharT ) << ".\n";
             stream << "Ensuring that registration works...\n";
             {
-                SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
+                SynchronizedStreamBufferImplementation< CharT,
+                                                        Traits,
+                                                        Allocator >
                         test;
                 test.doRegister ( nullptr );
                 try
                 {
-                    std::scoped_lock<std::mutex> testLock (
+                    std::scoped_lock< std::mutex > testLock (
                             *test.locks.at ( nullptr ) );
                 } catch ( std::range_error &error )
                 {
@@ -65,7 +73,9 @@ namespace io::base
             }
             {
                 stream << "Testing race conditions...\n";
-                SynchronizedStreamBufferImplementation<CharT, Traits, Allocator>
+                SynchronizedStreamBufferImplementation< CharT,
+                                                        Traits,
+                                                        Allocator >
                         test;
                 test.locks.emplace ( nullptr, new std::mutex ( ) );
                 std::uint32_t       threadCount = 1 << 10;
@@ -108,8 +118,8 @@ namespace io::base
 
         static inline test::Unittest test = { &unittest };
 
-        std::map<std::basic_streambuf<CharT, Traits> *,
-                 std::unique_ptr<std::mutex>>
+        std::map< std::basic_streambuf< CharT, Traits > *,
+                  std::unique_ptr< std::mutex > >
                 locks;
         SynchronizedStreamBufferImplementation ( ) = default;
 
@@ -118,7 +128,7 @@ namespace io::base
          *
          * @param buf the streambuf to register.
          */
-        void doRegister ( std::basic_streambuf<CharT, Traits> *const &buf )
+        void doRegister ( std::basic_streambuf< CharT, Traits > *const &buf )
         {
             if ( !locks.contains ( buf ) )
             {
@@ -133,10 +143,10 @@ namespace io::base
          * @param buf the buffer
          * @param action the action
          */
-        void doAtomically ( std::basic_streambuf<CharT, Traits> *const &buf,
-                            std::function<void ( )> const              &action )
+        void doAtomically ( std::basic_streambuf< CharT, Traits > *const &buf,
+                            std::function< void ( ) > const &action )
         {
-            std::scoped_lock<std::mutex> lock ( *locks [ buf ] );
+            std::scoped_lock< std::mutex > lock ( *locks [ buf ] );
             action ( );
         }
     };
@@ -157,21 +167,21 @@ namespace io::base
      * @tparam Traits the traits type
      * @tparam Allocator the allocator type.
      */
-    template <class CharT, class Traits, class Allocator>
-    class basic_syncstreambuf : public std::basic_streambuf<CharT, Traits>
+    template < class CharT, class Traits, class Allocator >
+    class basic_syncstreambuf : public std::basic_streambuf< CharT, Traits >
     {
         // todo: switch to using *this* container rather than the one in the
         // namespace. Since I'm committing this code directly to main, I'm not
         // willing to make that change just now.
-        static inline SynchronizedStreamBufferImplementation<CharT,
-                                                             Traits,
-                                                             Allocator>
-                                                    container;
-        std::mutex                                  bufferMutex;
-        std::mutex                                  streamMutex;
-        std::basic_streambuf<CharT, Traits>        *stream;
-        std::basic_string<CharT, Traits, Allocator> buffer;
-        std::atomic_bool                            emitOnSync = false;
+        static inline SynchronizedStreamBufferImplementation< CharT,
+                                                              Traits,
+                                                              Allocator >
+                                                      container;
+        std::mutex                                    bufferMutex;
+        std::mutex                                    streamMutex;
+        std::basic_streambuf< CharT, Traits > *       stream;
+        std::basic_string< CharT, Traits, Allocator > buffer;
+        std::atomic_bool                              emitOnSync = false;
 
         static inline bool selfTest ( std::ostream &stream )
         {
@@ -180,11 +190,11 @@ namespace io::base
                    << sizeof ( CharT ) << "\n";
             stream << "Ensuring that giving two syncbuf's the same output "
                       "stream gives them the same underlying buffer...\n";
-            std::basic_stringstream<CharT, Traits, Allocator> testStream;
-            basic_syncstreambuf<CharT, Traits, Allocator>     test1, test2;
-            test1 = basic_syncstreambuf<CharT, Traits, Allocator> (
+            std::basic_stringstream< CharT, Traits, Allocator > testStream;
+            basic_syncstreambuf< CharT, Traits, Allocator >     test1, test2;
+            test1 = basic_syncstreambuf< CharT, Traits, Allocator > (
                     testStream.rdbuf ( ) );
-            test2 = basic_syncstreambuf<CharT, Traits, Allocator> (
+            test2 = basic_syncstreambuf< CharT, Traits, Allocator > (
                     testStream.rdbuf ( ) );
             if ( test1.stream != test2.stream )
             {
@@ -194,8 +204,8 @@ namespace io::base
             }
             stream << "Ensuring that outputting to the two syncbufs do not go "
                       "through until calls to emit...\n";
-            std::basic_ostream<CharT, Traits> stream1 ( &test1 );
-            std::basic_ostream<CharT, Traits> stream2 ( &test2 );
+            std::basic_ostream< CharT, Traits > stream1 ( &test1 );
+            std::basic_ostream< CharT, Traits > stream2 ( &test2 );
 
             static CharT text [] = {
                     'S',
@@ -230,7 +240,7 @@ namespace io::base
             std::atomic_bool   go    = false;
 
             auto sendInformationOn =
-                    [ & ] ( basic_syncstreambuf<CharT, Traits, Allocator>
+                    [ & ] ( basic_syncstreambuf< CharT, Traits, Allocator >
                                     *alloc ) {
                         ready.fetch_sub ( 1 );
                         while ( !go.load ( ) )
@@ -245,11 +255,9 @@ namespace io::base
                     .detach ( );
             std::thread ( std::bind_front ( sendInformationOn, &test2 ) )
                     .detach ( );
-            while ( ready.load ( ) )
-            { }
+            while ( ready.load ( ) ) { }
             go.store ( true );
-            while ( done.load ( ) < 2 )
-            { }
+            while ( done.load ( ) < 2 ) { }
             if ( testStream.str ( ).find ( text2 ) == std::string::npos )
             {
                 BASIC_UNIT_FAIL ( stream,
@@ -286,20 +294,20 @@ namespace io::base
         {
             emit ( );
             stream = nullptr;
-            buffer = std::basic_string<CharT, Traits, Allocator> ( );
+            buffer = std::basic_string< CharT, Traits, Allocator > ( );
             emitOnSync.store ( false );
         }
     public:
         basic_syncstreambuf ( ) : basic_syncstreambuf ( nullptr ) { }
         explicit basic_syncstreambuf (
-                std::basic_streambuf<CharT, Traits> *obuf )
-                : stream ( obuf )
+                std::basic_streambuf< CharT, Traits > *obuf ) :
+                stream ( obuf )
         {
             container.doRegister ( obuf );
         }
-        basic_syncstreambuf ( std::basic_streambuf<CharT, Traits> *obuf,
-                              Allocator const                     &a )
-                : basic_syncstreambuf ( obuf )
+        basic_syncstreambuf ( std::basic_streambuf< CharT, Traits > *obuf,
+                              Allocator const &                      a ) :
+                basic_syncstreambuf ( obuf )
         { }
         basic_syncstreambuf ( basic_syncstreambuf &&that )
         {
@@ -325,11 +333,11 @@ namespace io::base
         {
             emit ( );
             other.emit ( );
-            std::scoped_lock<std::mutex> thisBufferLock ( bufferMutex );
-            std::scoped_lock<std::mutex> thisStreamLock ( streamMutex );
+            std::scoped_lock< std::mutex > thisBufferLock ( bufferMutex );
+            std::scoped_lock< std::mutex > thisStreamLock ( streamMutex );
 
-            std::scoped_lock<std::mutex> thatBufferLock ( other.bufferMutex );
-            std::scoped_lock<std::mutex> thatStreamLock ( other.streamMutex );
+            std::scoped_lock< std::mutex > thatBufferLock ( other.bufferMutex );
+            std::scoped_lock< std::mutex > thatStreamLock ( other.streamMutex );
             std::swap ( buffer, other.buffer );
             std::swap ( stream, other.stream );
             bool temp = emitOnSync.load ( );
@@ -364,12 +372,12 @@ namespace io::base
         {
             bool result;
             auto emission = [ & ] ( ) {
-                std::scoped_lock<std::mutex> streamLock ( streamMutex );
-                std::scoped_lock<std::mutex> bufferLock ( bufferMutex );
+                std::scoped_lock< std::mutex > streamLock ( streamMutex );
+                std::scoped_lock< std::mutex > bufferLock ( bufferMutex );
                 if ( stream )
                 {
                     stream->sputn ( buffer.c_str ( ), buffer.size ( ) );
-                    buffer = emptyString<CharT, Traits, Allocator> ( );
+                    buffer = emptyString< CharT, Traits, Allocator > ( );
                     result = true;
                     if ( !stream->pubsync ( ) )
                     {
@@ -391,7 +399,7 @@ namespace io::base
          *
          * @return std::basic_streambuf<CharT, Traits>* the wrapped buffer
          */
-        std::basic_streambuf<CharT, Traits> *get_wrapped ( ) const noexcept
+        std::basic_streambuf< CharT, Traits > *get_wrapped ( ) const noexcept
         {
             return stream;
         }
@@ -446,7 +454,7 @@ namespace io::base
         void imbue ( std::locale const &loc ) override
         {
             auto imbuement = [ & ] ( ) {
-                std::scoped_lock<std::mutex> streamLock ( streamMutex );
+                std::scoped_lock< std::mutex > streamLock ( streamMutex );
                 stream->pubimbue ( loc );
             };
 
@@ -464,12 +472,12 @@ namespace io::base
          * @return std::basic_streambuf<CharT, Traits>* the value returned from
          * the underlying streambuf
          */
-        std::basic_streambuf<CharT, Traits> *
+        std::basic_streambuf< CharT, Traits > *
                 setbuf ( CharT *s, std::streamsize n ) override
         {
-            std::basic_streambuf<CharT, Traits> *result;
-            auto                                 bufferset = [ & ] ( ) {
-                std::scoped_lock<std::mutex> streamLock ( streamMutex );
+            std::basic_streambuf< CharT, Traits > *result;
+            auto                                   bufferset = [ & ] ( ) {
+                std::scoped_lock< std::mutex > streamLock ( streamMutex );
                 result = stream->pubsetbuf ( s, n );
             };
 
@@ -494,11 +502,11 @@ namespace io::base
                 Traits::off_type        off,
                 std::ios_base::seekdir  dir,
                 std::ios_base::openmode which = std::ios_base::in
-                                                | std::ios_base::out ) override
+                                              | std::ios_base::out ) override
         {
             typename Traits::pos_type result;
             auto                      offseek = [ & ] ( ) {
-                std::scoped_lock<std::mutex> streamLock ( streamMutex );
+                std::scoped_lock< std::mutex > streamLock ( streamMutex );
                 result = stream->pubseekoff ( off, dir, which );
             };
             container.doAtomically ( stream, [ & ] ( ) { offseek ( ); } );
@@ -508,11 +516,11 @@ namespace io::base
         Traits::pos_type seekpos (
                 Traits::pos_type        pos,
                 std::ios_base::openmode which = std::ios_base::in
-                                                | std::ios_base::out ) override
+                                              | std::ios_base::out ) override
         {
             typename Traits::pos_type result;
             auto                      posseek = [ & ] ( ) {
-                std::scoped_lock<std::mutex> streamLock ( streamMutex );
+                std::scoped_lock< std::mutex > streamLock ( streamMutex );
                 result = stream->pubseekpos ( pos, which );
             };
             container.doAtomically ( stream, [ & ] ( ) { posseek ( ); } );
@@ -535,28 +543,25 @@ namespace io::base
         std::streamsize xsputn ( Traits::char_type const *s,
                                  std::streamsize          count ) override
         {
-            std::basic_string<CharT, Traits, Allocator> str =
-                    emptyString<CharT, Traits, Allocator> ( );
-            for ( std::streamsize i = 0; i < count; i++ )
-            {
-                str += s [ i ];
-            }
-            std::scoped_lock<std::mutex> bufferLock ( bufferMutex );
+            std::basic_string< CharT, Traits, Allocator > str =
+                    emptyString< CharT, Traits, Allocator > ( );
+            for ( std::streamsize i = 0; i < count; i++ ) { str += s [ i ]; }
+            std::scoped_lock< std::mutex > bufferLock ( bufferMutex );
             buffer += str;
             return count;
         }
     };
 
-    template <class CharT, class Traits, class Allocator>
-    class basic_osyncstream : public std::basic_ostream<CharT, Traits>
+    template < class CharT, class Traits, class Allocator >
+    class basic_osyncstream : public std::basic_ostream< CharT, Traits >
     {
         std::mutex bufferMutex;
 
         void move ( basic_osyncstream &&other ) noexcept
         {
-            std::scoped_lock<std::mutex> bufferLock ( bufferMutex ),
+            std::scoped_lock< std::mutex > bufferLock ( bufferMutex ),
                     otherLock ( other.bufferMutex );
-            std::basic_ostream<CharT, Traits>::rdbuf ( other.rdbuf ( ) );
+            std::basic_ostream< CharT, Traits >::rdbuf ( other.rdbuf ( ) );
         }
 
         static inline bool selfTest ( std::ostream &stream )
@@ -582,8 +587,8 @@ namespace io::base
                     '!',
                     '\n',
             };
-            std::basic_stringstream<CharT, Traits, Allocator> out;
-            basic_osyncstream<CharT, Traits, Allocator>       ostream ( out );
+            std::basic_stringstream< CharT, Traits, Allocator > out;
+            basic_osyncstream< CharT, Traits, Allocator >       ostream ( out );
             ostream << test;
             if ( !out.str ( ).empty ( ) )
             {
@@ -600,7 +605,7 @@ namespace io::base
             }
             stream << "Testing that text does not get garbled...\n";
 
-            out = std::basic_stringstream<CharT, Traits, Allocator> ( );
+            out = std::basic_stringstream< CharT, Traits, Allocator > ( );
             unsigned           con      = 16;
             std::atomic_size_t ready    = con;
             std::atomic_size_t passd    = con;
@@ -617,7 +622,7 @@ namespace io::base
                     std::this_thread::sleep_for (
                             std::chrono::milliseconds ( 1 ) );
                 }
-                basic_osyncstream<CharT, Traits, Allocator> ostream ( out );
+                basic_osyncstream< CharT, Traits, Allocator > ostream ( out );
                 ostream << strings [ id ];
                 CharT temp [] = { ( CharT ) '\n', 0 };
                 ostream << temp;
@@ -680,23 +685,23 @@ namespace io::base
         using int_type       = typename Traits::int_type;
         using pos_type       = typename Traits::pos_type;
         using allocator_type = Allocator;
-        using streambuf_type = std::basic_streambuf<CharT, Traits>;
-        using syncbuf_type   = basic_syncstreambuf<CharT, Traits, Allocator>;
+        using streambuf_type = std::basic_streambuf< CharT, Traits >;
+        using syncbuf_type   = basic_syncstreambuf< CharT, Traits, Allocator >;
 
-        basic_osyncstream ( streambuf_type *buf, Allocator const &a )
-                : basic_osyncstream ( buf )
+        basic_osyncstream ( streambuf_type *buf, Allocator const &a ) :
+                basic_osyncstream ( buf )
         { }
         explicit basic_osyncstream ( streambuf_type *buf )
         {
-            std::basic_ostream<CharT, Traits>::rdbuf (
+            std::basic_ostream< CharT, Traits >::rdbuf (
                     new syncbuf_type ( buf ) );
         }
-        basic_osyncstream ( std::basic_ostream<CharT, Traits> &os,
-                            Allocator const                   &a )
-                : basic_osyncstream ( os.rdbuf ( ), a )
+        basic_osyncstream ( std::basic_ostream< CharT, Traits > &os,
+                            Allocator const &                    a ) :
+                basic_osyncstream ( os.rdbuf ( ), a )
         { }
-        explicit basic_osyncstream ( std::basic_ostream<CharT, Traits> &os )
-                : basic_osyncstream ( os.rdbuf ( ) )
+        explicit basic_osyncstream ( std::basic_ostream< CharT, Traits > &os ) :
+                basic_osyncstream ( os.rdbuf ( ) )
         { }
         basic_osyncstream ( basic_osyncstream &&other ) noexcept
         {
@@ -714,7 +719,7 @@ namespace io::base
         syncbuf_type *rdbuf ( ) const noexcept
         {
             return ( syncbuf_type * )
-                    std::basic_ostream<CharT, Traits>::rdbuf ( );
+                    std::basic_ostream< CharT, Traits >::rdbuf ( );
         }
         streambuf_type *get_wrapped ( ) const noexcept
         {
@@ -723,40 +728,40 @@ namespace io::base
 
         void emit ( )
         {
-            std::scoped_lock<std::mutex> bufferLock ( bufferMutex );
+            std::scoped_lock< std::mutex > bufferLock ( bufferMutex );
             rdbuf ( )->emit ( );
         }
     };
 
-    template class basic_syncstreambuf<defines::ChrChar>;
-    template class basic_syncstreambuf<defines::U08Char>;
-    template class basic_syncstreambuf<defines::U16Char>;
-    template class basic_syncstreambuf<defines::U32Char>;
+    template class basic_syncstreambuf< defines::ChrChar >;
+    template class basic_syncstreambuf< defines::U08Char >;
+    template class basic_syncstreambuf< defines::U16Char >;
+    template class basic_syncstreambuf< defines::U32Char >;
 
-    template class basic_osyncstream<defines::ChrChar>;
-    template class basic_osyncstream<defines::U08Char>;
-    template class basic_osyncstream<defines::U16Char>;
-    template class basic_osyncstream<defines::U32Char>;
+    template class basic_osyncstream< defines::ChrChar >;
+    template class basic_osyncstream< defines::U08Char >;
+    template class basic_osyncstream< defines::U16Char >;
+    template class basic_osyncstream< defines::U32Char >;
 
     template class SynchronizedStreamBufferImplementation<
             defines::ChrChar,
-            std::char_traits<defines::ChrChar>,
-            std::allocator<defines::ChrChar>>;
+            std::char_traits< defines::ChrChar >,
+            std::allocator< defines::ChrChar > >;
     template class SynchronizedStreamBufferImplementation<
             defines::U08Char,
-            std::char_traits<defines::U08Char>,
-            std::allocator<defines::U08Char>>;
+            std::char_traits< defines::U08Char >,
+            std::allocator< defines::U08Char > >;
     template class SynchronizedStreamBufferImplementation<
             defines::U16Char,
-            std::char_traits<defines::U16Char>,
-            std::allocator<defines::U16Char>>;
+            std::char_traits< defines::U16Char >,
+            std::allocator< defines::U16Char > >;
     template class SynchronizedStreamBufferImplementation<
             defines::U32Char,
-            std::char_traits<defines::U32Char>,
-            std::allocator<defines::U32Char>>;
+            std::char_traits< defines::U32Char >,
+            std::allocator< defines::U32Char > >;
 
-    using syncbuf      = basic_syncstreambuf<char>;
-    using wsyncbuf     = basic_syncstreambuf<wchar_t>;
-    using osyncstream  = basic_osyncstream<char>;
-    using wosyncstream = basic_osyncstream<wchar_t>;
+    using syncbuf      = basic_syncstreambuf< char >;
+    using wsyncbuf     = basic_syncstreambuf< wchar_t >;
+    using osyncstream  = basic_osyncstream< char >;
+    using wosyncstream = basic_osyncstream< wchar_t >;
 } // namespace io::base

@@ -9,28 +9,29 @@
  * above.
  *
  */
-#include <cstdint>
-#include <defines/macros.h++>
-#include <fstream>
 #include <io/unicode/character.h++>
-#include <iostream>
-#include <rapidxml-1.13/rapidxml.hpp>
-#include <sstream>
+
+#include <defines/constants.h++>
+#include <defines/macros.h++>
+#include <defines/types.h++>
 #include <test/unittester.h++>
+
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <vector>
+
+#include <rapidxml-1.13/rapidxml.hpp>
 
 using namespace io::unicode;
 using namespace defines;
 
-#define MAX_UNICODE 0x10FFFF
-#define DATA_FILE   "ucd.all.grouped.xml"
-#define DATA_PATH   "./data/unicode/"
-
-std::vector<CharacterProperties> properties = { };
+std::vector< CharacterProperties > properties = { };
 
 void initializeProperties ( );
 
-std::vector<CharacterProperties> const &io::unicode::characterProperties ( )
+std::vector< CharacterProperties > const &io::unicode::characterProperties ( )
 {
     if ( properties.empty ( ) )
     {
@@ -42,7 +43,7 @@ std::vector<CharacterProperties> const &io::unicode::characterProperties ( )
 void initializeProperties ( )
 {
     defines::EXMLDocument document;
-    defines::EFileStream  file ( DATA_PATH DATA_FILE );
+    defines::EFileStream  file ( defines::ucdDataName );
     defines::EString      contents = ES ( "" );
     while ( !file.eof ( ) )
     {
@@ -51,7 +52,7 @@ void initializeProperties ( )
         contents += temp;
     }
     file.close ( );
-    document.parse<0> ( ( defines::ECString ) contents.c_str ( ) );
+    document.parse< 0 > ( ( defines::ECString ) contents.c_str ( ) );
     defines::EXMLNode *group = document.first_node ( "ucd" )
                                        ->first_node ( "repertoire" )
                                        ->first_node ( "group" );
@@ -108,8 +109,9 @@ void initializeProperties ( )
             {
                 if ( !child->first_attribute ( "last-cp" ) )
                 {
-                    RUNTIME_ERROR ( "Found the first code point, but the last "
-                                    "code point is missing!" )
+                    RUNTIME_ERROR (
+                            "Found the first code point, but the last "
+                            "code point is missing!" )
                 }
                 // parse code point
                 auto parseCodePoint =
@@ -130,8 +132,9 @@ void initializeProperties ( )
                 }
             } else
             {
-                RUNTIME_ERROR ( "Cannot parse node: it's not a single "
-                                "character nor a range of them!" )
+                RUNTIME_ERROR (
+                        "Cannot parse node: it's not a single "
+                        "character nor a range of them!" )
             }
             child = child->next_sibling ( );
         }
@@ -156,7 +159,7 @@ bool propertyInitializationTest ( std::ostream &stream )
     characterProperties ( );
     stream << "Ensuring that the size of character properties is 0x10FFFF "
               "characters...\n";
-    if ( characterProperties ( ).size ( ) != MAX_UNICODE + 1 )
+    if ( characterProperties ( ).size ( ) != defines::maxUnicode + 1 )
     {
         CHAR_UNITTEST_FAIL ( stream,
                              "Missing or extra characters detected",
@@ -165,7 +168,7 @@ bool propertyInitializationTest ( std::ostream &stream )
                              " which indicates a Unicode range of [U+0, U+",
                              characterProperties ( ).size ( ) - 1,
                              "] instead of the expected range [U+0, U+",
-                             MAX_UNICODE )
+                             defines::maxUnicode )
         END_UNIT_FAIL ( stream )
     }
     stream << "Ensuring that emoji have a width of two columns...\n";

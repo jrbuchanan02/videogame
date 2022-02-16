@@ -16,9 +16,11 @@ generals = --std=gnu++2a
 
 ifeq ($(operating_system), windows)
 	defines = -DWINDOWS
+	clang_format = @echo "Would run clang-format-12"
 	RM = C:\msys64\usr\bin\rm.exe -f
 else
 	defines = -DLINUX
+	clang_format = clang-format-12
 	CXX = g++-10 -pthread -Wl,--no-as-needed
 endif
 
