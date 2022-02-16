@@ -63,15 +63,25 @@ io::console::ConsoleManipulator
     return [ = ] ( Console &console ) -> Console & {
         if ( at < 8 )
         {
-            console.getScreenColor ( at ) =
+            console.setScreenColor (
+                    at,
                     std::shared_ptr< colors::RGBAColor > (
-                            new colors::RGBAColor ( red, green, blue, alpha ) );
+                            new colors::RGBAColor ( red,
+                                                    green,
+                                                    blue,
+                                                    alpha ) ) );
+
         } else
         {
-            console.getCalculationColor ( at ) =
+            console.setCalculationColor (
+                    at,
                     std::shared_ptr< colors::RGBAColor > (
-                            new colors::RGBAColor ( red, green, blue, alpha ) );
+                            new colors::RGBAColor ( red,
+                                                    green,
+                                                    blue,
+                                                    alpha ) ) );
         }
+
         return console;
     };
 }
@@ -89,7 +99,7 @@ io::console::ConsoleManipulator
 {
     return [ = ] ( Console &console ) -> Console & {
         auto get = [ & ] ( std::size_t const &index )
-                -> std::shared_ptr< colors::IColor > & {
+                -> std::shared_ptr< colors::IColor > {
             if ( index < 8 )
             {
                 return console.getScreenColor ( index );
@@ -104,8 +114,15 @@ io::console::ConsoleManipulator
         std::shared_ptr< colors::IColor > fm = get ( frequencyModulation );
         std::shared_ptr< colors::IColor > am = get ( amplitudeModulation );
 
-        get ( at ) = std::shared_ptr< colors::IndirectColor > (
+        auto newColor = std::shared_ptr< colors::IndirectColor > (
                 new colors::IndirectColor ( r, g, b, a, ap, fq, fm, am ) );
+        if ( at < 8 )
+        {
+            console.setScreenColor ( at, newColor );
+        } else
+        {
+            console.setCalculationColor ( at, newColor );
+        }
         return console;
     };
 }

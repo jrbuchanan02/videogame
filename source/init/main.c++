@@ -46,8 +46,10 @@ int main ( int const argc, char const *const *const argv )
     using namespace io::console;
     Console con;
     // set up some (hopefully) flashing text
-    con << setDirectColor ( 8, 0x7F, 0x7F, 0x7F );
-    con << setIndirectColor ( 1, 8, 8, 0, 0, 0x7F, 0x7F, 0x7F );
+    con << commandDelay ( 100 );
+    con << setDirectColor ( 8, 0x30, 0x30, 0x30 );
+    con << setDirectColor ( 9, 0x7F, 0x7F, 0x7F );
+    con << setIndirectColor ( 1, 8, 9, 0, 0, 0x7F, 0x7F, 0x7F );
     con << doWaitForText << "Videogame\n";
     con << "\u001b[31mPress enter to start!\n" << noWaitForText;
     std::cin.get ( );

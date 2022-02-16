@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 

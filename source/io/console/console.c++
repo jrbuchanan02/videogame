@@ -60,13 +60,14 @@ struct io::console::Console::impl_s
     using ConsoleSize     = ConsolePoint;
     using CursorPosition  = ConsolePoint;
 
-    std::stack< CursorPosition > positionStack;
-    void                         pushCursorPosition ( );
-    void                         pullCursorPosition ( );
+    std::stack< CursorPosition >      positionStack;
+    void                              pushCursorPosition ( );
+    void                              pullCursorPosition ( );
     // data for managing the command channel
-
+    // mutex to prevent reading invalid colors
+    std::mutex                        changingColors;
     // colors onscreen.
-    std::shared_ptr< colors::IColor >                          screen [ 8 ];
+    std::shared_ptr< colors::IColor > screen [ 8 ];
     // colors used for calculating those onscreen.
     // this value is a map to allow random access and fast addition / removal
     // without reallocating the entire system.
@@ -173,10 +174,13 @@ void io::console::Console::impl_s::commandGenerator ( )
         {
             this->time -= std::numbers::pi;
         }
+        for ( auto &pcalc : colors ) { pcalc.second->refresh ( time ); }
+
         std::stringstream command;
         auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
-            std::stringstream            result;
-            defines::UnboundColor const *rawColor =
+            std::scoped_lock< std::mutex > lock ( this->changingColors );
+            std::stringstream              result;
+            defines::UnboundColor const   *rawColor =
                     this->screen [ color ]->rgba ( time );
             defines::BoundColor bound [ 4 ] = {
                     colors::bind ( rawColor [ 0 ] ),
@@ -291,7 +295,7 @@ void io::console::Console::send ( std::string const &str ) noexcept
     }
 }
 
-std::shared_ptr< io::console::colors::IColor > &
+std::shared_ptr< io::console::colors::IColor >
         io::console::Console::getScreenColor ( std::uint8_t const &index )
 {
     if ( index > 7 )
@@ -305,7 +309,7 @@ std::shared_ptr< io::console::colors::IColor > &
     }
 }
 
-std::shared_ptr< io::console::colors::IColor > &
+std::shared_ptr< io::console::colors::IColor >
         io::console::Console::getCalculationColor (
                 std::size_t const    &at,
                 colors::IColor const &deflt )
@@ -318,6 +322,22 @@ std::shared_ptr< io::console::colors::IColor > &
         pimpl->colors.insert ( std::pair { at, ( colors::IColor * ) &deflt } );
         return pimpl->colors.at ( at );
     }
+}
+
+void io::console::Console::setScreenColor (
+        std::uint8_t const                      &index,
+        std::shared_ptr< colors::IColor > const &color )
+{
+    std::scoped_lock< std::mutex > lock ( pimpl->changingColors );
+    pimpl->screen [ index & 7 ] = color;
+}
+
+void io::console::Console::setCalculationColor (
+        std::size_t const                       &index,
+        std::shared_ptr< colors::IColor > const &color )
+{
+    std::scoped_lock< std::mutex > lock ( pimpl->changingColors );
+    pimpl->colors.insert_or_assign ( index, color );
 }
 
 std::uint64_t io::console::Console::getTxtRate ( ) const noexcept

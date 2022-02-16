@@ -52,13 +52,19 @@ namespace io::console
         std::uint64_t getCmdRate ( ) const noexcept;
         void          setCmdRate ( std::uint64_t const &value ) noexcept;
 
-        std::shared_ptr< io::console::colors::IColor > &
+        std::shared_ptr< io::console::colors::IColor >
                 getScreenColor ( std::uint8_t const &index );
 
-        std::shared_ptr< io::console::colors::IColor > &getCalculationColor (
+        std::shared_ptr< io::console::colors::IColor > getCalculationColor (
                 std::size_t const &,
                 colors::IColor const &deflt =
                         colors::RGBAColor ( 0, 0, 0, 0 ) );
+
+        void setScreenColor ( std::uint8_t const                      &index,
+                              std::shared_ptr< colors::IColor > const &color );
+        void setCalculationColor (
+                std::size_t const                       &index,
+                std::shared_ptr< colors::IColor > const &color );
 
         template < class T >
         // clang-format off

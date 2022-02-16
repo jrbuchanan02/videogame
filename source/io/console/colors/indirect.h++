@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <numbers>
 #include <sstream>
