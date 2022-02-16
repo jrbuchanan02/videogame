@@ -158,4 +158,29 @@ namespace io::console::manip
         }
         return ( char * ) result;
     }
+
+    inline bool validUTF08 ( char const *const &str )
+    {
+        try
+        {
+            ( void ) widen ( str );
+            return true;
+        } catch ( std::runtime_error &rt )
+        {
+            return false;
+        }
+    }
+
+    inline bool validUTF32 ( char32_t const &c )
+    {
+        try
+        {
+            auto temp = narrow ( c );
+            delete [] temp;
+            return true;
+        } catch ( std::runtime_error &rt )
+        {
+            return false;
+        }
+    }
 } // namespace io::console::manip
