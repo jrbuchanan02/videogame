@@ -49,10 +49,12 @@ Windows 11).[^2]
    I know, does not support this command. This does not mean that Videogame will
    *never* run on a Darwin-based system, but that Videogame would lose a fundamental
    component of its engine when running on a Darwin-based system.
-3. A display capable of rendering CGA graphics (or equivalent) or later.
+3. A computer capable of approximately 5,000 floating point operations per second
+ and capable of multithreading.
+4. A display capable of rendering CGA graphics (or equivalent) or later.
    - Almost every modern device passes this requirement. It is just here for 
    completion / humor purposes.
-4. Keeping the [license](./LICENSE) file next to the executable. While Videogame
+5. Keeping the [license](./LICENSE) file next to the executable. While Videogame
 does not currently check for this license, Videogame is licensed under the GPL
 version 3.0, and my understanding of that license is that it must remain with the
 work.
@@ -60,9 +62,8 @@ work.
 1. If on Windows, having Windows Terminal installed. Windows Terminal is not 
 required to play Videogame, but it allows you to perform cool graphical tricks
 with Videogame such as setting the font, setting the starting-window size, and
-more.
-2. A display capable of housing 120 columns onscreen at once. I just like the
-widescreen effect.
+more. In general, I would recommend Windows Terminal for normal use.
+2. A display capable of housing 120 columns onscreen at once.
 
 [^1]: This measurement comes from measuring my own computer while Videogame is 
 running. It is most accurate to Windows 11 Home running on a x64-style processor
