@@ -43,6 +43,7 @@ namespace io::console::colors
             this->color [ 1 ] = _2;
             this->color [ 2 ] = _3;
             this->color [ 3 ] = _4;
+            for ( std::size_t i = 0; i < 4; i++ ) { this->basic [ i ] = 0; }
         }
         virtual ~DirectColor ( )                     = default;
         DirectColor ( DirectColor const & ) noexcept = default;
@@ -72,7 +73,7 @@ namespace io::console::colors
     class RGBAColor : public DirectColor
     {
     protected:
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 rgbaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
@@ -83,7 +84,7 @@ namespace io::console::colors
             return result;
         }
 
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmykRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -113,7 +114,7 @@ namespace io::console::colors
             return result;
         }
 
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmyaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -152,7 +153,7 @@ namespace io::console::colors
     class CMYAColor : public DirectColor
     {
     protected:
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 rgbaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -172,7 +173,7 @@ namespace io::console::colors
             }
             return result;
         }
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmykRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -196,7 +197,7 @@ namespace io::console::colors
             return result;
         }
 
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmyaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
@@ -225,7 +226,7 @@ namespace io::console::colors
     class CMYKColor : public DirectColor
     {
     protected:
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 rgbaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -256,7 +257,7 @@ namespace io::console::colors
             result [ 3 ] = 0;
             return result;
         }
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmykRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
@@ -267,7 +268,7 @@ namespace io::console::colors
             return result;
         }
 
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmyaRaw ( ) const noexcept override final
         {
             defines::UnboundColor *result =
@@ -311,4 +312,4 @@ namespace io::console::colors
         CMYKColor &operator= ( CMYKColor const & ) noexcept = default;
         CMYKColor &operator= ( CMYKColor && ) noexcept = default;
     };
-} // namespace io::console::internal::colors
+} // namespace io::console::colors

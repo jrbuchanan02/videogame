@@ -54,10 +54,13 @@
 
 #    define RUNTIME_ERROR( WHAT, ... )                                         \
         {                                                                      \
-            std::stringstream message ( "" );                                  \
+            _Pragma ( "GCC diagnostic push" )                                  \
+                    _Pragma ( "GCC diagnostic ignored \"-Wunused-value\"" )    \
+                            std::stringstream message ( "" );                  \
             message << "On LINE " << __LINE__ << " in FILE " << __FILE__       \
                     << ": " << WHAT __VA_OPT__ ( << ) __VA_ARGS__;             \
             throw std::runtime_error ( message.str ( ) );                      \
+            _Pragma ( "GCC diagnostic pop" )                                   \
         }
 
 #    define CATCH_AND_GIVE_LINE( Exception, ... )                              \

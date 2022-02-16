@@ -36,7 +36,6 @@ namespace io::console
         std::unique_ptr< impl_s > pimpl;
 
         void send ( std::string const &str ) noexcept;
-        
     public:
         Console ( );
         virtual ~Console ( );
@@ -45,6 +44,18 @@ namespace io::console
         void          setCols ( std::uint32_t const &value ) noexcept;
         std::uint32_t getRows ( ) const noexcept;
         void          setRows ( std::uint32_t const &value ) noexcept;
+
+        std::uint64_t getTxtRate ( ) const noexcept;
+        void          setTxtRate ( std::uint64_t const &value ) noexcept;
+        std::uint64_t getCmdRate ( ) const noexcept;
+        void          setCmdRate ( std::uint64_t const &value ) noexcept;
+
+        colors::IColor *&getScreenColor ( std::uint8_t const &index );
+
+        colors::IColor *&getCalculationColor (
+                std::size_t const &,
+                colors::IColor const &deflt =
+                        colors::RGBAColor ( 0, 0, 0, 0 ) );
 
         template < class T >
         // clang-format off
