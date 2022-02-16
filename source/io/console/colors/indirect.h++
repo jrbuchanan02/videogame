@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <numbers>
 #include <sstream>
@@ -45,12 +46,11 @@ namespace io::console::colors
                      defines::UnboundColor const &frequencyModulation,
                      defines::UnboundColor const &amplitudeModulation )
                 -> defines::UnboundColor {
-            return basic
-                 + amplitude
-                           * ( std::sin ( 2 * std::numbers::pi * frequency
-                                                  * time
-                                          + frequencyModulation )
-                               + amplitudeModulation );
+            defines::UnboundColor omega = 2 * std::numbers::pi * frequency;
+            defines::UnboundColor phi =
+                    frequencyModulation * 2 * std::numbers::pi;
+            return basic + amplitude * std::sin ( omega * time + phi )
+                 + amplitude * amplitudeModulation;
         };
 
         static inline BlendFunction averageAdjust =
@@ -141,7 +141,9 @@ namespace io::console::colors
                 IColor ( ),
                 delta ( amplitude ), fmMod ( freqModulation ),
                 amMod ( ampModulation ), freqs ( frequency )
-        { }
+        {
+            this->refresh ( );
+        }
         IndirectColor (
                 defines::UnboundColor const     &r,
                 defines::UnboundColor const     &g,
@@ -160,13 +162,14 @@ namespace io::console::colors
             this->basic [ 1 ] = g;
             this->basic [ 2 ] = b;
             this->basic [ 3 ] = a;
+            this->refresh ( );
         }
         IndirectColor ( IndirectColor const & ) noexcept = default;
         IndirectColor ( IndirectColor && ) noexcept      = default;
         IndirectColor &operator= ( IndirectColor const & ) noexcept = default;
         IndirectColor &operator= ( IndirectColor && ) noexcept = default;
 
-        void refresh ( double const &time = 0 ) const noexcept
+        void refresh ( double const &time = 0 ) const noexcept override final
         {
             auto deltas = delta->rgba ( time );
             auto fmMods = fmMod->rgba ( time );

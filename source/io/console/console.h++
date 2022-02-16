@@ -40,6 +40,8 @@ namespace io::console
         Console ( );
         virtual ~Console ( );
 
+        void setWaitOnText ( bool const & ) noexcept;
+
         std::uint32_t getCols ( ) const noexcept;
         void          setCols ( std::uint32_t const &value ) noexcept;
         std::uint32_t getRows ( ) const noexcept;
@@ -50,13 +52,19 @@ namespace io::console
         std::uint64_t getCmdRate ( ) const noexcept;
         void          setCmdRate ( std::uint64_t const &value ) noexcept;
 
-        std::shared_ptr< io::console::colors::IColor > &
+        std::shared_ptr< io::console::colors::IColor >
                 getScreenColor ( std::uint8_t const &index );
 
-        std::shared_ptr< io::console::colors::IColor > &getCalculationColor (
+        std::shared_ptr< io::console::colors::IColor > getCalculationColor (
                 std::size_t const &,
                 colors::IColor const &deflt =
                         colors::RGBAColor ( 0, 0, 0, 0 ) );
+
+        void setScreenColor ( std::uint8_t const                      &index,
+                              std::shared_ptr< colors::IColor > const &color );
+        void setCalculationColor (
+                std::size_t const                       &index,
+                std::shared_ptr< colors::IColor > const &color );
 
         template < class T >
         // clang-format off
@@ -67,7 +75,7 @@ namespace io::console
              && !std::is_same_v < T, char8_t > 
              && !std::is_same_v < T, char16_t > 
              && !std::is_same_v < T, char32_t > 
-             && !std::is_same_v < T, ConsoleManipulator > )
+             && !std::is_invocable_r_v< Console &, T, Console & > )
         {
             // clang-format on
             std::stringstream temp;
@@ -132,7 +140,7 @@ namespace io::console
 
         template < class T >
         Console &operator<< ( T const &t ) requires (
-                std::is_same_v< T, ConsoleManipulator > )
+                std::is_invocable_r_v< Console &, T, Console & > )
         {
             return t ( *this );
         }

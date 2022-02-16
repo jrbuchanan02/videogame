@@ -14,6 +14,7 @@
 #include <defines/types.h++>
 #include <test/unittester.h++>
 
+#include <io/console/conmanip.h++>
 #include <io/console/console.h++>
 
 #include <iostream>
@@ -44,8 +45,20 @@ int main ( int const argc, char const *const *const argv )
     }
     using namespace io::console;
     Console con;
-    con << "Videogame has exited. Press enter to close the window or return to "
-           "the shell.\n";
+    // set up some (hopefully) flashing text
+    con << setDirectColor ( 8, 1, 1, 1 );
+    con << setDirectColor ( 9, 0, 0x80, 0x80, 0x80 );
+    con << setDirectColor ( 10, 0, 0, 0 );
+    con << setIndirectColor ( 1, 9, 8, 10, 10, 0x7F, 0x7F, 0x7F );
+    con << setBaseComponent ( 2, 0xC0, 0xFF, 0xEE );
+    con << commandDelay ( 100 );
+    con << doWaitForText << "Videogame\n";
+    con << "\u001b[31mPress enter to start!\n" << noWaitForText;
+    std::cin.get ( );
+    // cute little easter-egg in that it's the color "Coffee" (even though it
+    // looks minty)
+    con << "\u001b[32mVideogame has exited. Press enter to close the window or "
+           "return to the shell.\n";
     std::cin.get ( );
     return 0;
 }

@@ -20,6 +20,7 @@
 #include <io/console/colors/indirect.h++>
 #include <io/console/internal/channel.h++>
 #include <io/console/manip/stringfunctions.h++>
+#include <io/unicode/character.h++>
 
 #include <atomic>
 #include <chrono>
@@ -59,19 +60,20 @@ struct io::console::Console::impl_s
     using ConsoleSize     = ConsolePoint;
     using CursorPosition  = ConsolePoint;
 
-    std::stack< CursorPosition > positionStack;
-    void                         pushCursorPosition ( );
-    void                         pullCursorPosition ( );
+    std::stack< CursorPosition >      positionStack;
+    void                              pushCursorPosition ( );
+    void                              pullCursorPosition ( );
     // data for managing the command channel
-
+    // mutex to prevent reading invalid colors
+    // std::mutex                        changingColors;
     // colors onscreen.
-    std::shared_ptr< colors::IColor >                          screen [ 8 ];
+    std::shared_ptr< colors::IColor > screen [ 8 ];
     // colors used for calculating those onscreen.
     // this value is a map to allow random access and fast addition / removal
     // without reallocating the entire system.
     std::map< std::size_t, std::shared_ptr< colors::IColor > > colors;
     // "now" so-to-speak.
-    double                                                     time;
+    double                                                     time = 0;
     // thread which feeds the cmd channel with the commands.
     std::jthread                                               commands;
     // boolean to tell the jthread that it's time to shut down when
@@ -84,6 +86,9 @@ struct io::console::Console::impl_s
     // just some general data
     ConsoleSize consoleSize = { 25, 80 };
 
+    // internal flag to block a thread until the text channel has caught up.
+    bool waitOnTextChannel = false;
+
     impl_s ( ) noexcept
     {
         // txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal )
@@ -91,13 +96,24 @@ struct io::console::Console::impl_s
         // std::atomic_bool > ( &readySignal ) ); std::cout << "here\n";
         for ( std::size_t i = 0; i < 8; i++ )
         {
-            screen [ i ] =
-                    std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
+            screen [ i ] = std::shared_ptr< colors::RGBAColor > (
+                    new colors::RGBAColor (
                             defines::defaultConsoleColors [ i ][ 0 ],
                             defines::defaultConsoleColors [ i ][ 1 ],
                             defines::defaultConsoleColors [ i ][ 2 ],
                             0xFF ) );
         }
+
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            for ( std::size_t j = 0; j < 3; j++ )
+            {
+                screen [ i ]->setBasicComponent (
+                        j,
+                        defines::defaultConsoleColors [ i ][ j ] );
+            }
+        }
+
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
         commands.detach ( );
         // TODO: insert console initialization routine.
@@ -164,15 +180,12 @@ void io::console::Console::impl_s::commandGenerator ( )
     using namespace std::chrono_literals;
     while ( !this->stopSignal.load ( ) )
     {
-
         this->time += 0.1;
-        if ( this->time > std::numbers::pi * 2 )
-        {
-            this->time -= std::numbers::pi;
-        }
+
         std::stringstream command;
         auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
-            std::stringstream            result;
+            std::stringstream result;
+            this->screen [ color ]->refresh ( time );
             defines::UnboundColor const *rawColor =
                     this->screen [ color ]->rgba ( time );
             defines::BoundColor bound [ 4 ] = {
@@ -181,13 +194,14 @@ void io::console::Console::impl_s::commandGenerator ( )
                     colors::bind ( rawColor [ 2 ] ),
                     colors::bind ( rawColor [ 3 ] ),
             };
-            delete [] rawColor;
+
             defines::SentColor sent [ 4 ] = {
                     defines::SentColor ( bound [ 0 ] ),
                     defines::SentColor ( bound [ 1 ] ),
                     defines::SentColor ( bound [ 2 ] ),
                     defines::SentColor ( bound [ 3 ] ),
             };
+
             result << "\u001b]" << defines::paletteChangePrefix << std::hex;
             result << color << defines::paletteChangeSpecif;
             for ( std::size_t i = 0; i < 2; i++ )
@@ -195,6 +209,7 @@ void io::console::Console::impl_s::commandGenerator ( )
                 result << sent [ i ] << defines::paletteChangeDelimt;
             }
             result << sent [ 2 ] << "\u001b\\";
+            delete [] rawColor;
             return result.str ( );
         };
 
@@ -262,14 +277,32 @@ void io::console::Console::setRows ( std::uint32_t const &value ) noexcept
 
 void io::console::Console::send ( std::string const &str ) noexcept
 {
-    std::scoped_lock< std::mutex > lock ( pimpl->sending );
-    for ( auto &cp : manip::splitByCodePoint ( str ) )
+    std::shared_ptr< bool > lastToken;
     {
-        pimpl->txt.pushString ( cp );
+        for ( auto &cp : manip::splitByCodePoint ( str ) )
+        {
+            // check for emoji. Their graphical representation is two columns
+            // wide on windows-systems, the cursor only moves one column across.
+            std::string temp = cp;
+            char32_t    c    = manip::widen ( temp.c_str ( ) );
+            if ( unicode::characterProperties ( ).at ( c ).emoji )
+            {
+                temp += "\u001b[C";
+            }
+
+            lastToken = pimpl->txt.pushString ( temp );
+        }
+    }
+    if ( pimpl->waitOnTextChannel )
+    {
+        while ( !*lastToken )
+        {
+            std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
+        }
     }
 }
 
-std::shared_ptr< io::console::colors::IColor > &
+std::shared_ptr< io::console::colors::IColor >
         io::console::Console::getScreenColor ( std::uint8_t const &index )
 {
     if ( index > 7 )
@@ -283,7 +316,7 @@ std::shared_ptr< io::console::colors::IColor > &
     }
 }
 
-std::shared_ptr< io::console::colors::IColor > &
+std::shared_ptr< io::console::colors::IColor >
         io::console::Console::getCalculationColor (
                 std::size_t const    &at,
                 colors::IColor const &deflt )
@@ -296,6 +329,20 @@ std::shared_ptr< io::console::colors::IColor > &
         pimpl->colors.insert ( std::pair { at, ( colors::IColor * ) &deflt } );
         return pimpl->colors.at ( at );
     }
+}
+
+void io::console::Console::setScreenColor (
+        std::uint8_t const                      &index,
+        std::shared_ptr< colors::IColor > const &color )
+{
+    pimpl->screen [ index & 7 ] = color;
+}
+
+void io::console::Console::setCalculationColor (
+        std::size_t const                       &index,
+        std::shared_ptr< colors::IColor > const &color )
+{
+    pimpl->colors.insert_or_assign ( index, color );
 }
 
 std::uint64_t io::console::Console::getTxtRate ( ) const noexcept
@@ -312,5 +359,10 @@ std::uint64_t io::console::Console::getCmdRate ( ) const noexcept
 }
 void io::console::Console::setCmdRate ( std::uint64_t const &value ) noexcept
 {
-    pimpl->txt.setDelay ( value );
+    pimpl->cmd.setDelay ( value );
+}
+
+void io::console::Console::setWaitOnText ( bool const &value ) noexcept
+{
+    pimpl->waitOnTextChannel = value;
 }

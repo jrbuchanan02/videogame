@@ -35,7 +35,14 @@ namespace io::console::internal
         void                setDelay ( std::uint64_t const &delay ) noexcept;
         std::uint64_t const getDelay ( ) const noexcept;
 
-        void pushString ( std::string const &string ) noexcept;
+        /**
+         * @brief Pushes a string onto the internal queue and gives you a token 
+         * that will evaluate to true when the string has been serviced.
+         * 
+         * @param string 
+         * @return std::shared_ptr<bool> 
+         */
+        std::shared_ptr<bool> pushString ( std::string const &string ) noexcept;
 
         void setReady ( SharedFlag const &ready ) noexcept;
     };

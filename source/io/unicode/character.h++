@@ -26,6 +26,8 @@ namespace io::unicode
         B ( columns )
         // 0 -> non-control character, 1-> control character
         B ( control )
+        // 0 -> not emoji, 1 -> emoji
+        B ( emoji )
         // 0 -> does not "want" a line break, 1-> "wants" a line break
         B ( wantsLB )
         // 0 -> wantsLB is a preference, 1-> wantsLB is a requirement
