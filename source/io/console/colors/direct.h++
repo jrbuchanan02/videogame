@@ -44,7 +44,10 @@ namespace io::console::colors
             this->color [ 1 ] = _2;
             this->color [ 2 ] = _3;
             this->color [ 3 ] = _4;
-            for ( std::size_t i = 0; i < 4; i++ ) { this->basic [ i ] = 0; }
+            for ( std::size_t i = 0; i < 4; i++ )
+            {
+                this->basic [ i ] = this->color [ i ];
+            }
         }
         virtual ~DirectColor ( )                     = default;
         DirectColor ( DirectColor const & ) noexcept = default;

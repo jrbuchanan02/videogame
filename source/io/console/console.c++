@@ -65,7 +65,7 @@ struct io::console::Console::impl_s
     void                              pullCursorPosition ( );
     // data for managing the command channel
     // mutex to prevent reading invalid colors
-    std::mutex                        changingColors;
+    // std::mutex                        changingColors;
     // colors onscreen.
     std::shared_ptr< colors::IColor > screen [ 8 ];
     // colors used for calculating those onscreen.
@@ -73,7 +73,7 @@ struct io::console::Console::impl_s
     // without reallocating the entire system.
     std::map< std::size_t, std::shared_ptr< colors::IColor > > colors;
     // "now" so-to-speak.
-    double                                                     time;
+    double                                                     time = 0;
     // thread which feeds the cmd channel with the commands.
     std::jthread                                               commands;
     // boolean to tell the jthread that it's time to shut down when
@@ -96,13 +96,24 @@ struct io::console::Console::impl_s
         // std::atomic_bool > ( &readySignal ) ); std::cout << "here\n";
         for ( std::size_t i = 0; i < 8; i++ )
         {
-            screen [ i ] =
-                    std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
+            screen [ i ] = std::shared_ptr< colors::RGBAColor > (
+                    new colors::RGBAColor (
                             defines::defaultConsoleColors [ i ][ 0 ],
                             defines::defaultConsoleColors [ i ][ 1 ],
                             defines::defaultConsoleColors [ i ][ 2 ],
                             0xFF ) );
         }
+
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            for ( std::size_t j = 0; j < 3; j++ )
+            {
+                screen [ i ]->setBasicComponent (
+                        j,
+                        defines::defaultConsoleColors [ i ][ j ] );
+            }
+        }
+
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
         commands.detach ( );
         // TODO: insert console initialization routine.
@@ -170,17 +181,12 @@ void io::console::Console::impl_s::commandGenerator ( )
     while ( !this->stopSignal.load ( ) )
     {
         this->time += 0.1;
-        if ( this->time > std::numbers::pi * 2 )
-        {
-            this->time -= std::numbers::pi;
-        }
-        for ( auto &pcalc : colors ) { pcalc.second->refresh ( time ); }
 
         std::stringstream command;
         auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
-            std::scoped_lock< std::mutex > lock ( this->changingColors );
-            std::stringstream              result;
-            defines::UnboundColor const   *rawColor =
+            std::stringstream result;
+            this->screen [ color ]->refresh ( time );
+            defines::UnboundColor const *rawColor =
                     this->screen [ color ]->rgba ( time );
             defines::BoundColor bound [ 4 ] = {
                     colors::bind ( rawColor [ 0 ] ),
@@ -188,13 +194,14 @@ void io::console::Console::impl_s::commandGenerator ( )
                     colors::bind ( rawColor [ 2 ] ),
                     colors::bind ( rawColor [ 3 ] ),
             };
-            delete [] rawColor;
+
             defines::SentColor sent [ 4 ] = {
                     defines::SentColor ( bound [ 0 ] ),
                     defines::SentColor ( bound [ 1 ] ),
                     defines::SentColor ( bound [ 2 ] ),
                     defines::SentColor ( bound [ 3 ] ),
             };
+
             result << "\u001b]" << defines::paletteChangePrefix << std::hex;
             result << color << defines::paletteChangeSpecif;
             for ( std::size_t i = 0; i < 2; i++ )
@@ -202,6 +209,7 @@ void io::console::Console::impl_s::commandGenerator ( )
                 result << sent [ i ] << defines::paletteChangeDelimt;
             }
             result << sent [ 2 ] << "\u001b\\";
+            delete [] rawColor;
             return result.str ( );
         };
 
@@ -271,7 +279,6 @@ void io::console::Console::send ( std::string const &str ) noexcept
 {
     std::shared_ptr< bool > lastToken;
     {
-        std::scoped_lock< std::mutex > lock ( pimpl->sending );
         for ( auto &cp : manip::splitByCodePoint ( str ) )
         {
             // check for emoji. Their graphical representation is two columns
@@ -328,7 +335,6 @@ void io::console::Console::setScreenColor (
         std::uint8_t const                      &index,
         std::shared_ptr< colors::IColor > const &color )
 {
-    std::scoped_lock< std::mutex > lock ( pimpl->changingColors );
     pimpl->screen [ index & 7 ] = color;
 }
 
@@ -336,7 +342,6 @@ void io::console::Console::setCalculationColor (
         std::size_t const                       &index,
         std::shared_ptr< colors::IColor > const &color )
 {
-    std::scoped_lock< std::mutex > lock ( pimpl->changingColors );
     pimpl->colors.insert_or_assign ( index, color );
 }
 
@@ -354,7 +359,7 @@ std::uint64_t io::console::Console::getCmdRate ( ) const noexcept
 }
 void io::console::Console::setCmdRate ( std::uint64_t const &value ) noexcept
 {
-    pimpl->txt.setDelay ( value );
+    pimpl->cmd.setDelay ( value );
 }
 
 void io::console::Console::setWaitOnText ( bool const &value ) noexcept
