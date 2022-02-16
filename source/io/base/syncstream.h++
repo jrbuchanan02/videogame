@@ -179,7 +179,7 @@ namespace io::base
                                                       container;
         std::mutex                                    bufferMutex;
         std::mutex                                    streamMutex;
-        std::basic_streambuf< CharT, Traits > *       stream;
+        std::basic_streambuf< CharT, Traits >        *stream;
         std::basic_string< CharT, Traits, Allocator > buffer;
         std::atomic_bool                              emitOnSync = false;
 
@@ -306,8 +306,9 @@ namespace io::base
             container.doRegister ( obuf );
         }
         basic_syncstreambuf ( std::basic_streambuf< CharT, Traits > *obuf,
-                              Allocator const &                      a ) :
-                basic_syncstreambuf ( obuf )
+                              Allocator const                       &a ) :
+                stream ( obuf ),
+                buffer ( a )
         { }
         basic_syncstreambuf ( basic_syncstreambuf &&that )
         {
@@ -411,7 +412,10 @@ namespace io::base
          * the allocator given to us.
          * @return Allocator the allocator.
          */
-        Allocator get_allocator ( ) const noexcept { return Allocator ( ); }
+        Allocator get_allocator ( ) const noexcept
+        {
+            return buffer.get_allocator ( );
+        }
 
         /**
          * @brief Enables or disables the setting to emit when we receive the
@@ -697,7 +701,7 @@ namespace io::base
                     new syncbuf_type ( buf ) );
         }
         basic_osyncstream ( std::basic_ostream< CharT, Traits > &os,
-                            Allocator const &                    a ) :
+                            Allocator const                     &a ) :
                 basic_osyncstream ( os.rdbuf ( ), a )
         { }
         explicit basic_osyncstream ( std::basic_ostream< CharT, Traits > &os ) :
