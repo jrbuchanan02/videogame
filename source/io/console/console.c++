@@ -39,11 +39,11 @@ struct io::console::Console::impl_s
     // to a race condition where text may be interleaved if sent to
     // the text channel.
     std::mutex            sending;
-    internal::TextChannel txt;
-    internal::TextChannel cmd;
+    std::atomic_bool mutable readySignal = false;
+    internal::TextChannel txt { internal::TextChannel::SharedFlag(&readySignal) };
+    internal::TextChannel cmd { internal::TextChannel::SharedFlag(&readySignal) };
 
     // data for managing the two channels.
-    std::atomic_bool mutable readySignal = false;
     std::chrono::milliseconds maxDelay ( ) const noexcept;
     void                      ensureStopped ( ) const noexcept;
     // data for managing the text channel
@@ -84,10 +84,14 @@ struct io::console::Console::impl_s
 
     impl_s ( ) noexcept
     {
-        txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
-        cmd.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
+        std::cout << "here\n";
+        //txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
+        //std::cout << "here\n";
+        //cmd.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
+        //std::cout << "here\n";
         for ( std::size_t i = 0; i < 8; i++ )
         {
+            std::cout << "here " << i << "\n";
             screen [ i ] =
                     std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
                             defines::defaultConsoleColors [ i ][ 0 ],
@@ -95,11 +99,16 @@ struct io::console::Console::impl_s
                             defines::defaultConsoleColors [ i ][ 2 ],
                             0xFF ) );
         }
+        std::cout << "here\n";
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
+        std::cout << "here\n";
         commands.detach ( );
+        std::cout << "here\n";
         // TODO: insert console initialization routine.
         // TODO: reset console
+        std::cout << "here\n";
         readySignal.store ( true );
+        std::cout << "here\n";
     }
 
     ~impl_s ( )

@@ -78,7 +78,8 @@ void io::console::internal::TextChannel::pushString (
 void io::console::internal::TextChannel::setReady (
         SharedFlag const &ready ) noexcept
 {
-    this->pimpl->ready = ready;
+    std::cout << "here\n";
+    this->pimpl->ready = std::shared_ptr< std::atomic_bool > ( ready.get ( ) );
 }
 
 void io::console::internal::TextChannel::impl_s::spin ( SharedFlag const &watch,
