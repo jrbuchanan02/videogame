@@ -79,14 +79,14 @@ feature-updates to windows provde support for these commands.
 
 ## Roadmap:
 Here are the steps in our roadmap. As Videogame gets more complete, the roadmap
-will become more fleshed out. However, the basic todo-list has taken shape. Items
-marked with x are incomplete, items marked with a ~ are in progress, and items
-without an x or ~ are complete.
+will become more fleshed out. However, the basic todo-list has taken shape. Items 
+checked off are fully complete. Items checked off but also crossed out might be 
+complete but have not been thouroughly (however you spell that word) tested.
 
 1. [ ] The Console Window
-   - [ ] The ability to output text at a specified rate with the following 
+   - ~[x]~ The ability to output text at a specified rate with the following 
    control over it in addition to the control provided by the Terminal Sequences:
-      + [ ] Exact color of the eight indexed colors and their movements over 
+      + ~[x]~ Exact color of the eight indexed colors and their movements over 
       a specified time.
          * Movements must allow multiple sweeps to both directly specified (rgb-value)
          colors and to indirectly specified (other colors we're potentially changing
