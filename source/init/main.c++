@@ -44,7 +44,6 @@ int main ( int const argc, char const *const *const argv )
     }
     using namespace io::console;
     Console con;
-
     con << "Videogame has exited. Press enter to close the window or return to "
            "the shell.\n";
     std::cin.get ( );

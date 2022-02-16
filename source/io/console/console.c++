@@ -156,6 +156,7 @@ void io::console::Console::impl_s::commandGenerator ( )
     while ( !this->stopSignal.load ( ) )
     {
         std::cout << "Beginning calculation...\n";
+
         this->time += 0.1;
         if ( this->time > std::numbers::pi * 2 )
         {
