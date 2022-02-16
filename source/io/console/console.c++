@@ -65,12 +65,15 @@ struct io::console::Console::impl_s
     // data for managing the command channel
 
     // colors onscreen.
+    std::shared_ptr< colors::IColor >                          screen [ 8 ];
     // colors used for calculating those onscreen.
     // this value is a map to allow random access and fast addition / removal
     // without reallocating the entire system.
     std::map< std::size_t, std::shared_ptr< colors::IColor > > colors;
     // "now" so-to-speak.
+    double                                                     time;
     // thread which feeds the cmd channel with the commands.
+    std::jthread                                               commands;
     // boolean to tell the jthread that it's time to shut down when
     // the console is destructed
     std::atomic_bool mutable stopSignal = false;
@@ -88,6 +91,12 @@ struct io::console::Console::impl_s
         // std::atomic_bool > ( &readySignal ) ); std::cout << "here\n";
         for ( std::size_t i = 0; i < 8; i++ )
         {
+            screen [ i ] =
+                    std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
+                            defines::defaultConsoleColors [ i ][ 0 ],
+                            defines::defaultConsoleColors [ i ][ 1 ],
+                            defines::defaultConsoleColors [ i ][ 2 ],
+                            0xFF ) );
         }
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
         commands.detach ( );
@@ -155,7 +164,6 @@ void io::console::Console::impl_s::commandGenerator ( )
     using namespace std::chrono_literals;
     while ( !this->stopSignal.load ( ) )
     {
-        std::cout << "Beginning calculation...\n";
 
         this->time += 0.1;
         if ( this->time > std::numbers::pi * 2 )
@@ -261,7 +269,7 @@ void io::console::Console::send ( std::string const &str ) noexcept
     }
 }
 
-io::console::colors::IColor *&
+std::shared_ptr< io::console::colors::IColor > &
         io::console::Console::getScreenColor ( std::uint8_t const &index )
 {
     if ( index > 7 )
@@ -275,9 +283,10 @@ io::console::colors::IColor *&
     }
 }
 
-io::console::colors::IColor *&io::console::Console::getCalculationColor (
-        std::size_t const    &at,
-        colors::IColor const &deflt )
+std::shared_ptr< io::console::colors::IColor > &
+        io::console::Console::getCalculationColor (
+                std::size_t const    &at,
+                colors::IColor const &deflt )
 {
     if ( pimpl->colors.contains ( at ) )
     {
