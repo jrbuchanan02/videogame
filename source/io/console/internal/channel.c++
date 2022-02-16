@@ -31,7 +31,8 @@ struct io::console::internal::TextChannel::impl_s
 {
     io::base::osyncstream                    stream { std::cout.rdbuf ( ) };
     std::queue< std::string >                queue { };
-    std::atomic< std::chrono::milliseconds > delay = 100ms;
+    // default to a bit less than 60 characters per second.
+    std::atomic< std::chrono::milliseconds > delay = 17ms;
     std::jthread                             thread;
     std::atomic_bool                         stop;
     SharedFlag                               ready;
@@ -78,7 +79,6 @@ void io::console::internal::TextChannel::pushString (
 void io::console::internal::TextChannel::setReady (
         SharedFlag const &ready ) noexcept
 {
-    std::cout << "here\n";
     this->pimpl->ready = std::shared_ptr< std::atomic_bool > ( ready.get ( ) );
 }
 
@@ -92,7 +92,7 @@ void io::console::internal::TextChannel::impl_s::wait ( bool const &checkStop )
 {
     auto now   = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
     auto start = now ( );
-    while ( now ( ) - start > delay.load ( ) )
+    while ( now ( ) - start < delay.load ( ) )
     {
         if ( checkStop && stop.load ( ) )
         {

@@ -38,12 +38,12 @@ namespace io::console::colors
                 defines::UnboundColor const & ) >;
 
         static inline BlendFunction defaultBlending =
-                [ ] ( double const                &time,
-                        defines::UnboundColor const &basic,
-                        defines::UnboundColor const &amplitude,
-                        defines::UnboundColor const &frequency,
-                        defines::UnboundColor const &frequencyModulation,
-                        defines::UnboundColor const &amplitudeModulation )
+                [] ( double const                &time,
+                     defines::UnboundColor const &basic,
+                     defines::UnboundColor const &amplitude,
+                     defines::UnboundColor const &frequency,
+                     defines::UnboundColor const &frequencyModulation,
+                     defines::UnboundColor const &amplitudeModulation )
                 -> defines::UnboundColor {
             return basic
                  + amplitude
@@ -54,12 +54,12 @@ namespace io::console::colors
         };
 
         static inline BlendFunction averageAdjust =
-                [ ] ( double const &,
-                        defines::UnboundColor const &basic,
-                        defines::UnboundColor const &amplitude,
-                        defines::UnboundColor const &frequency,
-                        defines::UnboundColor const &frequencyModulation,
-                        defines::UnboundColor const &amplitudeModulation )
+                [] ( double const &,
+                     defines::UnboundColor const &basic,
+                     defines::UnboundColor const &amplitude,
+                     defines::UnboundColor const &frequency,
+                     defines::UnboundColor const &frequencyModulation,
+                     defines::UnboundColor const &amplitudeModulation )
                 -> defines::UnboundColor {
             return basic
                  + ( amplitude + frequency + frequencyModulation
@@ -68,12 +68,12 @@ namespace io::console::colors
         };
 
         static inline BlendFunction fullAverage =
-                [ ] ( double const &,
-                        defines::UnboundColor const &basic,
-                        defines::UnboundColor const &amplitude,
-                        defines::UnboundColor const &frequency,
-                        defines::UnboundColor const &frequencyModulation,
-                        defines::UnboundColor const &amplitudeModulation )
+                [] ( double const &,
+                     defines::UnboundColor const &basic,
+                     defines::UnboundColor const &amplitude,
+                     defines::UnboundColor const &frequency,
+                     defines::UnboundColor const &frequencyModulation,
+                     defines::UnboundColor const &amplitudeModulation )
                 -> defines::UnboundColor {
             return ( basic + amplitude + frequency + frequencyModulation
                      + amplitudeModulation )
@@ -101,7 +101,7 @@ namespace io::console::colors
         blend_functions::BlendFunction blender =
                 blend_functions::defaultBlending;
     protected:
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 rgbaRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],
@@ -110,7 +110,7 @@ namespace io::console::colors
                                this->color [ 3 ] )
                     .rgba ( );
         }
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmyaRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],
@@ -119,7 +119,7 @@ namespace io::console::colors
                                this->color [ 3 ] )
                     .cmya ( );
         }
-        virtual defines::UnboundColor const *const 
+        virtual defines::UnboundColor const *const
                 cmykRaw ( ) const noexcept override final
         {
             return RGBAColor ( this->color [ 0 ],
@@ -215,5 +215,16 @@ namespace io::console::colors
                 }
             }
         }
+
+        blend_functions::BlendFunction const &
+                getBlendFunction ( ) const noexcept
+        {
+            return blender;
+        }
+        void setBlendFunction (
+                blend_functions::BlendFunction const &blender ) noexcept
+        {
+            this->blender = blender;
+        }
     };
-} // namespace io::console::internal::colors
+} // namespace io::console::colors

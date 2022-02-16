@@ -38,10 +38,12 @@ struct io::console::Console::impl_s
     // our implementation of splitting by code point opened th door
     // to a race condition where text may be interleaved if sent to
     // the text channel.
-    std::mutex            sending;
+    std::mutex sending;
     std::atomic_bool mutable readySignal = false;
-    internal::TextChannel txt { internal::TextChannel::SharedFlag(&readySignal) };
-    internal::TextChannel cmd { internal::TextChannel::SharedFlag(&readySignal) };
+    internal::TextChannel txt {
+            internal::TextChannel::SharedFlag ( &readySignal ) };
+    internal::TextChannel cmd {
+            internal::TextChannel::SharedFlag ( &readySignal ) };
 
     // data for managing the two channels.
     std::chrono::milliseconds maxDelay ( ) const noexcept;
@@ -84,14 +86,11 @@ struct io::console::Console::impl_s
 
     impl_s ( ) noexcept
     {
-        std::cout << "here\n";
-        //txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
-        //std::cout << "here\n";
-        //cmd.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal ) );
-        //std::cout << "here\n";
+        // txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal )
+        // ); std::cout << "here\n"; cmd.setReady ( std::shared_ptr<
+        // std::atomic_bool > ( &readySignal ) ); std::cout << "here\n";
         for ( std::size_t i = 0; i < 8; i++ )
         {
-            std::cout << "here " << i << "\n";
             screen [ i ] =
                     std::shared_ptr< colors::IColor > ( new colors::RGBAColor (
                             defines::defaultConsoleColors [ i ][ 0 ],
@@ -99,16 +98,11 @@ struct io::console::Console::impl_s
                             defines::defaultConsoleColors [ i ][ 2 ],
                             0xFF ) );
         }
-        std::cout << "here\n";
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
-        std::cout << "here\n";
         commands.detach ( );
-        std::cout << "here\n";
         // TODO: insert console initialization routine.
         // TODO: reset console
-        std::cout << "here\n";
         readySignal.store ( true );
-        std::cout << "here\n";
     }
 
     ~impl_s ( )
@@ -207,7 +201,7 @@ void io::console::Console::impl_s::commandGenerator ( )
 
         auto now   = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
         auto start = now ( );
-        while ( now ( ) - start > operator""ms ( this->cmd.getDelay ( ) ) )
+        while ( now ( ) - start < operator""ms ( this->cmd.getDelay ( ) ) )
         {
             if ( this->stopSignal.load ( ) )
             {
@@ -224,7 +218,7 @@ void io::console::Console::impl_s::commandGenerator ( )
         {
             auto now = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
             auto start = now ( );
-            while ( now ( ) - start > operator""ms ( this->cmd.getDelay ( ) ) )
+            while ( now ( ) - start < operator""ms ( this->cmd.getDelay ( ) ) )
             {
                 if ( this->stopSignal.load ( ) )
                 {

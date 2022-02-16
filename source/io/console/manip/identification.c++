@@ -346,6 +346,14 @@ std::vector< std::string >
     return result;
 }
 
+std::vector< std::string >
+        io::console::manip::splitByCodePoint ( std::u8string str )
+{
+    std::string temp = "";
+    for ( char8_t &c : str ) { temp += ( char ) c; }
+    return splitByCodePoint ( temp );
+}
+
 #define INCORRECT_SEQUENCE( TRANS, EXPECT, ... )                               \
     CHAR_UNITTEST_FAIL ( stream,                                               \
                          "Incorrect Labeling",                                 \

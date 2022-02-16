@@ -12,14 +12,12 @@
 #include <defines/constants.h++>
 #include <defines/macros.h++>
 #include <defines/types.h++>
-#include <io/base/syncstream.h++>
-#include <io/unicode/character.h++>
 #include <test/unittester.h++>
 
 #include <io/console/console.h++>
 
-
 #include <iostream>
+#include <string>
 
 #ifdef WINDOWS
 #    include "windows.h"
@@ -32,16 +30,23 @@ int main ( int const argc, char const *const *const argv )
 #ifdef WINDOWS
     SetConsoleOutputCP ( 65001 );
 #endif
-    dumpInformation ( argc, argv );
+    for ( int i = 0; i < argc; i++ )
+    {
+        if ( std::string ( argv [ i ] ) == "--unittest" )
+        {
+            test::runUnittests ( std::cout );
+            std::cin.get ( );
+        } else if ( std::string ( argv [ i ] ) == "--dump-args" )
+        {
+            dumpInformation ( argc, argv );
+            std::cin.get ( );
+        }
+    }
     using namespace io::console;
     Console con;
-    // todo: move to a unittest.
-    con << "According to the properties, 🅱 takes up ";
-    auto columns = io::unicode::characterProperties ( ).at ( U'🅱' ).columns;
-    con << ( 1 + columns ) << " columns.\n";
 
-    test::runUnittests ( std::cout );
-    // if we're on an actual terminal, wait for user input to exit.
+    con << "Videogame has exited. Press enter to close the window or return to "
+           "the shell.\n";
     std::cin.get ( );
     return 0;
 }

@@ -30,6 +30,8 @@ namespace io::console::manip
      */
     std::vector< std::string > splitByCodePoint ( std::string );
 
+    std::vector< std::string > splitByCodePoint ( std::u8string str );
+
     /**
      * @brief Takes a C-string and widens it to a UTF-32 character sequence.
      * @note Useful for querying the properties of a sequence.
