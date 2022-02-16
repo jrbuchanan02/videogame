@@ -83,14 +83,12 @@ namespace io::console
             auto codePoints = manip::splitByCodePoint ( t );
             for ( auto &cp : codePoints )
             {
-                try
+                // check here since a direct call to widen would appear too
+                // hacky even though validUTF08 just checks if the call to widen
+                // throws.
+                if ( !manip::validUTF08 ( cp ) )
                 {
-                    ( void ) widen ( cp.c_str ( ) );
-                } catch ( std::runtime_error &rt )
-                {
-                    // runtime error here means invalid code point.
-                    // which is an error here.
-                    throw;
+                    RUNTIME_ERROR ( "Invalid UTF-8 Sequence!" )
                 }
                 *this << cp;
             }
@@ -113,6 +111,9 @@ namespace io::console
 
             for ( auto &cp : t )
             {
+                // no try / catch here since we would just rethrow. No call to
+                // validUTF32 since we need temp and we would just throw a
+                // runtime_error if the sequence weren't valid anyways
                 char *temp = narrow ( cp );
                 translated += temp;
                 // narrow allocates
