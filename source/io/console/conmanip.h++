@@ -57,4 +57,16 @@ namespace io::console
         console.setWaitOnText ( false );
         return console;
     }
+
+    inline Console &doTextWrapping ( Console &console )
+    {
+        console.setWrapping ( true );
+        return console;
+    }
+
+    inline Console &noTextWrapping ( Console &console )
+    {
+        console.setWrapping ( false );
+        return console;
+    }
 } // namespace io::console

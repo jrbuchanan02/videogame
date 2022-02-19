@@ -88,6 +88,8 @@ struct io::console::Console::impl_s
 
     // internal flag to block a thread until the text channel has caught up.
     bool waitOnTextChannel = false;
+    // internal flag to (attempt to) wrap text.
+    bool wrapText          = false;
 
     impl_s ( ) noexcept
     {
@@ -278,18 +280,90 @@ void io::console::Console::setRows ( std::uint32_t const &value ) noexcept
 void io::console::Console::send ( std::string const &str ) noexcept
 {
     std::shared_ptr< bool > lastToken;
+    std::string             line = str;
+    if ( pimpl->wrapText )
     {
-        for ( auto &cp : manip::splitByCodePoint ( str ) )
+        std::vector< std::string > joinables =
+                manip::generateTextInseperables ( line );
+        std::string   joined          = "";
+        std::uint32_t currentPosition = 0;
+
+        auto lengthOf = [] ( std::string text ) -> std::uint32_t {
+            std::uint32_t result = 0;
+            for ( auto &cp : manip::splitByCodePoint ( text ) )
+            {
+                auto props = unicode::characterProperties ( ).at (
+                        manip::widen ( cp.c_str ( ) ) );
+                if ( !props.control )
+                {
+                    result += 1 + props.columns;
+                }
+            }
+            return result;
+        };
+        // for each joinable string in joinables:
+        // 1. if it's a hard line break, reset the current position since a
+        // line break will occur automatically.
+        // 2. if adding the next joinable would cause a screen wrap and we are
+        // not at the beginning of a line, insert a newline then add the
+        // joinable.
+        // 3. if we uncontrollably wrapped the previous line and we have another
+        // joinable to add, unconditionally break between the two.
+        for ( auto &joinable : joinables )
         {
-            // check for emoji. Their graphical representation is two columns
-            // wide on windows-systems, the cursor only moves one column across.
+            std::uint32_t itsLength = lengthOf ( joinable );
+            // if we would uncontrollably wrap the screen by adding the sequence
+            if ( currentPosition && itsLength + currentPosition > getCols ( ) )
+            {
+                joined += "\n";
+                joined += joinable;
+                currentPosition = itsLength;
+                // no need to check again for the uncontrolled screen wrap
+                // since currentPosition != 0.
+            } else
+            {
+                joined += joinable;
+                currentPosition += itsLength;
+                // check if joinable ends in a hard line break
+                char32_t lastCodePoint =
+                        manip::widen ( manip::splitByCodePoint ( joinable )
+                                               .back ( )
+                                               .c_str ( ) );
+                auto properties =
+                        unicode::characterProperties ( ).at ( lastCodePoint );
+                unicode::BreakingProperties breaking =
+                        ( unicode::BreakingProperties ) properties.lineBreaking;
+                switch ( breaking )
+                {
+                    case unicode::BreakingProperties::BK:
+                    case unicode::BreakingProperties::CR:
+                    case unicode::BreakingProperties::LF:
+                    case unicode::BreakingProperties::NL:
+                        // we have a hard line break
+                        currentPosition = 0;
+                        break;
+                    default: break;
+                }
+            }
+        }
+        // final step: set line to joined
+        line = joined;
+    }
+
+    {
+        std::scoped_lock< std::mutex > lock ( pimpl->sending );
+        for ( auto &cp : manip::splitByCodePoint ( line ) )
+        {
+            // check for emoji. Their graphical representation is two
+            // columns wide on windows-systems, the cursor only moves one
+            // column across.
             std::string temp = cp;
             char32_t    c    = manip::widen ( temp.c_str ( ) );
             if ( unicode::characterProperties ( ).at ( c ).emoji )
             {
+                // command that moves the cursor one unit forwards.
                 temp += "\u001b[C";
             }
-
             lastToken = pimpl->txt.pushString ( temp );
         }
     }
@@ -365,4 +439,9 @@ void io::console::Console::setCmdRate ( std::uint64_t const &value ) noexcept
 void io::console::Console::setWaitOnText ( bool const &value ) noexcept
 {
     pimpl->waitOnTextChannel = value;
+}
+
+void io::console::Console::setWrapping ( bool const &value ) noexcept
+{
+    pimpl->wrapText = value;
 }

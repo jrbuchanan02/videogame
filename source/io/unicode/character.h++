@@ -19,6 +19,54 @@
 
 namespace io::unicode
 {
+    // six bits.
+    enum class BreakingProperties : std::uint8_t
+    {
+        BK,
+        CR,
+        LF,
+        CM,
+        NL,
+        SG,
+        WJ,
+        ZW,
+        GL,
+        SP,
+        ZWJ,
+        B2,
+        BA,
+        BB,
+        HY,
+        CB,
+        CL,
+        CP,
+        EX,
+        IN,
+        NS,
+        OP,
+        QU,
+        IS,
+        NU,
+        PO,
+        PR,
+        SY,
+        AI,
+        AL,
+        CJ,
+        EB,
+        EM,
+        H2,
+        H3,
+        HL,
+        ID,
+        JL,
+        JV,
+        JT,
+        RI,
+        SA,
+        XX,
+    };
+
     struct CharacterProperties
     {
 #define B( N ) BITFIELD ( N )
@@ -28,10 +76,12 @@ namespace io::unicode
         B ( control )
         // 0 -> not emoji, 1 -> emoji
         B ( emoji )
-        // 0 -> does not "want" a line break, 1-> "wants" a line break
-        B ( wantsLB )
-        // 0 -> wantsLB is a preference, 1-> wantsLB is a requirement
-        B ( require )
+        B ( reserved1 )
+        B ( reserved2 )
+        B ( reserved3 )
+        B ( reserved4 )
+        B ( reserved5 )
+        std::uint8_t lineBreaking : 6 = (std::uint8_t)BreakingProperties::XX;
 #undef B
         inline CharacterProperties ( ) noexcept = default;
         inline CharacterProperties ( CharacterProperties const & ) noexcept =

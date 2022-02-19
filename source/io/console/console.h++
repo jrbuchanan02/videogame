@@ -66,6 +66,8 @@ namespace io::console
                 std::size_t const                       &index,
                 std::shared_ptr< colors::IColor > const &color );
 
+        void setWrapping ( bool const & ) noexcept;
+
         template < class T >
         // clang-format off
         Console &operator<< ( T const &t ) requires (
