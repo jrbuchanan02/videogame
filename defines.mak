@@ -4,6 +4,10 @@
 mingw_make := mingw32-make.exe
 linux_make := make
 
+# set from commandline
+INTERNAL_CHAR ?= 1
+EXTERNAL_CHAR ?= 1
+
 ifeq ($(findstring $(mingw_make), $(notdir $(MAKE))), $(mingw_make))
 	operating_system := windows
 else
@@ -23,6 +27,8 @@ else
 	clang_format = clang-format-12
 	CXX = g++-10 -pthread -Wl,--no-as-needed
 endif
+
+defines += -DI_CHAR_SIZE=$(INTERNAL_CHAR) -DE_CHAR_SIZE=$(EXTERNAL_CHAR)
 
 CXXFLAGS += $(generals) $(warnings) $(optimize) $(defines)
 
