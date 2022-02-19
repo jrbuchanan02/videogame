@@ -31,18 +31,36 @@ int main ( int const argc, char const *const *const argv )
 #ifdef WINDOWS
     SetConsoleOutputCP ( 65001 );
 #endif
+    bool runUnittests    = false;
+    bool dumpInformation = false;
     for ( int i = 0; i < argc; i++ )
     {
         if ( std::string ( argv [ i ] ) == "--unittest" )
         {
-            test::runUnittests ( std::cout );
-            std::cin.get ( );
-        } else if ( std::string ( argv [ i ] ) == "--dump-args" )
+            runUnittests = true;
+        } else if ( std::string ( argv [ i ] ) == "--dump-information" )
         {
-            dumpInformation ( argc, argv );
-            std::cin.get ( );
+            dumpInformation = true;
         }
     }
+
+    if ( runUnittests )
+    {
+        if ( test::runUnittests ( std::cout ) )
+        {
+            return 1;
+        } else
+        {
+            return 0;
+        }
+    }
+
+    if ( dumpInformation )
+    {
+        ::dumpInformation ( argc, argv );
+        return 0;
+    }
+
     using namespace io::console;
     Console con;
     // set up some (hopefully) flashing text
