@@ -67,16 +67,27 @@ void initializeProperties ( )
                 [ & ] ( defines::EXMLNode *p,
                         defines::EXMLNode *c,
                         defines::ECString  n ) -> defines::EXMLAttribute * {
-            if ( c->first_attribute ( n ) )
-                return c->first_attribute ( n );
-            else if ( p->first_attribute ( n ) )
-                return p->first_attribute ( n );
-            else
+            if ( c->first_attribute ( ES ( n ) )
+                 || ( c->first_attribute ( ES ( n ) )
+                              != p->first_attribute ( ES ( n ) )
+                      // such a F***ing stupid hack, but rapidxml seems to not
+                      // populate the emoji field if we're in a group and the
+                      // group specifies a default emoji value
+                      && defines::EString ( ES ( "Emoji" ) ) == n ) )
             {
-                defines::ChrString failMessage = "Missing field \"";
-                failMessage += n;
-                failMessage += "\"";
-                throw std::runtime_error ( failMessage.c_str ( ) );
+                return c->first_attribute ( ES ( n ) );
+            } else if ( p->first_attribute ( ES ( n ) ) )
+            {
+                return p->first_attribute ( ES ( n ) );
+            } else
+            {
+                RUNTIME_ERROR (
+                        "Failed to find field ",
+                        n,
+                        " for unicode character ",
+                        ( c->first_attribute ( "cp" )
+                                  ? c->first_attribute ( "cp" )->value ( )
+                                  : " in group" ) )
             }
         };
         CharacterProperties result;
@@ -92,16 +103,23 @@ void initializeProperties ( )
         {
             result.columns = 0;
         }
+        temp = "";
 
         defines::ECString emoji =
-                getField ( node->parent ( ), node, ES ( "Emoji" ) )->value ( );
-        temp = emoji;
+                ( getField ( node->parent ( ), node, ES ( "Emoji" ) )
+                          ? getField ( node->parent ( ), node, ES ( "Emoji" ) )
+                                    ->value ( )
+                          : ES ( "Y" ) );
+        temp = std::string ( emoji );
         if ( temp == ES ( "Y" ) )
         {
             result.emoji = 1;
-        } else
+        } else if ( temp == ES ( "N" ) )
         {
             result.emoji = 0;
+        } else
+        {
+            RUNTIME_ERROR ( "Yes / No field was not yes or no!" )
         }
 
         // determine whether a line break is preferred and / or required.
@@ -238,19 +256,7 @@ bool propertyInitializationTest ( std::ostream &stream )
                              defines::maxUnicode )
         END_UNIT_FAIL ( stream )
     }
-    stream << "Ensuring that emoji have a width of two columns...\n";
-    for ( auto &u : emoji )
-    {
-        if ( !characterProperties ( ).at ( u ).emoji && u > 0x7F )
-        {
-            CHAR_UNITTEST_FAIL ( stream,
-                                 "Property detected: ",
-                                 "An emoji, U+",
-                                 std::uint32_t ( u ),
-                                 " was marked as a non-emoji!" )
-            END_UNIT_FAIL ( stream )
-        }
-    }
+
     stream << "Ensuring that CJK characters have a width of two columns...\n";
     for ( auto &u : cjk )
     {
@@ -276,6 +282,17 @@ bool propertyInitializationTest ( std::ostream &stream )
                     "A Phonetic-derivative (i.e., Latin) character, U+",
                     std::uint32_t ( u ),
                     " was marked as two columns wide!" )
+            END_UNIT_FAIL ( stream )
+        }
+    }
+    stream << "Ensuring that emoji are marked as emoji...\n";
+    for ( auto &u : emoji )
+    {
+        if ( !characterProperties ( ).at ( u ).emoji )
+        {
+            CHAR_UNITTEST_FAIL (
+                    stream,
+                    "Found a \"not emoji\" in a string of only emoji!" )
             END_UNIT_FAIL ( stream )
         }
     }

@@ -33,7 +33,7 @@ all: build $(object_files)
 	@echo $(include_dirs)
 
 check: all
-	$(exec_name) --unittest
+	./$(exec_name) --unittest
 
 do_format: $(formatted_source)
 	@echo Formatting...
