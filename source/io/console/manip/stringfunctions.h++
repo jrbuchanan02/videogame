@@ -33,6 +33,15 @@ namespace io::console::manip
     std::vector< std::string > splitByCodePoint ( std::u8string str );
 
     /**
+     * @brief Generates a vector of the parts of text which are not allowed to
+     * be split across lines. Line breaks are allowed between elements. The
+     * character allowing the line break is at the end of the string.
+     *
+     * @return std::vector< std::string >
+     */
+    std::vector< std::string > generateTextInseperables ( std::string );
+
+    /**
      * @brief Takes a C-string and widens it to a UTF-32 character sequence.
      * @note Useful for querying the properties of a sequence.
      *

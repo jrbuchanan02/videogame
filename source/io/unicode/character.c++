@@ -27,6 +27,12 @@
 using namespace io::unicode;
 using namespace defines;
 
+#define LINE_BREAKING_CASE( val )                                              \
+    if ( temp == ES ( #val ) )                                                 \
+    {                                                                          \
+        result.lineBreaking = ( std::uint8_t ) BreakingProperties::val;        \
+    }
+
 std::vector< CharacterProperties > properties = { };
 
 void initializeProperties ( );
@@ -97,6 +103,63 @@ void initializeProperties ( )
         {
             result.emoji = 0;
         }
+
+        // determine whether a line break is preferred and / or required.
+        defines::ECString lineBreak =
+                getField ( node->parent ( ), node, ES ( "lb" ) )->value ( );
+        temp = lineBreak;
+        // non-tailorable line-breaking classes
+        LINE_BREAKING_CASE ( BK )
+        LINE_BREAKING_CASE ( CR )
+        LINE_BREAKING_CASE ( LF )
+        LINE_BREAKING_CASE ( CM )
+        LINE_BREAKING_CASE ( NL )
+        LINE_BREAKING_CASE ( SG )
+        LINE_BREAKING_CASE ( WJ )
+        LINE_BREAKING_CASE ( ZW )
+        LINE_BREAKING_CASE ( GL )
+        LINE_BREAKING_CASE ( SP )
+        LINE_BREAKING_CASE ( ZWJ )
+        // break opportunities
+        LINE_BREAKING_CASE ( B2 )
+        LINE_BREAKING_CASE ( BA )
+        LINE_BREAKING_CASE ( BB )
+        LINE_BREAKING_CASE ( HY )
+        LINE_BREAKING_CASE ( CB )
+        // characters prohibiting certain breaks
+        LINE_BREAKING_CASE ( CL )
+        LINE_BREAKING_CASE ( CP )
+        LINE_BREAKING_CASE ( EX )
+        LINE_BREAKING_CASE ( IN )
+        LINE_BREAKING_CASE ( NS )
+        LINE_BREAKING_CASE ( OP )
+        LINE_BREAKING_CASE ( QU )
+        // numeric context
+#pragma push_macro( "IS" ) // conflicts wiht the define "IS"
+#undef IS
+        LINE_BREAKING_CASE ( IS )
+#pragma pop_macro( "IS" )
+        LINE_BREAKING_CASE ( NU )
+        LINE_BREAKING_CASE ( PO )
+        LINE_BREAKING_CASE ( PR )
+        LINE_BREAKING_CASE ( SY )
+        // other characters
+        LINE_BREAKING_CASE ( AI )
+        LINE_BREAKING_CASE ( AL )
+        LINE_BREAKING_CASE ( CL )
+        LINE_BREAKING_CASE ( CJ )
+        LINE_BREAKING_CASE ( EB )
+        LINE_BREAKING_CASE ( EM )
+        LINE_BREAKING_CASE ( H2 )
+        LINE_BREAKING_CASE ( H3 )
+        LINE_BREAKING_CASE ( HL )
+        LINE_BREAKING_CASE ( ID )
+        LINE_BREAKING_CASE ( JL )
+        LINE_BREAKING_CASE ( JV )
+        LINE_BREAKING_CASE ( JT )
+        LINE_BREAKING_CASE ( RI )
+        LINE_BREAKING_CASE ( SA )
+        LINE_BREAKING_CASE ( XX )
 
         properties.push_back ( result );
     };
