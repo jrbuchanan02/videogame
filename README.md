@@ -84,9 +84,9 @@ checked off are fully complete. Items checked off but also crossed out might be
 complete but have not been thouroughly (however you spell that word) tested.
 
 1. [ ] The Console Window
-   - ~[x]~ The ability to output text at a specified rate with the following 
+   - [x] The ability to output text at a specified rate with the following 
    control over it in addition to the control provided by the Terminal Sequences:
-      + ~[x]~ Exact color of the eight indexed colors and their movements over 
+      + [x] Exact color of the eight indexed colors and their movements over 
       a specified time.
          * Movements must allow multiple sweeps to both directly specified (rgb-value)
          colors and to indirectly specified (other colors we're potentially changing
