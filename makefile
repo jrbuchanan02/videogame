@@ -45,6 +45,6 @@ install:
 	@echo All sudo commands will be shown. 
 	@echo Note that the command may function on similar versions of linux that have
 	@echo apt-get
-	apt udpate
+	apt update
 	apt install gcc-10 -y
 	apt install clang-format-12 -y
