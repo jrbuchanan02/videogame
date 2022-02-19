@@ -97,7 +97,7 @@ complete but have not been thouroughly (however you spell that word) tested.
       + [ ] The text justification
    - [x] The ability to output text that the user sees while modifying the 
    attributes of all text onscreen.
-   - [ ] The ability to programmatically determine the console window's operating
+   - [x] The ability to programmatically determine the console window's operating
    environment and to properly set the Console Window into a known, default state.
 2. [ ] The Serialization / Deserialization
    - [ ] The ability to programmatically detect which data files are available for
