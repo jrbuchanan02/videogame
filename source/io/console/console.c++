@@ -84,7 +84,15 @@ struct io::console::Console::impl_s
     void commandGenerator ( );
 
     // just some general data
-    ConsoleSize consoleSize = { 25, 80 };
+    ConsoleSize                              consoleSize = { 25, 80 };
+    // thread which holds a function to regularly update the size of the
+    // console.
+    std::jthread                             sizeUpdater;
+    // time between updates.
+    std::atomic< std::chrono::milliseconds > updateRate =
+            std::chrono::milliseconds ( 500 );
+
+    void sizeUpdateFunction ( );
 
     // internal flag to block a thread until the text channel has caught up.
     bool waitOnTextChannel = false;
@@ -118,9 +126,23 @@ struct io::console::Console::impl_s
 
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
         commands.detach ( );
-        // TODO: insert console initialization routine.
-        // TODO: reset console
+#ifdef WINDOWS
+        SetConsoleOutputCP ( 65001 );
+        HANDLE hcout = GetStdHandle ( STD_OUTPUT_HANDLE );
+        DWORD  mode  = 0;
+        GetConsoleMode ( hcout, &mode );
+        mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode ( hcout, mode );
+        HANDLE hcin = GetStdHandle ( STD_INPUT_HANDLE );
+        GetConsoleMode ( hcin, &mode );
+        mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+        SetConsoleMode ( hcout, mode );
+#endif
+        std::cout << "\u001b[3J\u001b[2J\u001b[0m\u001b[H";
+        std::cout.flush ( );
         readySignal.store ( true );
+        sizeUpdater = std::jthread ( [ & ] ( ) { sizeUpdateFunction ( ); } );
+        sizeUpdater.detach ( );
     }
 
     ~impl_s ( )
@@ -254,6 +276,43 @@ void io::console::Console::impl_s::commandGenerator ( )
     }
 }
 
+void io::console::Console::impl_s::sizeUpdateFunction ( )
+{
+    using namespace std::chrono_literals;
+    while ( !this->stopSignal.load ( ) )
+    {
+#ifdef WINDOWS
+        HANDLE                     hcout = GetStdHandle ( STD_OUTPUT_HANDLE );
+        CONSOLE_SCREEN_BUFFER_INFO info;
+        GetConsoleScreenBufferInfo ( hcout, &info );
+        consoleSize.row = info.dwSize.Y;
+        consoleSize.col = info.dwSize.X;
+#else
+        // use the linux environment variables
+        defines::ChrChar *_rows = std::getenv ( "ROWS" );
+        defines::ChrChar *_cols = std::getenv ( "COLUMNS" );
+
+        defines::ChrStringStream rows { _rows };
+        defines::ChrStringStream cols { _cols };
+        rows >> consoleSize.row;
+        cols >> consoleSize.col;
+#endif
+
+        auto now   = [ & ] ( ) { return std::chrono::steady_clock::now ( ); };
+        auto start = now ( );
+        while ( now ( ) - start < this->updateRate.load ( ) )
+        {
+            if ( this->stopSignal.load ( ) )
+            {
+                return;
+            } else
+            {
+                std::this_thread::sleep_for ( 1ms );
+            }
+        }
+    }
+}
+
 io::console::Console::Console ( ) : pimpl ( new impl_s ( ) ) { }
 io::console::Console::~Console ( ) = default;
 
@@ -346,6 +405,7 @@ void io::console::Console::send ( std::string const &str ) noexcept
                 }
             }
         }
+
         // final step: set line to joined
         line = joined;
     }
