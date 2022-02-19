@@ -1,3 +1,4 @@
+[![C/C++ CI](https://github.com/jrbuchanan02/videogame/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/jrbuchanan02/videogame/actions/workflows/c-cpp.yml)
 # Videogame
 You can find the [license](./LICENSE) [here](./LICENSE): [link](./LICENSE)
 (all three links lead to the license). Videogame is published under the GNU GPL
