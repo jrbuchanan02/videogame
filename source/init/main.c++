@@ -28,9 +28,6 @@ void dumpInformation ( int const &, char const *const *const & );
 
 int main ( int const argc, char const *const *const argv )
 {
-#ifdef WINDOWS
-    SetConsoleOutputCP ( 65001 );
-#endif
     bool runUnittests    = false;
     bool dumpInformation = false;
     for ( int i = 0; i < argc; i++ )
@@ -77,19 +74,90 @@ int main ( int const argc, char const *const *const argv )
     con << doTextWrapping;
     con << setDirectColor ( 8, 2, 2, 2 );
     con << doWaitForText
-        << "Placeholder storyline. Pretend that this text contains an "
-           "intricate plot and interesting backstory about the imaginary, "
-           "not-yet-existent world within Videogame, which does not even have "
-           "a title yet. Learn about the final boss's evil-ness and the "
-           "generic worldbuilding style assumed. Learn about the hero that "
-           "will prevent the final boss from achieving their ultimate plan and "
-           "the prophercy or something which fortells their arrival -- or "
-           "whatever foreshadowing describes the player's introduction. Remain "
-           "prepared for text in countless languages. "
-           "グーグル翻訳とduolingo教育の私のひどい混合を許してください and "
-           "enjoy the ride!";
+        << "When video game receives a plot, this text will inform you about "
+           "the inciting incident, and all of your tasks that you will have as "
+           "the main character and hero of the story. Be prepared for text in "
+           "multiple languages, sometimes without translation, and feel "
+           "comfortable with the unexpected. Aunque el español es mi lengua "
+           "segundo, lo siento para los errores. 日本語は私の三言語です, and I "
+           "wouldn't really say I know Japanese yet, lol.\n";
+    con << "Either way, be prepared for a wild ride of a story and an RNG "
+           "filled adventure! I take my inspiration from Miguel Cervantes, "
+           "author of Don Quixote, and Rumiko Takahashi, author of Ranma 1/2 "
+           "and Inuyasha, but also my own weird dreams.";
     con << "\n\n";
-    con << "\u001b[31m[Press enter to continue]\u001b[38m";
+    con << "\u001b[31m[Press enter to continue]\u001b[39m";
+    std::cin.get ( );
+    con << "\n\n";
+    con << "At this point, you would enter the character creation process. The "
+           "game would ask for your name, and have a line break as it shows "
+           "you the prompt.\n";
+    std::string temp;
+    std::getline ( std::cin, temp );
+    con << "Then the game would list out attributes that you can choose for "
+           "your character. These attributes would give your character, " << temp << ", certain "
+           "advantages and or disadvantages throughout the game.\n";
+    std::string exampleAttributes [] = {
+            "Attribute",
+            "Attribute",
+            "Attribute",
+            "Attribute",
+            "Attribute",
+            "Attribute",
+    };
+
+    for ( int i = 0; i < 3; i++ )
+    {
+        con << "Please select attribute " << ( i + 1 ) << ":\n";
+        for ( unsigned j = 0;
+              j < sizeof ( exampleAttributes ) / sizeof ( std::string );
+              j++ )
+        {
+            con << "\t" << j + 1 << exampleAttributes [ j ] << "\n";
+        }
+        std::string line;
+        std::getline(std::cin, line);
+        unsigned temp = 0;
+        // check to see if line contains any digits
+        char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+        for ( int j = 0; j < 10; j++ )
+        {
+            if ( line.find(digits[j]) != std::string::npos)
+            {
+                std::stringstream { line } >> temp;
+                break;
+            }
+        }
+        con << "So you have chosen \""
+            << exampleAttributes [ temp
+                                   % ( sizeof ( exampleAttributes )
+                                       / sizeof ( std::string ) ) ]
+            << "\"\n";
+        con << "Aquí el videojuego verificará su repuesta y cambiaría "
+               "lenguas.\n";
+    }
+
+    con << "After the character has selected their attributes, the game will "
+           "ask for the gender of the requested character. Part of the RNG is "
+           "that the game may choose to randomize the gender and attributes of "
+           "the character after creation.\n";
+    con << "A reference to the anime ranma 1/2, The character may change forms "
+           "when hit with certain temperatures of water, or, as a reference to "
+           "a fever dream I had a while back, the character may become two "
+           "people. Also, technically a reference still to Ranma 1/2, the "
+           "videogame may lock the characters gender. It would not lock the "
+           "characters form to a non human one, Because I plan on all "
+           "humanoids having certain attributes, advantages and disadvantages, "
+           "that the player should have.\n";
+    con << "References to other video games, anime, manga, and pop culture "
+           "should also exist. For example, a reference to the video game "
+           "Fallout New Vegas might be cool.\n";
+    con << "The goal with the RNG within the character creation is to create a "
+           "unique experience each time somebody plays the game.\n";
+    con << "Regardless, you have reached the end of the hypothetical character "
+           "creation scene.There is no storyline yet, So what you just did was "
+           "just symbolic, and the video game will exit as soon as you press "
+           "enter.\n";
     std::cin.get ( );
     // cute little easter-egg in that it's the color "Coffee" (even though it
     // looks minty)
