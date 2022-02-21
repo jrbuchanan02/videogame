@@ -1,0 +1,106 @@
+{
+    "language": "en-US",
+    "transliterations": [
+        "NOT",
+        "YES",
+        "ALT"
+    ],
+    "text": [
+        {
+            "title": "Videogame",
+            "start-message": "Press enter to start!",
+            "exit-message": [
+                "Videogame has exited, press enter to close the window or ",
+                "return control to the shell."
+            ],
+            "continue-message": "[Press enter to continue]",
+            "attribute-name.0": "Attribute",
+            "attribute-name.1": "Attribute",
+            "attribute-name.2": "Attribute",
+            "attribute-name.3": "Attribute",
+            "attribute-name.4": "Attribute",
+            "attribute-name.5": "Attribute",
+            "attribute-name.6": "Attribute",
+            "attribute-select-prompt": "Please select an attribute:",
+            "attribute-select-confirm.0": "So you have chosen \"",
+            "attribute-select-confirm.1": "\", have you?",
+            "introduction.0": [
+                "When Videogame receives a plot, this text will inform you ",
+                "about the inciting incident and all of the tasks that you ",
+                "will have as the main character and hero of the story. Be ",
+                "prepared for text in multiple languages, sometimes without ",
+                "translation, and for the unexpected. Aunque tengo mucha ",
+                "experiencia en el español por mi lengua segunda, lo siento ",
+                "para los errores. 日本語は私の三言語です, and I wouldn't really ",
+                "say I know Japanese yet."
+            ],
+            "introduction.1": [
+                "Either way, get ready for a wild ride and an RNG filled ",
+                "adventure! The storyline takes inspiration from famous ",
+                "(non-english writing) authors such as Miguel Cervantes, the ",
+                "author of Don Quixote, Rumiko Takahashi, the author of Ranma ",
+                "1/2 and Inuyasha, and Tite Kubo, the author of Bleach. ",
+                "However Videogame doesn't lean entirely on inspiration from ",
+                "outside sources since I will come up with plenty of my own ",
+                "concepts and ideas."
+            ],
+            "introduction.2": "\n",
+            "introduction.3": [
+                "After the chracter has selected their attributes, the game ",
+                "will ask for the gender of their character (no, I'm not ",
+                "going to do that yet). Part of the RNG is that the game may ",
+                "randomize any aspect of the character (other than the name) ",
+                "after character creation."
+            ],
+            "introduction.4": [
+                "A reference to the anime Ranma 1/2 (in Japanese, らんまニ部の一",
+                " or らんま 1/2), the character's gender may even be ",
+                "randomized to change under certain conditions, such as ",
+                "getting hit with certain temperatures of water. Or, a concept ",
+                "I came up with, the character could be two people at once. ",
+                "One restriction on the form would be that it should remain ",
+                "humanoid. However, other than that restriction, the RNG can ",
+                "choose whatever it wants."
+            ],
+            "introduction.5": [
+                "Videogame may also randomize the introduction and storyline, ",
+                "generating a truly unique and unexpected experience each time ",
+                "you start a new game. Perhaps references to other anime, ",
+                "manga, and pop culture will be cool?"
+            ],
+            "introduction.6": [
+                "Regardless, you have reached the end of the hypothetical ",
+                "character creation scene. There is no storyline yet, so what ",
+                "you just did was only symbolic, and the program will exit as ",
+                "soon as you press enter."
+            ],
+            "character-creation.0": [
+                "At this point, you would enter the character creation ",
+                "process. The game would ask you for your name and there ",
+                "would be a line break as it shows you this prompt (for your ",
+                "character's name):\n"
+            ],
+            "character-creation.1": [
+                "Then the game would list out attributes that you can choose ",
+                "for your character. These attributes would give your ",
+                "character, "
+            ],
+            "character-creation.2": [
+                ", certain advantages or disadvantages throughout the game."
+            ]
+        },
+        {
+            "introduction.0": [
+                "When Videogame receives a plot, this text will inform you ",
+                "about the inciting incident and all of the tasks that you ",
+                "will have as the main character and hero of the story. Be ",
+                "prepared for text in multiple languages, sometimes without ",
+                "translation, and for the unexpected. Aunque tengo mucha ",
+                "experiencia en el español por mi lengua segunda, lo siento ",
+                "para los errores. Nihongo ha watashi no san gengo desu, and ",
+                "I wouldn't really say I know Japanese yet."
+            ]
+        },
+        {}
+    ]
+}

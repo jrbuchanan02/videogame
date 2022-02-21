@@ -90,6 +90,8 @@ struct io::console::Console::impl_s
     bool waitOnTextChannel = false;
     // internal flag to (attempt to) wrap text.
     bool wrapText          = false;
+    // internal flag to (attempt to) center text.
+    bool centerText        = false;
 
     impl_s ( ) noexcept
     {
@@ -285,8 +287,9 @@ void io::console::Console::send ( std::string const &str ) noexcept
     {
         std::vector< std::string > joinables =
                 manip::generateTextInseperables ( line );
-        std::string   joined          = "";
-        std::uint32_t currentPosition = 0;
+        std::vector< std::string > lines           = { "" };
+        std::string                joined          = "";
+        std::uint32_t              currentPosition = 0;
 
         auto lengthOf = [] ( std::string text ) -> std::uint32_t {
             std::uint32_t result = 0;
@@ -315,14 +318,14 @@ void io::console::Console::send ( std::string const &str ) noexcept
             // if we would uncontrollably wrap the screen by adding the sequence
             if ( currentPosition && itsLength + currentPosition > getCols ( ) )
             {
-                joined += "\n";
-                joined += joinable;
+                lines.back ( ).append ( "\n" );
+                lines.push_back ( joinable );
                 currentPosition = itsLength;
                 // no need to check again for the uncontrolled screen wrap
                 // since currentPosition != 0.
             } else
             {
-                joined += joinable;
+                lines.back ( ) += joinable;
                 currentPosition += itsLength;
                 // check if joinable ends in a hard line break
                 char32_t lastCodePoint =
@@ -346,6 +349,23 @@ void io::console::Console::send ( std::string const &str ) noexcept
                 }
             }
         }
+<<<<<<< Updated upstream
+=======
+
+        for ( auto &aLine : lines )
+        {
+            if ( pimpl->centerText )
+            {
+                // each line has a newline already, so we don't need to check
+                // for that.
+                joined += manip::centerTextOn ( aLine, getCols ( ) );
+            } else
+            {
+                joined += aLine;
+            }
+        }
+
+>>>>>>> Stashed changes
         // final step: set line to joined
         line = joined;
     }
@@ -444,4 +464,9 @@ void io::console::Console::setWaitOnText ( bool const &value ) noexcept
 void io::console::Console::setWrapping ( bool const &value ) noexcept
 {
     pimpl->wrapText = value;
+}
+
+void io::console::Console::setCentering ( bool const &value ) noexcept
+{
+    pimpl->centerText = value;
 }

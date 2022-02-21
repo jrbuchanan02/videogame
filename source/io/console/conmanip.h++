@@ -69,4 +69,17 @@ namespace io::console
         console.setWrapping ( false );
         return console;
     }
+
+    inline Console &doTextCenter ( Console &console )
+    {
+        console << doTextWrapping;
+        console.setCentering ( true );
+        return console;
+    }
+
+    inline Console &noTextCenter ( Console &console )
+    {
+        console.setCentering ( false );
+        return console;
+    }
 } // namespace io::console

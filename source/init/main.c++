@@ -52,8 +52,16 @@ int main ( int const argc, char const *const *const argv )
     con << setIndirectColor ( 1, 9, 8, 10, 10, 0x7F, 0x7F, 0x7F );
     con << setBaseComponent ( 2, 0xC0, 0xFF, 0xEE );
     con << commandDelay ( 100 );
+<<<<<<< Updated upstream
     con << doWaitForText << "Videogame\n";
     con << "\u001b[31mPress enter to start!\n" << noWaitForText;
+=======
+    con << doWaitForText << doTextCenter << getString ( "title" )
+        << noTextCenter << noTextWrapping << "\n";
+    con << "\u001b[31m" << doTextCenter << getString ( "start-message" )
+        << noTextCenter << noTextWrapping << "\n"
+        << noWaitForText;
+>>>>>>> Stashed changes
     std::cin.get ( );
     con << "\u001b[39;49m\u001b[3J\u001b[2J\u001b[H";
     con << doTextWrapping;
