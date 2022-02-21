@@ -1,5 +1,5 @@
 
-directories = ./extern/rapidxml-1.13
+directories = ./extern/rapidxml-1.13 ./extern/rapidjson/include/
 
 include_dirs += $(directories)
 

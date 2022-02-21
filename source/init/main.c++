@@ -17,32 +17,60 @@
 #include <io/console/conmanip.h++>
 #include <io/console/console.h++>
 
+#include <ux/serialization/strings.h++>
+
+#include <filesystem>
 #include <iostream>
 #include <string>
-
-#ifdef WINDOWS
-#    include "windows.h"
-#endif
 
 void dumpInformation ( int const &, char const *const *const & );
 
 int main ( int const argc, char const *const *const argv )
 {
-#ifdef WINDOWS
-    SetConsoleOutputCP ( 65001 );
-#endif
+    std::filesystem::path dataPath { argv [ 0 ] };
+    dataPath = dataPath.parent_path ( );
+    dataPath /= "data";
+    dataPath /= "text";
+
+    ux::serialization::TransliterationLevel translit =
+            ux::serialization::TransliterationLevel::NOT;
+    defines::IString locale = "en-US";
+
+    ux::serialization::ExternalizedStrings strings { dataPath };
+    auto getString = [ & ] ( defines::IString const &key ) -> defines::IString {
+        using ux::serialization::StringKey;
+        return strings.get ( StringKey { locale, key, translit } );
+    };
+    bool runUnittests    = false;
+    bool dumpInformation = false;
     for ( int i = 0; i < argc; i++ )
     {
         if ( std::string ( argv [ i ] ) == "--unittest" )
         {
-            test::runUnittests ( std::cout );
-            std::cin.get ( );
-        } else if ( std::string ( argv [ i ] ) == "--dump-args" )
+            runUnittests = true;
+        } else if ( std::string ( argv [ i ] ) == "--dump-information" )
         {
-            dumpInformation ( argc, argv );
-            std::cin.get ( );
+            dumpInformation = true;
         }
     }
+
+    if ( runUnittests )
+    {
+        if ( test::runUnittests ( std::cout ) )
+        {
+            return 1;
+        } else
+        {
+            return 0;
+        }
+    }
+
+    if ( dumpInformation )
+    {
+        ::dumpInformation ( argc, argv );
+        return 0;
+    }
+
     using namespace io::console;
     Console con;
     // set up some (hopefully) flashing text
@@ -52,39 +80,71 @@ int main ( int const argc, char const *const *const argv )
     con << setIndirectColor ( 1, 9, 8, 10, 10, 0x7F, 0x7F, 0x7F );
     con << setBaseComponent ( 2, 0xC0, 0xFF, 0xEE );
     con << commandDelay ( 100 );
-<<<<<<< Updated upstream
-    con << doWaitForText << "Videogame\n";
-    con << "\u001b[31mPress enter to start!\n" << noWaitForText;
-=======
     con << doWaitForText << doTextCenter << getString ( "title" )
         << noTextCenter << noTextWrapping << "\n";
     con << "\u001b[31m" << doTextCenter << getString ( "start-message" )
         << noTextCenter << noTextWrapping << "\n"
         << noWaitForText;
->>>>>>> Stashed changes
     std::cin.get ( );
     con << "\u001b[39;49m\u001b[3J\u001b[2J\u001b[H";
     con << doTextWrapping;
     con << setDirectColor ( 8, 2, 2, 2 );
-    con << doWaitForText
-        << "Placeholder storyline. Pretend that this text contains an "
-           "intricate plot and interesting backstory about the imaginary, "
-           "not-yet-existent world within Videogame, which does not even have "
-           "a title yet. Learn about the final boss's evil-ness and the "
-           "generic worldbuilding style assumed. Learn about the hero that "
-           "will prevent the final boss from achieving their ultimate plan and "
-           "the prophercy or something which fortells their arrival -- or "
-           "whatever foreshadowing describes the player's introduction. Remain "
-           "prepared for text in countless languages. "
-           "グーグル翻訳とduolingo教育の私のひどい混合を許してください and "
-           "enjoy the ride!";
-    con << "\n\n";
-    con << "\u001b[31m[Press enter to continue]\u001b[38m";
+    con << doWaitForText << getString ( "introduction.0" ) << "\n";
+    con << getString ( "introduction.1" ) << "\n";
+    con << getString ( "introduction.2" ) << "\n";
+    con << "\u001b[31m" << getString ( "continue-message" ) << "\u001b[39m";
+    std::cin.get ( );
+    con << getString ( "character-creation.0" ) << "\n";
+    std::string temp;
+    std::getline ( std::cin, temp );
+    con << getString ( "character-creation.1" ) << temp
+        << getString ( "character-creation.2" ) << "\n";
+    defines::IString exampleAttributes [] = {
+            getString ( "attribute-name.0" ),
+            getString ( "attribute-name.1" ),
+            getString ( "attribute-name.2" ),
+            getString ( "attribute-name.3" ),
+            getString ( "attribute-name.4" ),
+            getString ( "attribute-name.5" ),
+            getString ( "attribute-name.6" ),
+    };
+
+    for ( int i = 0; i < 3; i++ )
+    {
+        con << getString ( "attribute-select-prompt" ) << "\n";
+        for ( unsigned j = 0;
+              j < sizeof ( exampleAttributes ) / sizeof ( std::string );
+              j++ )
+        {
+            con << "\t" << j + 1 << exampleAttributes [ j ] << "\n";
+        }
+        std::string line;
+        std::getline ( std::cin, line );
+        unsigned temp  = 0;
+        // check to see if line contains any digits
+        char digits [] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        for ( int j = 0; j < 10; j++ )
+        {
+            if ( line.find ( digits [ j ] ) != std::string::npos )
+            {
+                std::stringstream { line } >> temp;
+                break;
+            }
+        }
+        temp %= 7;
+        con << getString ( "attribute-select-confirm.0" );
+        con << exampleAttributes [ temp ];
+        con << getString ( "attribute-select-confirm.1" );
+        std::string _temp;
+        std::getline ( std::cin, _temp );
+    }
+
+    con << getString ( "introduction.5" ) << "\n";
+    con << getString ( "introduction.6" ) << "\n";
     std::cin.get ( );
     // cute little easter-egg in that it's the color "Coffee" (even though it
     // looks minty)
-    con << "\u001b[32mVideogame has exited. Press enter to close the window or "
-           "return to the shell.\n";
+    con << "\u001b[32m" << getString ( "exit-message" ) << "\n";
     std::cin.get ( );
     return 0;
 }

@@ -33,8 +33,18 @@ all: build $(object_files)
 	@echo $(include_dirs)
 
 check: all
-	$(exec_name)
+	./$(exec_name) --unittest
 
 do_format: $(formatted_source)
 	@echo Formatting...
 	$(clang_format) -style=file -i $(formatted_source)
+
+install:
+	@echo Installing required dependencies for building.
+	@echo This command requires Ubuntu 20.04 LTS and also requires sudo permissions.
+	@echo All sudo commands will be shown. 
+	@echo Note that the command may function on similar versions of linux that have
+	@echo apt-get
+	apt update
+	apt install gcc-10 -y
+	apt install clang-format-12 -y

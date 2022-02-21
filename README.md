@@ -1,11 +1,13 @@
+[![C/C++ CI](https://github.com/jrbuchanan02/videogame/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/jrbuchanan02/videogame/actions/workflows/c-cpp.yml)
+[![CodeQL](https://github.com/jrbuchanan02/videogame/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/jrbuchanan02/videogame/actions/workflows/codeql-analysis.yml)
 # Videogame
 You can find the [license](./LICENSE) [here](./LICENSE): [link](./LICENSE)
 (all three links lead to the license). Videogame is published under the GNU GPL
 version 3.0 with the hopes that it will be entertaining, but comes "as-is" with
 no warranty, neither express nor implied. Videogame has open-source
-dependencies and databases. These are published under the Boost Software License
-and the Unicode License. All dependencies and databases also come "as-is" and 
-with no warranty, neither express nor implied.
+dependencies and databases. These are published under the Boost Software License, 
+the Unicode License, and the MIT License. All dependencies and databases also 
+come "as-is" and with no warranty, neither express nor implied.
 
 It may seem implied, but Videogame is a working title. Since the game is not 
 currently playable, I am not concerned about figuring out a plot, but about
@@ -58,6 +60,7 @@ Windows 11).[^2]
 does not currently check for this license, Videogame is licensed under the GPL
 version 3.0, and my understanding of that license is that it must remain with the
 work.
+6. Around 60 MB of storage free.[^6]
 ### Recommended
 1. If on Windows, having Windows Terminal installed. Windows Terminal is not 
 required to play Videogame, but it allows you to perform cool graphical tricks
@@ -84,9 +87,9 @@ checked off are fully complete. Items checked off but also crossed out might be
 complete but have not been thouroughly (however you spell that word) tested.
 
 1. [ ] The Console Window
-   - ~[x]~ The ability to output text at a specified rate with the following 
+   - [x] The ability to output text at a specified rate with the following 
    control over it in addition to the control provided by the Terminal Sequences:
-      + ~[x]~ Exact color of the eight indexed colors and their movements over 
+      + [x] Exact color of the eight indexed colors and their movements over 
       a specified time.
          * Movements must allow multiple sweeps to both directly specified (rgb-value)
          colors and to indirectly specified (other colors we're potentially changing
@@ -95,7 +98,7 @@ complete but have not been thouroughly (however you spell that word) tested.
       + [ ] The text justification
    - [x] The ability to output text that the user sees while modifying the 
    attributes of all text onscreen.
-   - [ ] The ability to programmatically determine the console window's operating
+   - [x] The ability to programmatically determine the console window's operating
    environment and to properly set the Console Window into a known, default state.
 2. [ ] The Serialization / Deserialization
    - [ ] The ability to programmatically detect which data files are available for
@@ -126,9 +129,20 @@ or, at https://www.unicode.org/license.txt (the link points there).
 version 1.13, which is copyright under the open-source Boost Software License. 
 You can read the Boost Software license [here](./extern/rapidxml-1.13/license.txt),
 or in the file ./extern/rapidxml-1.13/license.txt (the link points there).
-
+- Rapidjson, Copyright 2015 THL A29 Limited, a Tencent company, and Milo Yip. The license [here](./extern/rapidjson/license.txt)
+states that it's all-rights reserved inside, but also that it is published under the MIT
+license. I take that statement to mean that rapidjson is published under the MIT license
+ and that the normal rules governing the MIT license apply[^5]
 [^3]: I may have the year off on the UCD 14.0's copyright date. However, we can
 infer from the age of Unicode version 14.0 to know that the copyright year listed
 is around that time.
 
 [^4]: Unicode Inc. is the name of the organization as listed in the license.
+[^5]: If I am incorrect in this assessment, please tell me so that I do not get 
+in trouble with copyright.
+
+[^6]: The videogame executable occupies between 1 and 0.75 MiB, the unicode 
+character database requires around 40MiB. The remaining 9 MiB accounts for 
+anticipated growth in the size of the executable and for anticipated binary
+files. If you have a modern computer and your storage is low enough check your
+disk stats, I would recommend upgrading your storage.

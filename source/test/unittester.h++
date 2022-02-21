@@ -24,8 +24,9 @@ namespace test
      * rates to the specified stream.
      *
      * @param stream the stream to output information to.
+     * @return if any unittests fail.
      */
-    void runUnittests ( std::ostream &stream );
+    bool runUnittests ( std::ostream &stream );
 
     /**
      * @brief A unittest to run.

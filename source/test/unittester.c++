@@ -21,7 +21,7 @@ struct TestRunner
 };
 static std::size_t count = 0;
 test::Unittest::Unittest ( std::function< bool ( std::ostream & ) > const &test,
-                           defines::ChrPString const &                     pass,
+                           defines::ChrPString const                      &pass,
                            defines::ChrPString const &fail ) :
         test ( test )
 {
@@ -43,7 +43,7 @@ test::Unittest::Unittest ( std::function< bool ( std::ostream & ) > const &test,
     count++;
 }
 
-void test::runUnittests ( std::ostream &stream )
+bool test::runUnittests ( std::ostream &stream )
 {
     if ( !count )
     {
@@ -76,6 +76,14 @@ void test::runUnittests ( std::ostream &stream )
     TestRunner::unittests->clear ( );
     delete TestRunner::unittests;
     TestRunner::unittests = nullptr;
+
+    if ( failCount )
+    {
+        return true;
+    } else
+    {
+        return false;
+    }
 }
 
 static bool testRuntimeErrorMacro ( std::ostream &os )
