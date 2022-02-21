@@ -312,6 +312,210 @@ std::vector< std::string >
     return output;
 }
 
+std::string io::console::manip::centerTextOn ( std::string   string,
+                                               std::uint32_t columns )
+{
+    // get the estimate of the amount of columns in the string
+    std::uint32_t  estimate   = columnsLong ( string );
+    // get the amount of columns we have to play with
+    std::ptrdiff_t difference = columns - estimate;
+    bool           sameParity = ( ~( columns ^ estimate ) ) & 1;
+    // four cases:
+    // 1. difference == 0: trivially, this is already centered.
+    // 2. difference < 0: replace characters with narrower variants until
+    // we can no longer do that or the difference is 0.
+    // 3. difference > 0 && sameParity: add difference / 2 spaces to the
+    // front and back of the string.
+    // 4. difference > 0 && !sameParity: attempt to widen the string by one
+    // column or narrow it by one column (if we can't widen it). Then follow
+    // case 3.
+    if ( !difference )
+    {
+        return string;
+    } else
+    {
+        // all cases here are easier if we have another string as utf-32
+        std::string    result = "";
+        std::u32string asU32  = U"";
+        for ( auto &cp : splitByCodePoint ( string ) )
+        {
+            asU32 += widen ( cp.c_str ( ) );
+        }
+
+        auto backToUTF8 = [ & ] ( ) {
+            std::string output = "";
+            for ( auto &cp : asU32 ) { output += narrow ( cp ); }
+            return output;
+        };
+
+        // returns true if it succeeded.
+        auto narrowOneUnit = [ & ] ( ) -> bool {
+            for ( std::size_t i = 0; i < asU32.size ( ) - 1; i++ )
+            {
+                if ( asU32.at ( i ) == ' ' )
+                {
+                    if ( asU32.at ( i + 1 ) == ' ' )
+                    {
+                        // remove the character at i+1
+                        asU32.erase ( i + 1, 1 );
+                        return true;
+                    }
+                }
+            }
+            for ( std::size_t i = 0; i < asU32.size ( ) - 1; i++ )
+            {
+                if ( asU32.at ( i ) == '-' )
+                {
+                    if ( asU32.at ( i + 1 ) == '-' )
+                    {
+                        // remove the character at i+1
+                        asU32.erase ( i + 1, 1 );
+                        return true;
+                    }
+                }
+            }
+            char32_t diff = U'！' - '!';
+            for ( char32_t cp = U'！'; cp <= U'～'; cp++ )
+            {
+                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+                {
+                    if ( asU32.at ( i ) == cp )
+                    {
+                        asU32.at ( i ) = ( cp - diff );
+                        return true;
+                    }
+                }
+            }
+            diff = U'･' - U'・';
+            for ( char32_t cp = U'･'; cp <= U'ﾟ'; cp++ )
+            {
+                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+                {
+                    if ( asU32.at ( i ) == cp )
+                    {
+                        asU32.at ( i ) = ( cp - diff );
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        auto widenOneUnit = [ & ] ( ) -> bool {
+            for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+            {
+                if ( asU32.at ( i ) == ' ' )
+                {
+                    asU32.insert ( i, 1, ' ' );
+                    return true;
+                }
+            }
+            for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+            {
+                if ( asU32.at ( i ) == '-' )
+                {
+                    asU32.insert ( i, 1, '-' );
+                }
+            }
+            char32_t diff = U'！' - '!';
+            for ( char32_t cp = '!'; cp <= '~'; cp++ )
+            {
+                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+                {
+                    if ( asU32.at ( i ) == cp )
+                    {
+                        asU32.at ( i ) = ( cp + diff );
+                        return true;
+                    }
+                }
+            }
+            diff = U'･' - U'・';
+            for ( char32_t cp = U'・'; cp <= U'゜'; cp++ )
+            {
+                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
+                {
+                    if ( asU32.at ( i ) == cp )
+                    {
+                        asU32.at ( i ) = ( cp + diff );
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        if ( difference < 0 )
+        {
+            while ( difference < 0 )
+            {
+                if ( narrowOneUnit ( ) )
+                {
+                    difference++;
+                } else
+                {
+                    // give up, we couldn't narrow the string
+                    return backToUTF8 ( );
+                }
+            }
+            // difference == 0
+            // exactly 0 columns to play with.
+            return backToUTF8 ( );
+        } else // difference > 0
+        {
+            if ( difference == 1 )
+            {
+                // attempt to narrow the string by one unit.
+                // add a space on the left.
+                narrowOneUnit ( );
+                return " " + backToUTF8 ( );
+            } else if ( !sameParity )
+            {
+                // attempt to narrow the string by one unit. If that
+                // fails, attempt to widen the string by one unit.
+                // add difference / 2 spaces to the left of the string.
+                if ( !narrowOneUnit ( ) )
+                {
+                    widenOneUnit ( );
+                }
+                std::string output = "";
+                for ( std::ptrdiff_t i = 0; i < difference / 2; i++ )
+                {
+                    output += " ";
+                }
+                return output + backToUTF8 ( );
+
+            } else
+            {
+                // add difference / 2 spaces to the left of the string.
+                std::string output = "";
+                for ( std::ptrdiff_t i = 0; i < difference / 2; i++ )
+                {
+                    output += " ";
+                }
+                return output + backToUTF8 ( );
+            }
+        }
+    }
+}
+
+std::uint32_t io::console::manip::columnsLong ( std::string const &string )
+{
+    std::uint32_t  result = 0;
+    std::u32string asU32  = U"";
+    for ( auto &cp : splitByCodePoint ( string ) )
+    {
+        asU32 += widen ( cp.c_str ( ) );
+    }
+    for ( auto &cp : asU32 )
+    {
+        auto properties = characterProperties ( ).at ( cp );
+        result += properties.control
+                        ? 0
+                        : ( 1 + ( properties.columns | properties.emoji ) );
+    }
+    return result;
+}
+
 BreakingProperties getBreakingPropertiesFrom ( char32_t const &c )
 {
     CharacterProperties properties = characterProperties ( ).at ( c );

@@ -67,6 +67,7 @@ namespace io::console
                 std::shared_ptr< colors::IColor > const &color );
 
         void setWrapping ( bool const & ) noexcept;
+        void setCentering ( bool const & ) noexcept;
 
         template < class T >
         // clang-format off

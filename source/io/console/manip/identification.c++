@@ -247,7 +247,13 @@ std::string grabCodePoint ( std::string &string )
     switch ( identifyFirst ( string ) )
     {
         case INVALID_: errorMessage = "Invalid Character Sequence!";
-        case UTFNBYTE: throw std::runtime_error ( errorMessage );
+        case UTFNBYTE:
+            RUNTIME_ERROR ( errorMessage,
+                            ": in decimal, U+",
+                            widen ( string.c_str ( ) ),
+                            ", \"",
+                            string.substr ( 0, 4 ),
+                            "\"" );
         case TERMINAL:
             result += string.front ( );
             string = string.substr ( 1 );
@@ -341,7 +347,23 @@ std::vector< std::string >
     std::vector< std::string > result = { };
     while ( !string.empty ( ) )
     {
-        result.push_back ( grabCodePoint ( string ) );
+        std::size_t       currentSize = string.size ( );
+        unsigned char     firstByte   = string.front ( );
+        std::stringstream temp;
+        temp << std::hex << std::uint32_t ( firstByte );
+        try
+        {
+            result.push_back ( grabCodePoint ( string ) );
+        } catch ( std::out_of_range &oor )
+        {
+            RUNTIME_ERROR ( "First byte of sequence is ",
+                            temp.str ( ),
+                            " but ran out of space on code point "
+                            "that should have been less "
+                            "than ",
+                            currentSize,
+                            " bytes long." )
+        }
     }
     return result;
 }

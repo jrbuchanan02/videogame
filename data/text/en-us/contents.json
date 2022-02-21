@@ -89,7 +89,18 @@
                 ", certain advantages or disadvantages throughout the game."
             ]
         },
-        {},
+        {
+            "introduction.0": [
+                "When Videogame receives a plot, this text will inform you ",
+                "about the inciting incident and all of the tasks that you ",
+                "will have as the main character and hero of the story. Be ",
+                "prepared for text in multiple languages, sometimes without ",
+                "translation, and for the unexpected. Aunque tengo mucha ",
+                "experiencia en el español por mi lengua segunda, lo siento ",
+                "para los errores. Nihongo ha watashi no san gengo desu, and ",
+                "I wouldn't really say I know Japanese yet."
+            ]
+        },
         {}
     ]
 }
