@@ -78,7 +78,8 @@ namespace io::console
              && !std::is_same_v < T, char8_t > 
              && !std::is_same_v < T, char16_t > 
              && !std::is_same_v < T, char32_t > 
-             && !std::is_invocable_r_v< Console &, T, Console & > )
+             && !std::is_invocable_r_v< Console &, T, Console & > 
+             && !std::is_convertible_v< T, ConsoleManipulator>)
         {
             // clang-format on
             std::stringstream temp;
@@ -146,6 +147,16 @@ namespace io::console
                 std::is_invocable_r_v< Console &, T, Console & > )
         {
             return t ( *this );
+        }
+
+        template < class T >
+        Console &operator<< ( T const &t ) requires (
+                // clang-format off
+                std::is_convertible_v< T, ConsoleManipulator > 
+                && !std::is_invocable_r_v< Console &, T, Console & > )
+        // clang-format on
+        {
+            return *this << t.operator io::console::ConsoleManipulator ( );
         }
     };
 } // namespace io::console
