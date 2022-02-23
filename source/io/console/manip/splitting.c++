@@ -543,10 +543,13 @@ bool isBreakingPropertyTailorable ( char32_t const &c )
 
 void removeCodePoint ( std::vector< std::string > &points )
 {
-    std::vector< std::string > temp = { };
-    for ( std::size_t i = 1; i < points.size ( ); i++ )
+    std::vector< std::string > temp   = { };
+    std::string                string = "";
+    for ( auto &cp : points ) { string += cp; }
+    std::vector< std::string > _temp = splitByCodePoint ( string );
+    for ( std::size_t i = 0; i < _temp.size ( ) - 1; i++ )
     {
-        temp.push_back ( points.at ( i ) );
+        temp.push_back ( _temp.at ( i ) );
     }
     points = temp;
 }

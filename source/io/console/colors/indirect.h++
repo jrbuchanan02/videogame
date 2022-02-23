@@ -172,7 +172,7 @@ namespace io::console::colors
         void refresh ( double const &time = 0 ) const noexcept override final
         {
             auto deltas = delta->rgba ( time );
-            auto fmMods = fmMod->rgba ( time );
+            auto fmMods = fmMod->rgba ( time - std::numbers::pi / 2 );
             auto amMods = amMod->rgba ( time );
             auto cfreqs = freqs->rgba ( time );
 
@@ -228,6 +228,58 @@ namespace io::console::colors
                 blend_functions::BlendFunction const &blender ) noexcept
         {
             this->blender = blender;
+        }
+
+        void setDelta ( std::shared_ptr< IColor > const &delta ) noexcept
+        {
+            if ( !this->references ( delta.get ( ) ) )
+            {
+                this->delta = delta;
+            }
+        }
+
+        void setFmMod ( std::shared_ptr< IColor > const &fmMod ) noexcept
+        {
+            if ( !this->references ( fmMod.get ( ) ) )
+            {
+                this->fmMod = fmMod;
+            }
+        }
+
+        void setAmMod ( std::shared_ptr< IColor > const &amMod ) noexcept
+        {
+            if ( !this->references ( amMod.get ( ) ) )
+            {
+                this->amMod = amMod;
+            }
+        }
+
+        void setFreqs ( std::shared_ptr< IColor > const &freqs ) noexcept
+        {
+            if ( !this->references ( freqs.get ( ) ) )
+            {
+                this->freqs = freqs;
+            }
+        }
+
+        void setParam ( std::uint8_t const              &param,
+                        std::shared_ptr< IColor > const &to )
+        {
+            if ( param >= 4 )
+            {
+                RUNTIME_ERROR ( "Parameter out of range: ",
+                                ( std::uint32_t ) param )
+            } else
+            {
+                switch ( param & 3 )
+                {
+                    case 0: setDelta ( to ); break;
+                    case 1: setFmMod ( to ); break;
+                    case 2: setAmMod ( to ); break;
+                    case 3:
+                    default: setFreqs ( to );
+                }
+            }
         }
     };
 } // namespace io::console::colors
