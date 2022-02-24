@@ -29,23 +29,12 @@ namespace ux::serialization
      */
     enum class TransliterationLevel : std::uint8_t
     {
-        NOT, // no transliteration
-        YES, // transliterated according to general conventions, leading to
-             // accented text
-        ALT, // transliterated in a way that keeps an ASCII alphabet.
+        NOT,  // no transliteration
+        YES,  // transliterated according to general conventions, leading to
+              // accented text
+        ALT,  // transliterated in a way that keeps an ASCII alphabet.
+        _MAX, // unused maximum value to make this a VideoEnumeration
     };
-
-    static constexpr inline defines::ICString
-            toString ( TransliterationLevel const level ) noexcept
-    {
-        switch ( level )
-        {
-            case TransliterationLevel::ALT: return IS ( "ALT" );
-            case TransliterationLevel::YES: return IS ( "YES" );
-            case TransliterationLevel::NOT:
-            default: return IS ( "NOT" );
-        }
-    }
 
     struct StringKey
     {
@@ -78,7 +67,7 @@ namespace ux::serialization
         ExternalizedStrings ( ) noexcept;
         ExternalizedStrings ( std::filesystem::path const & );
 
-        virtual ~ExternalizedStrings();
+        virtual ~ExternalizedStrings ( );
 
         void set ( StringKey const &, defines::IString const & );
         defines::IString const get ( StringKey const & ) const noexcept;

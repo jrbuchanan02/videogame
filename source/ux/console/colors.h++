@@ -13,6 +13,7 @@
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
 
 #include <io/console/colors/color.h++>
@@ -30,19 +31,8 @@ namespace ux::console
         WAVEFORM,
         AVERAGE4,
         AVERAGE5,
+        _MAX,
     };
-
-    constexpr inline defines::ChrCString const
-            toString ( SerializedColorFunction const scf ) noexcept
-    {
-        using enum SerializedColorFunction;
-        switch ( scf )
-        {
-            case WAVEFORM: return "WAVEFORM";
-            case AVERAGE4: return "AVERAGE4";
-            case AVERAGE5: return "AVERAGE5";
-        }
-    }
 
     template < class CharT, class Traits = std::char_traits< CharT > >
     inline std::basic_istream< CharT, Traits > &
@@ -51,41 +41,8 @@ namespace ux::console
     {
         std::basic_string< CharT, Traits > temp;
         is >> temp;
-        // string compare on strings of not-necessarily the same size.
-        // we only need to check up to eight values, since all lengths
-        // in SerializedColorFunction are eight.
-        if ( temp.size ( ) < 8 || temp.size ( ) > 8 )
-        {
-            return is;
-        } else
-        {
-            using enum SerializedColorFunction;
-            bool waveformEligible = true;
-            bool average4Eligible = true;
-            bool average5Eligible = true;
-            for ( std::size_t i = 0; i < 8; i++ )
-            {
-                waveformEligible &=
-                        temp.at ( i ) == toString ( WAVEFORM ) [ i ];
-                average4Eligible &=
-                        temp.at ( j ) == toString ( AVERAGE4 ) [ i ];
-                average5Eligible &=
-                        temp.at ( j ) == toString ( AVERAGE5 ) [ i ];
-            }
-
-            if ( waveformEligible )
-            {
-                scf = WAVEFORM;
-            } else if ( average4Eligible )
-            {
-                scf = AVERAGE4;
-            } else if ( average5Eligible )
-            {
-                scf = AVERAGE5;
-            }
-
-            return is;
-        }
+        scf = defines::fromString< SerializedColorFunction > ( temp );
+        return is;
     }
 
     class ColorBlock
@@ -108,7 +65,7 @@ namespace ux::console
 
         void delColor ( std::size_t const & ) noexcept;
 
-        std::shared_ptr< io::console::colors::IColor > const &
+        std::shared_ptr< io::console::colors::IColor > const
                 getColor ( std::size_t const & ) noexcept;
 
         void setColor ( std::size_t const &,

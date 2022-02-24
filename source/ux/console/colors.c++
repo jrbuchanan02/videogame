@@ -63,7 +63,9 @@ ColorBlock &ux::console::ColorBlock::operator= ( ColorBlock &&that ) noexcept
     return *this;
 }
 
-std::shared_ptr< IColor > parseColor ( rapidjson::Value::Object const & );
+std::shared_ptr< IColor > parseColor (
+        rapidjson::Value::Object const &,
+        std::map< std::size_t, std::shared_ptr< IColor > > const & );
 
 ux::console::ColorBlock::ColorBlock ( rapidjson::Value::Object const &object )
 {
@@ -95,7 +97,7 @@ ux::console::ColorBlock::ColorBlock ( rapidjson::Value::Object const &object )
     // the colors can appear in either a "calculation" object or a
     // "screen" object.
 
-    auto iterate = [ & ] ( defines::ECString place ) {
+    auto iterate = [ & ] ( defines::EPString place ) {
         // iterate through the colors.
         for ( auto &item : object [ place ].GetObject ( ) )
         {
@@ -137,7 +139,7 @@ void ux::console::ColorBlock::delColor ( std::size_t const &index ) noexcept
     }
 }
 
-std::shared_ptr< IColor > const &
+std::shared_ptr< IColor > const
         ux::console::ColorBlock::getColor ( std::size_t const &index ) noexcept
 {
     if ( pimpl->colors.contains ( index ) )
@@ -252,17 +254,17 @@ std::shared_ptr< IColor > parseColor (
             defines::EStringStream  temp { color [ "func" ].GetString ( ) };
             SerializedColorFunction scf;
             temp >> scf;
-            using enum ux::console::SerializedColorFunction;
             switch ( scf )
             {
-                case WAVEFORM:
+                case SerializedColorFunction::_MAX: // an error condition
+                case SerializedColorFunction::WAVEFORM:
                     output->setBlendFunction (
                             blend_functions::defaultBlending );
                     break;
-                case AVERAGE4:
+                case SerializedColorFunction::AVERAGE4:
                     output->setBlendFunction ( blend_functions::averageAdjust );
                     break;
-                case AVERAGE5:
+                case SerializedColorFunction::AVERAGE5:
                     output->setBlendFunction ( blend_functions::fullAverage );
             }
         }

@@ -13,6 +13,7 @@
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
 #include <io/base/syncstream.h++>
 
@@ -224,5 +225,6 @@ defines::IString const ux::serialization::ExternalizedStrings::get (
     }
 
     return IS ( "!" ) + key.language + IS ( "." ) + key.text + IS ( "." )
-         + toString ( key.level ) + IS ( "!" );
+         + defines::rtToString< TransliterationLevel > ( key.level )
+         + IS ( "!" );
 }
