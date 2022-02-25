@@ -1,0 +1,51 @@
+# here is everything that could show up on a screen.
+
+# the default colors
+Colors:
+  - &defaultBlack
+    Number: 0
+    Direct: Yes
+    Base: [0x00, 0x00, 0x00, 0x00]
+  - &defaultRed
+    Number: 1
+    Direct: Yes
+    Base: [0x7F, 0x00, 0x00, 0x00]
+  - &defaultGreen
+    Number: 2
+    Direct: Yes
+    Base: [0x00, 0x7F, 0x00, 0x00]
+  - &defaultYellow
+    Number: 3
+    Direct: Yes
+    Base: [0x7F, 0x7F, 0x00, 0x00]
+  - &defaultBlue
+    Number: 4
+    Direct: Yes
+    Base: [0x00, 0x00, 0x7F, 0x00]
+  - &defaultMagenta
+    Number: 5
+    Direct: Yes
+    Base: [0x7F, 0x00, 0x7F, 0x00]
+  - &defaultCyan
+    Number: 6
+    Direct: Yes
+    Base: [0x00, 0x7F, 0x7F, 0x00]
+  - &defaultWhite
+    Number: 7
+    Direct: Yes
+    Base: [0x7F, 0x7F, 0x7F, 0x00]
+
+Screens:
+  - &titleScreen
+    Id: Title
+    Line:
+      - Id: Title
+      - Colors:
+        - *defaultBlack
+        - *defaultRed
+        - *defaultGreen
+        - *defaultOrange
+        - *defaultBlue
+        - *defaultMagenta
+        - *defaultCyan
+        - *defaultWhite

@@ -11,12 +11,11 @@
  */
 #pragma once
 
+#include <ux/serialization/externalized.h++>
+
 #include <defines/constants.h++>
 #include <defines/macros.h++>
 #include <defines/types.h++>
-
-#include <ux/console/colors.h++>
-#include <ux/console/screen.h++>
 
 #include <io/console/console.h++>
 
@@ -25,19 +24,8 @@
 
 namespace ux::serialization
 {
-    class ScreenID
+    class ExternalizedScreen : public Externalized<console::Screen>
     {
-        struct impl_s;
-        std::unique_ptr<impl_s> pimpl;
-    public:
 
-    };
-
-    class ExternalizedScreens
-    {
-        struct impl_s;
-        std::unique_ptr<impl_s> pimpl;
-    public:
-        
     };
 }

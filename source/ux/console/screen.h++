@@ -3,7 +3,7 @@
  * @author Joshua Buchanan (joshuarobertbuchanan@gmail.com)
  * @brief A screen.
  * @version 1
- * @date 2022-02-23
+ * @date 2022-02-25
  *
  * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed
  * above.
@@ -11,29 +11,22 @@
  */
 #pragma once
 
+#include <io/console/colors/color.h++>
+
 #include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
 
-#include <ux/console/colors.h++>
-
-#include <yaml-cpp/yaml.h>
-
-#include <memory>
+#include <ux/serialization/externalized.h++>
 
 namespace ux::console
 {
+    class Color
+    { };
     class Line
-    {
-        struct impl_s;
-        std::unique_ptr< impl_s > pimpl;
-    public:
-    };
+    { };
 
     class Screen
-    {
-        struct impl_s;
-        std::unique_ptr< impl_s > pimpl;
-    public:
-    };
+    { };
 } // namespace ux::console
