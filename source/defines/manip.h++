@@ -36,7 +36,10 @@ namespace defines
             memberName = memberName.substr ( memberName.find_last_of ( ':' ) );
         }
         // also eliminate up to the last space
-        memberName = memberName.substr ( memberName.find_last_of ( ' ' ) );
+        if ( memberName.find_last_of(' ') != defines::ChrString::npos )
+        {
+            memberName = memberName.substr ( memberName.find_last_of ( ' ' ) );
+        }
         return memberName;
     }
 
