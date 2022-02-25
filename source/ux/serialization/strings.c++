@@ -17,8 +17,7 @@
 #include <defines/types.h++>
 #include <io/base/syncstream.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
+#include <yaml-cpp/yaml.h>
 
 #include <filesystem>
 #include <fstream>
@@ -28,203 +27,50 @@
 #include <sstream>
 #include <stdexcept>
 
-struct ux::serialization::ExternalizedStrings::impl_s
+void ux::serialization::ExternalizedStrings::_parse (
+        defines::ChrString const &text )
 {
-    std::map< StringKey, defines::IString > contents;
-
-    impl_s ( )  = default;
-    ~impl_s ( ) = default;
-};
-
-ux::serialization::ExternalizedStrings::ExternalizedStrings ( ) noexcept :
-        pimpl ( new impl_s ( ) )
-{ }
-
-ux::serialization::ExternalizedStrings::ExternalizedStrings (
-        std::filesystem::path const &path ) :
-        ExternalizedStrings ( )
-{
-    // step 1: this path should lead to data/text. ensure that
-    // it ends in the proper names.
-
-    bool validPath = path.u32string ( ).ends_with ( U"data/text" );
-#ifdef WINDOWS
-    validPath |= path.u32string ( ).ends_with ( U"data\\text" );
-#endif
-    if ( !validPath )
+    YAML::Node       node               = YAML::Load ( text );
+    std::size_t      maxTransliteration = node [ "Transliterations" ].size ( );
+    defines::IString language           = node [ "Language" ].Scalar ( );
+    std::cout << "Language: " << language << "\n";
+    for ( std::size_t i = 0; i < maxTransliteration; i++ )
     {
-#ifdef WINDOWS
-        defines::ChrString failMessage = " is not data/text or data\\text!";
-#else
-        defines::ChrString failMessage = " is not data/text!";
-#endif
-        RUNTIME_ERROR ( ( defines::ChrCString ) path.u8string ( ).c_str ( ),
-                        failMessage )
-    }
-
-    auto directoryEntries =
-            std::filesystem::recursive_directory_iterator ( path );
-    for ( auto &entry : directoryEntries )
-    {
-        if ( entry.is_regular_file ( ) )
+        std::cout << "here " << i << "\n";
+        defines::ChrString rawTransliteration =
+                node [ "transliterations" ][ i ].as< defines::ChrString > ( );
+        std::cout << "here " << i << "\n";
+        TransliterationLevel parsedTransliteration =
+                defines::fromString< TransliterationLevel > (
+                        rawTransliteration );
+        std::cout << "here " << i << "\n";
+        if ( parsedTransliteration == TransliterationLevel::_MAX )
         {
-            // check if the entry is a .json file.
-            auto path = entry.path ( );
-            if ( path.extension ( ).u32string ( ) == U".json" )
-            {
-                defines::EString     filename = path.string ( );
-                defines::EFileStream fstream =
-                        defines::EFileStream ( filename );
-                defines::EString slurped = ES ( "" );
-                if ( fstream.bad ( ) )
-                {
-                    RUNTIME_ERROR ( "Failed to open file: ", filename );
-                }
-                while ( !fstream.eof ( ) )
-                {
-                    defines::EString temp;
-                    std::getline ( fstream, temp );
-                    slurped += temp;
-                }
-                rapidjson::Document document;
-                document.Parse ( ( defines::ChrCString ) slurped.c_str ( ) );
-
-                // iterate
-                std::size_t maxTranslit =
-                        document [ "transliterations" ].Size ( );
-                defines::IString language =
-                        document [ "language" ].GetString ( );
-                for ( std::size_t i = 0; i < maxTranslit; i++ )
-                {
-                    TransliterationLevel parsed = TransliterationLevel::NOT;
-                    defines::EString     value =
-                            document [ "transliterations" ][ i ].GetString ( );
-                    if ( value == "ALT" )
-                    {
-                        parsed = TransliterationLevel::ALT;
-                    } else if ( value == "YES" )
-                    {
-                        parsed = TransliterationLevel::YES;
-                    } else if ( value == "NOT" )
-                    {
-                        parsed = TransliterationLevel::NOT;
-                    } else
-                    {
-                        io::base::osyncstream { std::cout }
-                                << "Warning: invalid key " << value << "\n";
-                    }
-                    // I find the lack of references ... disturbing
-                    auto items = document [ "text" ][ i ]
-                                         .GetObject ( )
-                                         .MemberBegin ( );
-                    for ( ; items
-                            != document [ "text" ][ i ]
-                                       .GetObject ( )
-                                       .MemberEnd ( );
-                          items++ )
-                    {
-                        defines::IString parsedString = IS ( "" );
-                        if ( items->value.IsString ( ) )
-                        {
-                            parsedString = items->value.GetString ( );
-                        } else
-                        {
-                            for ( std::size_t i = 0; i < items->value.Size ( );
-                                  i++ )
-                            {
-                                parsedString += items->value.GetArray ( ) [ i ]
-                                                        .GetString ( );
-                            }
-                        }
-                        set ( StringKey { language,
-                                          items->name.GetString ( ),
-                                          parsed },
-                              parsedString );
-                    }
-                }
-            }
+            std::cout << "here " << i << "\n";
+            parsedTransliteration = TransliterationLevel::NOT;
+            std::cout << "here " << i << "\n";
+            io::base::osyncstream { std::cout }
+                    << "Warning: invalid transliteration level: \""
+                    << rawTransliteration << "\"\n";
         }
-    }
-}
+        std::cout << "here " << i << "\n";
 
-ux::serialization::ExternalizedStrings::~ExternalizedStrings ( ) = default;
-
-void ux::serialization::ExternalizedStrings::set (
-        StringKey const        &key,
-        defines::IString const &value )
-{
-    pimpl->contents.insert_or_assign ( key, value );
-}
-
-defines::IString const ux::serialization::ExternalizedStrings::get (
-        StringKey const &key ) const noexcept
-{
-    if ( pimpl->contents.contains ( key ) )
-    {
-        return pimpl->contents.at ( key );
-    } else
-    {
-        if ( key.level == TransliterationLevel::YES )
+        for ( auto const &item : node [ "Text" ][ i ] )
         {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::ALT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::ALT } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::NOT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::NOT } );
-            }
-        } else if ( key.level == TransliterationLevel::ALT )
-        {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::YES } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::YES } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::NOT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::NOT } );
-            }
-        } else
-        {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::YES } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::YES } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::ALT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::ALT } );
-            }
+            std::cout << "here " << i << "\n";
+            defines::IString parsedString = IS ( "" );
+            std::cout << "here " << i << "\n";
+            parsedString = item.as< defines::IString > ( );
+            std::cout << "here " << i << "\n";
+            std::shared_ptr< StringKey > key =
+                    std::shared_ptr< StringKey > ( new StringKey ( ) );
+            std::cout << "here " << i << "\n";
+            key->key                  = item.Tag ( );
+            key->language             = language;
+            key->transliterationLevel = parsedTransliteration;
+            std::cout << "here " << i << "\n";
+            getMap ( ).insert_or_assign ( key, parsedString );
         }
+        std::cin.get ( );
     }
-
-    return IS ( "!" ) + key.language + IS ( "." ) + key.text + IS ( "." )
-         + defines::rtToString< TransliterationLevel > ( key.level )
-         + IS ( "!" );
 }

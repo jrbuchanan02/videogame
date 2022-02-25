@@ -20,8 +20,7 @@
 
 #include <io/base/syncstream.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
+#include <yaml-cpp/yaml.h>
 
 #include <iostream>
 #include <map>
@@ -64,10 +63,10 @@ ColorBlock &ux::console::ColorBlock::operator= ( ColorBlock &&that ) noexcept
 }
 
 std::shared_ptr< IColor > parseColor (
-        rapidjson::Value::Object const &,
+        YAML::Node const &,
         std::map< std::size_t, std::shared_ptr< IColor > > const & );
 
-ux::console::ColorBlock::ColorBlock ( rapidjson::Value::Object const &object )
+ux::console::ColorBlock::ColorBlock ( YAML::Node const &object )
 {
     /**
      * The expected format of a single color:
@@ -99,10 +98,10 @@ ux::console::ColorBlock::ColorBlock ( rapidjson::Value::Object const &object )
 
     auto iterate = [ & ] ( defines::EPString place ) {
         // iterate through the colors.
-        for ( auto &item : object [ place ].GetObject ( ) )
+        for ( auto const &item : object [ place ] )
         {
             // grab the keys.
-            defines::EStringStream temp { item.name.GetString ( ) };
+            defines::EStringStream temp { item.Tag ( ) };
 
             // don't overwrite black with a poorly initialized color.
             std::size_t index = 8;
@@ -110,17 +109,17 @@ ux::console::ColorBlock::ColorBlock ( rapidjson::Value::Object const &object )
 
             pimpl->colors.insert_or_assign (
                     index,
-                    parseColor ( item.value.GetObject ( ), pimpl->colors ) );
+                    parseColor ( item, pimpl->colors ) );
         }
     };
 
-    if ( object.HasMember ( "calculation" ) )
+    if ( object [ "Calculation" ] )
     {
-        iterate ( "calculation" );
+        iterate ( "Calculation" );
     }
-    if ( object.HasMember ( "screen" ) )
+    if ( object [ "Screen" ] )
     {
-        iterate ( "screen" );
+        iterate ( "Screen" );
     }
 }
 
@@ -183,25 +182,27 @@ ux::console::ColorBlock::operator io::console::ConsoleManipulator ( )
 }
 
 std::shared_ptr< IColor > parseColor (
-        rapidjson::Value::Object const                           &color,
+        YAML::Node const                                         &color,
         std::map< std::size_t, std::shared_ptr< IColor > > const &colors )
 {
     // at this point, it has already been determined that the color is either
     // direct or indirect.
-    defines::EString mode = color [ "mode" ].GetString ( );
+    defines::EString mode = color [ "Mode" ].as< defines::EString > ( );
     if ( mode == "DIRECT" )
     {
         std::shared_ptr< RGBAColor > output =
                 std::shared_ptr< RGBAColor > ( new RGBAColor ( ) );
         // grab the base
-        auto base = color [ "base" ].GetArray ( );
-        // currently, defines::UnboundColor is a double
-        for ( std::size_t i = 0; i < base.Size ( ); i++ )
+        auto base = color [ "Base" ];
+
+        for ( std::size_t i = 0; i < base.size ( ); i++ )
         {
-            output->setBasicComponent ( i, base [ i ].GetDouble ( ) );
+            output->setBasicComponent (
+                    i,
+                    base [ i ].as< defines::UnboundColor > ( ) );
         }
         // zero-initialize any ommitted values
-        for ( std::size_t i = base.Size ( ); i < 4; i++ )
+        for ( std::size_t i = base.size ( ); i < 4; i++ )
         {
             output->setBasicComponent ( i, 0 );
         }
@@ -212,16 +213,18 @@ std::shared_ptr< IColor > parseColor (
                 std::shared_ptr< IndirectColor > ( new IndirectColor ( ) );
         // same basic component grabbing as before, but, this time the
         // entire field is optional.
-        if ( color.HasMember ( "base" ) )
+        if ( color [ "Base" ] )
         {
-            auto base = color [ "base" ].GetArray ( );
+            auto base = color [ "Base" ];
             // currently, defines::UnboundColor is a double
-            for ( std::size_t i = 0; i < base.Size ( ); i++ )
+            for ( std::size_t i = 0; i < base.size ( ); i++ )
             {
-                output->setBasicComponent ( i, base [ i ].GetDouble ( ) );
+                output->setBasicComponent (
+                        i,
+                        base [ i ].as< defines::UnboundColor > ( ) );
             }
             // zero-initialize any ommitted values
-            for ( std::size_t i = base.Size ( ); i < 4; i++ )
+            for ( std::size_t i = base.size ( ); i < 4; i++ )
             {
                 output->setBasicComponent ( i, 0 );
             }
@@ -234,24 +237,29 @@ std::shared_ptr< IColor > parseColor (
         }
         // similar grabbing mechanism, but this time for integers, and they
         // must be >=0 and the field is required.
-        auto args = color [ "args" ].GetArray ( );
-        if ( args.Size ( ) != 4 )
+        auto args = color [ "Args" ];
+        if ( !args )
+        {
+            RUNTIME_ERROR ( "The parameter \"Args\" is required." )
+        }
+        if ( args.size ( ) != 4 )
         {
             RUNTIME_ERROR (
                     "Must have four color reference arguments for indirect "
                     "colors. Got ",
-                    args.Size ( ),
+                    args.size ( ),
                     " instead." )
         }
         for ( std::size_t i = 0; i < 4; i++ )
         {
-            std::size_t index = args [ i ].GetUint64 ( );
+            std::size_t index = args [ i ].as< std::size_t > ( );
             output->setParam ( std::uint8_t ( i ), colors.at ( index ) );
         }
         // set the function. This field is optional.
-        if ( color.HasMember ( "func" ) )
+        if ( color [ "Function" ] )
         {
-            defines::EStringStream  temp { color [ "func" ].GetString ( ) };
+            defines::EStringStream temp {
+                    color [ "Function" ].as< defines::EString > ( ) };
             SerializedColorFunction scf;
             temp >> scf;
             switch ( scf )

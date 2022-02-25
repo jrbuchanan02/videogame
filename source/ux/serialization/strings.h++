@@ -11,6 +11,8 @@
  */
 #pragma once
 
+#include <ux/serialization/externalized.h++>
+
 #include <defines/constants.h++>
 #include <defines/macros.h++>
 #include <defines/types.h++>
@@ -36,40 +38,76 @@ namespace ux::serialization
         _MAX, // unused maximum value to make this a VideoEnumeration
     };
 
-    struct StringKey
+    struct StringKey : public ExternalID
     {
-        defines::IString const     language;
-        defines::IString const     text;
-        TransliterationLevel const level;
+        defines::IString     language;
+        TransliterationLevel transliterationLevel;
+        POLYMORPHIC_IDENTIFIER ( StringKey )
 
-        inline std::strong_ordering const
-                operator<=> ( StringKey const &key ) const noexcept
+        StringKey ( ) noexcept = default;
+
+        StringKey ( defines::IString     key,
+                    defines::IString     lang,
+                    TransliterationLevel tlit ) :
+                language { lang },
+                transliterationLevel ( tlit )
         {
-            // first, compare language
-            if ( language != key.language )
+            this->key = key;
+        }
+    protected:
+        virtual std::partial_ordering const
+                order ( ExternalID const &id ) const noexcept
+        {
+            if ( id.getIdentifier ( ) == StringKey::identifier )
             {
-                return language <=> key.language;
-            } else if ( text != key.text )
-            {
-                return text <=> key.text;
-            } else
-            {
-                return ( std::uint8_t ) level <=> ( std::uint8_t ) key.level;
+                // check against the language
+                if ( language
+                     != dynamic_cast< StringKey const & > ( id ).language )
+                {
+                    return language
+                       <=> dynamic_cast< StringKey const & > ( id ).language;
+                } else if ( transliterationLevel
+                            != dynamic_cast< StringKey const & > ( id )
+                                       .transliterationLevel )
+                {
+                    return transliterationLevel
+                       <=> dynamic_cast< StringKey const & > ( id )
+                                   .transliterationLevel;
+                } else
+                {
+                    return std::partial_ordering::equivalent;
+                }
             }
+            return std::partial_ordering::unordered;
         }
     };
 
-    class ExternalizedStrings
+    class ExternalizedStrings : public Externalized< defines::IString >
     {
-        struct impl_s;
-        std::unique_ptr< impl_s > pimpl;
+    protected:
+        virtual void _parse ( defines::ChrString const & ) override;
+
+        virtual defines::ChrString folder ( ) const noexcept override final
+        {
+            return "text";
+        }
+        virtual defines::IString defaultValue (
+                std::shared_ptr< ExternalID > const &ext ) const override final
+        {
+            defines::IString result = "!" + ext->key;
+            if ( ext->getIdentifier ( ) == StringKey::identifier )
+            {
+                auto const &temp = dynamic_cast< StringKey & > ( *ext );
+                result += "." + temp.language + "."
+                        + defines::rtToString< TransliterationLevel > (
+                                  temp.transliterationLevel );
+            }
+            result += "!";
+            return result;
+        }
     public:
-        ExternalizedStrings ( ) noexcept;
-        ExternalizedStrings ( std::filesystem::path const & );
-
-        virtual ~ExternalizedStrings ( );
-
-        void set ( StringKey const &, defines::IString const & );
-        defines::IString const get ( StringKey const & ) const noexcept;
+        POLYMORPHIC_IDENTIFIER ( ExternalizedStrings )
+        ExternalizedStrings ( ) noexcept = default;
+        virtual ~ExternalizedStrings ( ) = default;
     };
 } // namespace ux::serialization

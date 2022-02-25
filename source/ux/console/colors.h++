@@ -19,8 +19,7 @@
 #include <io/console/colors/color.h++>
 #include <io/console/console.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
+#include <yaml-cpp/yaml.h>
 
 #include <memory>
 
@@ -57,7 +56,7 @@ namespace ux::console
         ColorBlock &operator= ( ColorBlock const & ) noexcept;
         ColorBlock &operator= ( ColorBlock && ) noexcept;
 
-        ColorBlock ( rapidjson::Value::Object const & );
+        ColorBlock ( YAML::Node const & );
 
         void addColor ( std::size_t const &,
                         std::shared_ptr< io::console::colors::IColor > const
