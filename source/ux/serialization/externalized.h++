@@ -65,6 +65,8 @@ namespace ux::serialization
             return std::partial_ordering::unordered;
         }
     public:
+        ExternalID ( ) noexcept = default;
+        ExternalID ( defines::IString const &key ) : key { key } { }
         std::strong_ordering const
                 operator<=> ( ExternalID const &that ) const noexcept
         {

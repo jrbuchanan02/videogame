@@ -33,48 +33,34 @@ void ux::serialization::ExternalizedStrings::_parse (
 {
     YAML::Node       node     = YAML::Load ( text );
     defines::IString language = node [ "Language" ].Scalar ( );
-    std::cout << "Language: " << language << "\n";
     for ( std::size_t i = 0; i < node [ "Text" ].size ( ); i++ )
     {
-        std::cout << "here " << i << "\n";
         defines::ChrString rawTransliteration =
                 node [ "Transliteration" ][ i ].as< defines::ChrString > ( );
-        std::cout << "here " << i << "\n";
         TransliterationLevel parsedTransliteration =
                 defines::fromString< TransliterationLevel > (
                         rawTransliteration );
-        std::cout << "here " << i << "\n";
         if ( parsedTransliteration == TransliterationLevel::_MAX )
         {
-            std::cout << "here " << i << "\n";
             parsedTransliteration = TransliterationLevel::NOT;
-            std::cout << "here " << i << "\n";
             io::base::osyncstream { std::cout }
                     << "Warning: invalid transliteration level: \""
                     << rawTransliteration << "\"\n";
         }
-        std::cout << "here " << i << "\n";
 
         for ( auto item = node [ "Text" ][ i ].begin ( );
               item != node [ "Text" ][ i ].end ( );
               item++ )
         {
-            std::cout << "here " << i << "\n";
             defines::IString parsedString = IS ( "" );
-            std::cout << "here " << i << "\n";
             parsedString = item->second.as< defines::IString > ( );
-            std::cout << parsedString << "\n";
-            std::cout << "here " << i << "\n";
-            std::shared_ptr< StringKey > key =
-                    std::shared_ptr< StringKey > ( new StringKey ( ) );
-            std::cout << "here " << i << "\n";
-            key->key                  = item->first.as< defines::IString > ( );
-            key->language             = language;
-            key->transliterationLevel = parsedTransliteration;
-            std::cout << "here " << i << "\n";
+            std::shared_ptr< ExternalID > key =
+                    std::shared_ptr< ExternalID > ( new ExternalID ( ) );
+            key->key = language + "." + item->first.as< defines::IString > ( )
+                     + "."
+                     + defines::rtToString< TransliterationLevel > (
+                               parsedTransliteration );
             getMap ( ).insert_or_assign ( key, parsedString );
-            std::cout << get ( key ) << "\n";
         }
     }
-    std::cin.get ( );
 }

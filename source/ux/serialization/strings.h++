@@ -38,6 +38,7 @@ namespace ux::serialization
         _MAX, // unused maximum value to make this a VideoEnumeration
     };
 
+    // TODO: remove because it's redundant
     struct StringKey : public ExternalID
     {
         defines::IString     language;

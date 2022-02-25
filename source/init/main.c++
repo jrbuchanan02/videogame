@@ -41,9 +41,12 @@ int main ( int const argc, char const *const *const argv )
                     new ux::serialization::ExternalizedStrings ( ) );
     strings->parse ( dataPath );
     auto getString = [ & ] ( defines::IString const &key ) -> defines::IString {
-        using ux::serialization::StringKey;
-        return strings->get ( std::shared_ptr< StringKey > (
-                new StringKey ( key, locale, translit ) ) );
+        using ux::serialization::ExternalID;
+        return strings->get ( std::shared_ptr< ExternalID > ( new ExternalID (
+                locale + "."+  key + "."
+                + defines::rtToString<
+                        ux::serialization::TransliterationLevel > (
+                        translit ) ) ) );
     };
     bool runUnittests    = false;
     bool dumpInformation = false;

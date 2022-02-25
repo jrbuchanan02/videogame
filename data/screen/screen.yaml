@@ -1,51 +1,73 @@
 # here is everything that could show up on a screen.
+# this file will probably end up quite long, but, we
+# want to add in plenty of indirection.
 
-# the default colors
-Colors:
-  - &defaultBlack
-    Number: 0
-    Direct: Yes
-    Base: [0x00, 0x00, 0x00, 0x00]
-  - &defaultRed
-    Number: 1
-    Direct: Yes
-    Base: [0x7F, 0x00, 0x00, 0x00]
-  - &defaultGreen
-    Number: 2
-    Direct: Yes
-    Base: [0x00, 0x7F, 0x00, 0x00]
-  - &defaultYellow
-    Number: 3
-    Direct: Yes
-    Base: [0x7F, 0x7F, 0x00, 0x00]
-  - &defaultBlue
-    Number: 4
-    Direct: Yes
-    Base: [0x00, 0x00, 0x7F, 0x00]
-  - &defaultMagenta
-    Number: 5
-    Direct: Yes
-    Base: [0x7F, 0x00, 0x7F, 0x00]
-  - &defaultCyan
-    Number: 6
-    Direct: Yes
-    Base: [0x00, 0x7F, 0x7F, 0x00]
-  - &defaultWhite
-    Number: 7
-    Direct: Yes
-    Base: [0x7F, 0x7F, 0x7F, 0x00]
-
+# the defaults
+Defaults:
+  # default colors
+  Colors:
+    # black
+    - &defaultBlack
+      Number: 0
+      Direct: Yes
+      Base: [0x00, 0x00, 0x00, 0x00]
+    # red
+    - &defaultRed
+      Number: 1
+      Direct: Yes
+      Base: [0x7F, 0x00, 0x00, 0x00]
+    # green
+    - &defaultGreen
+      Number: 2
+      Direct: Yes
+      Base: [0x7F, 0x00, 0x00, 0x00]
+# the screens
 Screens:
-  - &titleScreen
-    Id: Title
-    Line:
-      - Id: Title
-      - Colors:
+  Title:
+    -
+      Id: Title
+      # 17 milliseconds between characters. As close as we can get
+      # to 60 per second
+      TextRate: 17
+      # 100 milliseconds between characters.
+      CommandRate: 100
+      Wrapped: true
+      Centered: true
+      Foreground: 7
+      Background: 0
+      Colors:
         - *defaultBlack
         - *defaultRed
         - *defaultGreen
-        - *defaultOrange
-        - *defaultBlue
-        - *defaultMagenta
-        - *defaultCyan
-        - *defaultWhite
+        # insert rest here.
+    -
+      Id: StartMessage
+      TextRate: 17
+      CommandRate: 100
+      Wrapped: true
+      Centered: true
+      Foreground: 1
+      Background: 0
+      Colors:
+        - *defaultBlack
+        - 
+          Number: 1
+          Direct: No
+          Base: [0x7F, 0x7F, 0x7F, 0x00]
+          Params: [8, 9, 10, 10]
+          Function: WAVEFORM
+        - *defaultGreen
+        # insert rest here
+        -
+          Number: 8
+          Direct: Yes
+          Base: [0x01, 0x01, 0x01, 0x00]
+        - Number: 9
+          Direct: Yes
+          Base: [0x80, 0x80, 0x80, 0x00]
+        - Number: 10
+          Direct: Yes
+          Base: [0x00, 0x00, 0x00, 0x00]
+      Prompt: Yes
+        Type: ENTER
+--- # end of document
