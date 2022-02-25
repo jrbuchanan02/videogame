@@ -129,17 +129,13 @@ or, at https://www.unicode.org/license.txt (the link points there).
 version 1.13, which is copyright under the open-source Boost Software License. 
 You can read the Boost Software license [here](./extern/rapidxml-1.13/license.txt),
 or in the file ./extern/rapidxml-1.13/license.txt (the link points there).
-- Rapidjson, Copyright 2015 THL A29 Limited, a Tencent company, and Milo Yip. The license [here](./extern/rapidjson/license.txt)
-states that it's all-rights reserved inside, but also that it is published under the MIT
-license. I take that statement to mean that rapidjson is published under the MIT license
- and that the normal rules governing the MIT license apply[^5]
+- YAML-CPP, copyright 2008-2015 Jesse Beder under the MIT license. You can find 
+the license [here](./extern/yaml-cpp/LICENSE)
 [^3]: I may have the year off on the UCD 14.0's copyright date. However, we can
 infer from the age of Unicode version 14.0 to know that the copyright year listed
 is around that time.
 
 [^4]: Unicode Inc. is the name of the organization as listed in the license.
-[^5]: If I am incorrect in this assessment, please tell me so that I do not get 
-in trouble with copyright.
 
 [^6]: The videogame executable occupies between 1 and 0.75 MiB, the unicode 
 character database requires around 40MiB. The remaining 9 MiB accounts for 

@@ -93,29 +93,29 @@ int main ( int const argc, char const *const *const argv )
     con << "\u001b[39;49m\u001b[3J\u001b[2J\u001b[H";
     con << doTextWrapping;
     con << setDirectColor ( 8, 2, 2, 2 );
-    con << doWaitForText << getString ( "introduction.0" ) << "\n";
-    con << getString ( "introduction.1" ) << "\n";
-    con << getString ( "introduction.2" ) << "\n";
-    con << "\u001b[31m" << getString ( "continue-message" ) << "\u001b[39m";
+    con << doWaitForText << getString ( "Introduction0" ) << "\n";
+    con << getString ( "Introduction1" ) << "\n";
+    con << getString ( "Introduction2" ) << "\n";
+    con << "\u001b[31m" << getString ( "ContinueMessage" ) << "\u001b[39m";
     std::cin.get ( );
-    con << getString ( "character-creation.0" ) << "\n";
+    con << getString ( "CharacterCreation0" ) << "\n";
     std::string temp;
     std::getline ( std::cin, temp );
-    con << getString ( "character-creation.1" ) << temp
-        << getString ( "character-creation.2" ) << "\n";
+    con << getString ( "CharacterCreation1" ) << temp
+        << getString ( "CharacterCreation2" ) << "\n";
     defines::IString exampleAttributes [] = {
-            getString ( "attribute-name.0" ),
-            getString ( "attribute-name.1" ),
-            getString ( "attribute-name.2" ),
-            getString ( "attribute-name.3" ),
-            getString ( "attribute-name.4" ),
-            getString ( "attribute-name.5" ),
-            getString ( "attribute-name.6" ),
+            getString ( "AttributeName0" ),
+            getString ( "AttributeName1" ),
+            getString ( "AttributeName2" ),
+            getString ( "AttributeName3" ),
+            getString ( "AttributeName4" ),
+            getString ( "AttributeName5" ),
+            getString ( "AttributeName6" ),
     };
 
     for ( int i = 0; i < 3; i++ )
     {
-        con << getString ( "attribute-select-prompt" ) << "\n";
+        con << getString ( "AttributeSelectPrompt" ) << "\n";
         for ( unsigned j = 0;
               j < sizeof ( exampleAttributes ) / sizeof ( std::string );
               j++ )
@@ -136,19 +136,19 @@ int main ( int const argc, char const *const *const argv )
             }
         }
         temp %= 7;
-        con << getString ( "attribute-select-confirm.0" );
+        con << getString ( "AttributeSelectConfirm0" );
         con << exampleAttributes [ temp ];
-        con << getString ( "attribute-select-confirm.1" );
+        con << getString ( "AttributeSelectConfirm1" );
         std::string _temp;
         std::getline ( std::cin, _temp );
     }
 
-    con << getString ( "introduction.5" ) << "\n";
-    con << getString ( "introduction.6" ) << "\n";
+    con << getString ( "Introduction5" ) << "\n";
+    con << getString ( "Introduction6" ) << "\n";
     std::cin.get ( );
     // cute little easter-egg in that it's the color "Coffee" (even though it
     // looks minty)
-    con << "\u001b[32m" << getString ( "exit-message" ) << "\n";
+    con << "\u001b[32m" << getString ( "ExitMessage" ) << "\n";
     std::cin.get ( );
     return 0;
 }

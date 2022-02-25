@@ -169,7 +169,7 @@ namespace ux::serialization
                     for ( std::string temp = ""; !fstream.eof ( );
                           std::getline ( fstream, temp ) )
                     {
-                        slurpee += temp;
+                        slurpee += temp + "\n";
                     }
 
                     _parse ( slurpee );
