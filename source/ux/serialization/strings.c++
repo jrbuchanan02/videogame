@@ -28,203 +28,72 @@
 #include <sstream>
 #include <stdexcept>
 
-struct ux::serialization::ExternalizedStrings::impl_s
+void ux::serialization::ExternalizedStrings::_parse (
+        defines::ChrString const &text )
 {
-    std::map< StringKey, defines::IString > contents;
+    rapidjson::Document   document;
+    io::base::osyncstream stream { std::cout };
+    stream << "Looking at text: \"" << text << "\"\n";
+    stream.emit ( );
 
-    impl_s ( )  = default;
-    ~impl_s ( ) = default;
-};
+    document.Parse ( text.c_str ( ) );
+    std::size_t maxTransliteration = document [ "transliterations" ].Size ( );
+    stream << "Loaded transliteration count.\n";
+    stream.emit ( );
+    defines::IString language =
+            document.FindMember ( "language" )->value.GetString ( );
 
-ux::serialization::ExternalizedStrings::ExternalizedStrings ( ) noexcept :
-        pimpl ( new impl_s ( ) )
-{ }
-
-ux::serialization::ExternalizedStrings::ExternalizedStrings (
-        std::filesystem::path const &path ) :
-        ExternalizedStrings ( )
-{
-    // step 1: this path should lead to data/text. ensure that
-    // it ends in the proper names.
-
-    bool validPath = path.u32string ( ).ends_with ( U"data/text" );
-#ifdef WINDOWS
-    validPath |= path.u32string ( ).ends_with ( U"data\\text" );
-#endif
-    if ( !validPath )
+    for ( std::size_t i = 0; i < maxTransliteration; i++ )
     {
-#ifdef WINDOWS
-        defines::ChrString failMessage = " is not data/text or data\\text!";
-#else
-        defines::ChrString failMessage = " is not data/text!";
-#endif
-        RUNTIME_ERROR ( ( defines::ChrCString ) path.u8string ( ).c_str ( ),
-                        failMessage )
-    }
-
-    auto directoryEntries =
-            std::filesystem::recursive_directory_iterator ( path );
-    for ( auto &entry : directoryEntries )
-    {
-        if ( entry.is_regular_file ( ) )
+        defines::ChrString rawTransliteration {
+                document [ "transliterations" ][ i ].GetString ( ) };
+        TransliterationLevel parsedTransliteration =
+                defines::fromString< TransliterationLevel > (
+                        rawTransliteration );
+        if ( parsedTransliteration == TransliterationLevel::_MAX )
         {
-            // check if the entry is a .json file.
-            auto path = entry.path ( );
-            if ( path.extension ( ).u32string ( ) == U".json" )
-            {
-                defines::EString     filename = path.string ( );
-                defines::EFileStream fstream =
-                        defines::EFileStream ( filename );
-                defines::EString slurped = ES ( "" );
-                if ( fstream.bad ( ) )
-                {
-                    RUNTIME_ERROR ( "Failed to open file: ", filename );
-                }
-                while ( !fstream.eof ( ) )
-                {
-                    defines::EString temp;
-                    std::getline ( fstream, temp );
-                    slurped += temp;
-                }
-                rapidjson::Document document;
-                document.Parse ( ( defines::ChrCString ) slurped.c_str ( ) );
+            parsedTransliteration = TransliterationLevel::NOT;
+            io::base::osyncstream { std::cout }
+                    << "Warning: invalid transliteration level: \""
+                    << rawTransliteration << "\"\n";
+        }
 
-                // iterate
-                std::size_t maxTranslit =
-                        document [ "transliterations" ].Size ( );
-                defines::IString language =
-                        document [ "language" ].GetString ( );
-                for ( std::size_t i = 0; i < maxTranslit; i++ )
+        try
+        {
+            for ( auto item = document.GetObject ( ) [ "text" ][ i ]
+                                      .GetObject ( )
+                                      .MemberBegin ( );
+                  item
+                  != document.GetObject ( ) [ "text" ]
+                             .GetObject ( )
+                             .MemberEnd ( );
+                  item++ )
+            {
+                defines::IString parsedString = IS ( "" );
+                if ( item->value.IsString ( ) )
                 {
-                    TransliterationLevel parsed = TransliterationLevel::NOT;
-                    defines::EString     value =
-                            document [ "transliterations" ][ i ].GetString ( );
-                    if ( value == "ALT" )
+                    parsedString = item->value.GetString ( );
+                } else
+                {
+                    for ( std::size_t i = 0; i < item->value.Size ( ); i++ )
                     {
-                        parsed = TransliterationLevel::ALT;
-                    } else if ( value == "YES" )
-                    {
-                        parsed = TransliterationLevel::YES;
-                    } else if ( value == "NOT" )
-                    {
-                        parsed = TransliterationLevel::NOT;
-                    } else
-                    {
-                        io::base::osyncstream { std::cout }
-                                << "Warning: invalid key " << value << "\n";
-                    }
-                    // I find the lack of references ... disturbing
-                    auto items = document [ "text" ][ i ]
-                                         .GetObject ( )
-                                         .MemberBegin ( );
-                    for ( ; items
-                            != document [ "text" ][ i ]
-                                       .GetObject ( )
-                                       .MemberEnd ( );
-                          items++ )
-                    {
-                        defines::IString parsedString = IS ( "" );
-                        if ( items->value.IsString ( ) )
-                        {
-                            parsedString = items->value.GetString ( );
-                        } else
-                        {
-                            for ( std::size_t i = 0; i < items->value.Size ( );
-                                  i++ )
-                            {
-                                parsedString += items->value.GetArray ( ) [ i ]
-                                                        .GetString ( );
-                            }
-                        }
-                        set ( StringKey { language,
-                                          items->name.GetString ( ),
-                                          parsed },
-                              parsedString );
+                        parsedString +=
+                                item->value.GetArray ( ) [ i ].GetString ( );
                     }
                 }
+                std::shared_ptr< StringKey > key =
+                        std::shared_ptr< StringKey > ( new StringKey ( ) );
+                key->key                  = item->name.GetString ( );
+                key->language             = language;
+                key->transliterationLevel = parsedTransliteration;
+                getMap ( ).insert_or_assign ( key, parsedString );
             }
+        } catch ( ... )
+        {
+            io::base::osyncstream stream { std::cout };
+            stream << "Noticed assertion failure. Attempting to parse index "
+                   << ( i + 1 ) << " of document.text.\n";
+            throw;
         }
     }
-}
-
-ux::serialization::ExternalizedStrings::~ExternalizedStrings ( ) = default;
-
-void ux::serialization::ExternalizedStrings::set (
-        StringKey const        &key,
-        defines::IString const &value )
-{
-    pimpl->contents.insert_or_assign ( key, value );
-}
-
-defines::IString const ux::serialization::ExternalizedStrings::get (
-        StringKey const &key ) const noexcept
-{
-    if ( pimpl->contents.contains ( key ) )
-    {
-        return pimpl->contents.at ( key );
-    } else
-    {
-        if ( key.level == TransliterationLevel::YES )
-        {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::ALT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::ALT } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::NOT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::NOT } );
-            }
-        } else if ( key.level == TransliterationLevel::ALT )
-        {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::YES } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::YES } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::NOT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::NOT } );
-            }
-        } else
-        {
-            if ( pimpl->contents.contains (
-                         StringKey { key.language,
-                                     key.text,
-                                     TransliterationLevel::YES } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::YES } );
-            } else if ( pimpl->contents.contains (
-                                StringKey { key.language,
-                                            key.text,
-                                            TransliterationLevel::ALT } ) )
-            {
-                return get ( StringKey { key.language,
-                                         key.text,
-                                         TransliterationLevel::ALT } );
-            }
-        }
-    }
-
-    return IS ( "!" ) + key.language + IS ( "." ) + key.text + IS ( "." )
-         + defines::rtToString< TransliterationLevel > ( key.level )
-         + IS ( "!" );
 }

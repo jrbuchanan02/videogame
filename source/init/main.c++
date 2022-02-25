@@ -36,10 +36,14 @@ int main ( int const argc, char const *const *const argv )
             ux::serialization::TransliterationLevel::NOT;
     defines::IString locale = "en-US";
 
-    ux::serialization::ExternalizedStrings strings { dataPath };
+    std::shared_ptr< ux::serialization::ExternalizedStrings > strings =
+            std::shared_ptr< ux::serialization::ExternalizedStrings > (
+                    new ux::serialization::ExternalizedStrings ( ) );
+    strings->parse ( dataPath );
     auto getString = [ & ] ( defines::IString const &key ) -> defines::IString {
         using ux::serialization::StringKey;
-        return strings.get ( StringKey { locale, key, translit } );
+        return strings->get ( std::shared_ptr< StringKey > (
+                new StringKey ( locale, key, translit ) ) );
     };
     bool runUnittests    = false;
     bool dumpInformation = false;
