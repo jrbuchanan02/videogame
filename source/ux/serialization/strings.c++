@@ -26,19 +26,19 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 void ux::serialization::ExternalizedStrings::_parse (
         defines::ChrString const &text )
 {
-    YAML::Node       node               = YAML::Load ( text );
-    std::size_t      maxTransliteration = node [ "Transliterations" ].size ( );
-    defines::IString language           = node [ "Language" ].Scalar ( );
+    YAML::Node       node     = YAML::Load ( text );
+    defines::IString language = node [ "Language" ].Scalar ( );
     std::cout << "Language: " << language << "\n";
-    for ( std::size_t i = 0; i < maxTransliteration; i++ )
+    for ( std::size_t i = 0; i < node [ "Text" ].size ( ); i++ )
     {
         std::cout << "here " << i << "\n";
         defines::ChrString rawTransliteration =
-                node [ "transliterations" ][ i ].as< defines::ChrString > ( );
+                node [ "Transliteration" ][ i ].as< defines::ChrString > ( );
         std::cout << "here " << i << "\n";
         TransliterationLevel parsedTransliteration =
                 defines::fromString< TransliterationLevel > (
@@ -55,22 +55,26 @@ void ux::serialization::ExternalizedStrings::_parse (
         }
         std::cout << "here " << i << "\n";
 
-        for ( auto const &item : node [ "Text" ][ i ] )
+        for ( auto item = node [ "Text" ][ i ].begin ( );
+              item != node [ "Text" ][ i ].end ( );
+              item++ )
         {
             std::cout << "here " << i << "\n";
             defines::IString parsedString = IS ( "" );
             std::cout << "here " << i << "\n";
-            parsedString = item.as< defines::IString > ( );
+            parsedString = item->second.as< defines::IString > ( );
+            std::cout << parsedString << "\n";
             std::cout << "here " << i << "\n";
             std::shared_ptr< StringKey > key =
                     std::shared_ptr< StringKey > ( new StringKey ( ) );
             std::cout << "here " << i << "\n";
-            key->key                  = item.Tag ( );
+            key->key                  = item->first.as< defines::IString > ( );
             key->language             = language;
             key->transliterationLevel = parsedTransliteration;
             std::cout << "here " << i << "\n";
             getMap ( ).insert_or_assign ( key, parsedString );
+            std::cout << get ( key ) << "\n";
         }
-        std::cin.get ( );
     }
+    std::cin.get ( );
 }
