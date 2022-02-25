@@ -60,6 +60,12 @@
         "iomanip": "cpp",
         "forward_list": "cpp",
         "fstream": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "bitset": "cpp",
+        "codecvt": "cpp",
+        "cstring": "cpp",
+        "set": "cpp",
+        "regex": "cpp",
+        "cinttypes": "cpp"
     }
 }

@@ -1,0 +1,7 @@
+Language: 'en-US'
+# "YES" in parentheses to avoid confusion with the 
+# boolean yes
+Transliterations: [NOT, 'YES', ALT]
+Text:
+  - Title: Videogame
+    StartMessage: Press enter to start!

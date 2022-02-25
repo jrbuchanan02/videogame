@@ -17,8 +17,7 @@
 #include <defines/types.h++>
 #include <io/base/syncstream.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
+#include <yaml-cpp/yaml.h>
 
 #include <filesystem>
 #include <fstream>
@@ -31,69 +30,47 @@
 void ux::serialization::ExternalizedStrings::_parse (
         defines::ChrString const &text )
 {
-    rapidjson::Document   document;
-    io::base::osyncstream stream { std::cout };
-    stream << "Looking at text: \"" << text << "\"\n";
-    stream.emit ( );
-
-    document.Parse ( text.c_str ( ) );
-    std::size_t maxTransliteration = document [ "transliterations" ].Size ( );
-    stream << "Loaded transliteration count.\n";
-    stream.emit ( );
-    defines::IString language =
-            document.FindMember ( "language" )->value.GetString ( );
-
+    YAML::Node       node               = YAML::Load ( text );
+    std::size_t      maxTransliteration = node [ "Transliterations" ].size ( );
+    defines::IString language           = node [ "Language" ].Scalar ( );
+    std::cout << "Language: " << language << "\n";
     for ( std::size_t i = 0; i < maxTransliteration; i++ )
     {
-        defines::ChrString rawTransliteration {
-                document [ "transliterations" ][ i ].GetString ( ) };
+        std::cout << "here " << i << "\n";
+        defines::ChrString rawTransliteration =
+                node [ "transliterations" ][ i ].as< defines::ChrString > ( );
+        std::cout << "here " << i << "\n";
         TransliterationLevel parsedTransliteration =
                 defines::fromString< TransliterationLevel > (
                         rawTransliteration );
+        std::cout << "here " << i << "\n";
         if ( parsedTransliteration == TransliterationLevel::_MAX )
         {
+            std::cout << "here " << i << "\n";
             parsedTransliteration = TransliterationLevel::NOT;
+            std::cout << "here " << i << "\n";
             io::base::osyncstream { std::cout }
                     << "Warning: invalid transliteration level: \""
                     << rawTransliteration << "\"\n";
         }
+        std::cout << "here " << i << "\n";
 
-        try
+        for ( auto const &item : node [ "Text" ][ i ] )
         {
-            for ( auto item = document.GetObject ( ) [ "text" ][ i ]
-                                      .GetObject ( )
-                                      .MemberBegin ( );
-                  item
-                  != document.GetObject ( ) [ "text" ]
-                             .GetObject ( )
-                             .MemberEnd ( );
-                  item++ )
-            {
-                defines::IString parsedString = IS ( "" );
-                if ( item->value.IsString ( ) )
-                {
-                    parsedString = item->value.GetString ( );
-                } else
-                {
-                    for ( std::size_t i = 0; i < item->value.Size ( ); i++ )
-                    {
-                        parsedString +=
-                                item->value.GetArray ( ) [ i ].GetString ( );
-                    }
-                }
-                std::shared_ptr< StringKey > key =
-                        std::shared_ptr< StringKey > ( new StringKey ( ) );
-                key->key                  = item->name.GetString ( );
-                key->language             = language;
-                key->transliterationLevel = parsedTransliteration;
-                getMap ( ).insert_or_assign ( key, parsedString );
-            }
-        } catch ( ... )
-        {
-            io::base::osyncstream stream { std::cout };
-            stream << "Noticed assertion failure. Attempting to parse index "
-                   << ( i + 1 ) << " of document.text.\n";
-            throw;
+            std::cout << "here " << i << "\n";
+            defines::IString parsedString = IS ( "" );
+            std::cout << "here " << i << "\n";
+            parsedString = item.as< defines::IString > ( );
+            std::cout << "here " << i << "\n";
+            std::shared_ptr< StringKey > key =
+                    std::shared_ptr< StringKey > ( new StringKey ( ) );
+            std::cout << "here " << i << "\n";
+            key->key                  = item.Tag ( );
+            key->language             = language;
+            key->transliterationLevel = parsedTransliteration;
+            std::cout << "here " << i << "\n";
+            getMap ( ).insert_or_assign ( key, parsedString );
         }
+        std::cin.get ( );
     }
 }

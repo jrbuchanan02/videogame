@@ -18,9 +18,6 @@
 
 #include <io/base/syncstream.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
-
 #include <compare>
 #include <filesystem>
 #include <fstream>
@@ -157,7 +154,7 @@ namespace ux::serialization
                 stream.emit ( );
                 // if the file is a normal file and has a .json extension
                 if ( entry.is_regular_file ( )
-                     && entry.path ( ).string ( ).ends_with ( ".json" ) )
+                     && entry.path ( ).string ( ).ends_with ( ".yaml" ) )
                 {
                     // slurp the file then parse.
                     defines::ChrString     slurpee = "";

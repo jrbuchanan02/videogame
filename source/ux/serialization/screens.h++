@@ -20,9 +20,6 @@
 
 #include <io/console/console.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
-
 #include <filesystem>
 #include <memory>
 

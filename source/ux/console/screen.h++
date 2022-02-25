@@ -17,8 +17,7 @@
 
 #include <ux/console/colors.h++>
 
-#include <rapidjson/document.h>
-#include <rapidjson/rapidjson.h>
+#include <yaml-cpp/yaml.h>
 
 #include <memory>
 
@@ -27,16 +26,14 @@ namespace ux::console
     class Line
     {
         struct impl_s;
-        std::unique_ptr<impl_s> pimpl;
+        std::unique_ptr< impl_s > pimpl;
     public:
-
     };
 
     class Screen
     {
         struct impl_s;
-        std::unique_ptr<impl_s> pimpl;
+        std::unique_ptr< impl_s > pimpl;
     public:
-        
     };
-}
+} // namespace ux::console
