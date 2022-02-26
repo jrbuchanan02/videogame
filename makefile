@@ -6,6 +6,8 @@ include build.mak
 object_files = $(source_files:%.c++=%.o)
 ex_obj_files = $(ex_src_files:%.cpp=%.o)
 
+
+
 define compile
 	@echo Compiling file $@ with flags $(CXXFLAGS)
 	@$(CXX) $(CXXFLAGS) -DUNITTEST $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(patsubst %.o,%.c++,$@) -c -o $@
@@ -15,6 +17,7 @@ define ex_compile
 	@echo Compiling file $@ with flags $(CXXFLAGS)
 	@$(CXX) $(CXXFLAGS) -DUNITTEST $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(patsubst %.o,%.cpp,$@) -c -o $@
 endef
+
 
 formatted_source = $(source_files) $(foreach dir, $(include_dirs), $(wildcard $(dir)/*.h++))
 
@@ -35,7 +38,14 @@ clean: $(source_files) $(ex_src_files)
 	$(RM) $(ex_obj_files)
 
 all: build $(object_files) $(ex_obj_files)
-	@echo Performing final linkage...
+	@echo Linking...
+	@$(CXX) $(CXXFLAGS) $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(object_files) $(ex_obj_files) -o $(exec_name)
+	@echo Built the following source files and included the following directories.
+	@echo $(source_files)
+	@echo $(include_dirs)
+
+debug: build $(object_files) $(ex_obj_files)
+	@echo Linking...
 	@$(CXX) $(CXXFLAGS) $(foreach inc_dir, $(include_dirs), -I $(inc_dir)) $(object_files) $(ex_obj_files) -o $(exec_name)
 	@echo Built the following source files and included the following directories.
 	@echo $(source_files)

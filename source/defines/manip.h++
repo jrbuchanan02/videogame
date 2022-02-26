@@ -36,7 +36,7 @@ namespace defines
             memberName = memberName.substr ( memberName.find_last_of ( ':' ) );
         }
         // also eliminate up to the last space
-        if ( memberName.find_last_of(' ') != defines::ChrString::npos )
+        if ( memberName.find_last_of ( ' ' ) != defines::ChrString::npos )
         {
             memberName = memberName.substr ( memberName.find_last_of ( ' ' ) );
         }
@@ -56,19 +56,30 @@ namespace defines
         }
     }
 
-    template < VideoEnumeration VE, VE val = ( VE ) 0 >
-    inline VE fromString ( defines::ChrString string )
+    template < VideoEnumeration VE, VE val = VE::_MAX >
+    inline VE fromString ( defines::ChrString string ) requires (
+            ( std::size_t ) val == 0 )
     {
         if ( string == toString< VE, val > ( ) )
         {
             return val;
-        } else if ( val != VE::_MAX )
-        {
-            return fromString< VE, ( VE ) ( std::size_t ( val ) + 1 ) > (
-                    string );
         } else
         {
             return VE::_MAX;
+        }
+    }
+    
+    template < VideoEnumeration VE, VE val = VE::_MAX >
+    inline VE fromString ( defines::ChrString string ) requires (
+            ( std::size_t ) val > 0 )
+    {
+        if ( string == toString< VE, val > ( ) )
+        {
+            return val;
+        } else
+        {
+            return fromString< VE, ( VE ) ( std::size_t ( val ) - 1 ) > (
+                    string );
         }
     }
 

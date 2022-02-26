@@ -2,6 +2,7 @@ Language: en-US
 Transliteration: ['NOT', 'YES', 'ALL']
 Text:
   -
+    EmptyString: ''
     Title: 'Videogame'
     StartMessage: 'Press enter to start!'
     ExitMessage: >

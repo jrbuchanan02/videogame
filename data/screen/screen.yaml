@@ -10,64 +10,106 @@ Defaults:
     - &defaultBlack
       Number: 0
       Direct: Yes
-      Base: [0x00, 0x00, 0x00, 0x00]
-    # red
+      Base: [0.0, 0, 0, 0]
     - &defaultRed
       Number: 1
       Direct: Yes
-      Base: [0x7F, 0x00, 0x00, 0x00]
+      Base: [127.0, 0, 0, 0]
     # green
     - &defaultGreen
       Number: 2
       Direct: Yes
-      Base: [0x7F, 0x00, 0x00, 0x00]
+      Base: [0.0, 127, 0, 0]
+    - &defaultYellow
+      Number: 3
+      Direct: Yes
+      Base: [127.0, 127, 0, 0]
+    - &defaultBlue
+      Number: 4
+      Direct: Yes
+      Base: [0x00, 0x00, 0x7F, 0x00]
+    - &defaultMagenta
+      Number: 5
+      Direct: Yes
+      Base: [0x7F, 0x00, 0x7F, 0x00]
+    - &defaultCyan
+      Number: 6
+      Direct: Yes
+      Base: [0x00, 0x7F, 0x7F, 0x00]
+    - &defaultWhite
+      Number: 7
+      Direct: Yes
+      Base: [0x7F, 0x7F, 0x7F, 0x00]
 # the screens
 Screens:
   Title:
-    -
-      Id: Title
-      # 17 milliseconds between characters. As close as we can get
-      # to 60 per second
-      TextRate: 17
-      # 100 milliseconds between characters.
-      CommandRate: 100
-      Wrapped: true
-      Centered: true
-      Foreground: 7
-      Background: 0
-      Colors:
-        - *defaultBlack
-        - *defaultRed
-        - *defaultGreen
-        # insert rest here.
-    -
-      Id: StartMessage
-      TextRate: 17
-      CommandRate: 100
-      Wrapped: true
-      Centered: true
-      Foreground: 1
-      Background: 0
-      Colors:
-        - *defaultBlack
-        - 
-          Number: 1
-          Direct: No
-          Base: [0x7F, 0x7F, 0x7F, 0x00]
-          Params: [8, 9, 10, 10]
-          Function: WAVEFORM
-        - *defaultGreen
-        # insert rest here
-        -
-          Number: 8
-          Direct: Yes
-          Base: [0x01, 0x01, 0x01, 0x00]
-        - Number: 9
-          Direct: Yes
-          Base: [0x80, 0x80, 0x80, 0x00]
-        - Number: 10
-          Direct: Yes
-          Base: [0x00, 0x00, 0x00, 0x00]
-      Prompt: Yes
-        Type: ENTER
+    Palette:
+      - *defaultBlack
+
+      - *defaultRed
+
+      - *defaultGreen
+
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [0x01, 0x01, 0x01, 0x01]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [0x80, 0x80, 0x80, 0x80]
+      -
+        Number: 10
+        Direct: Yes
+        Base: [0x00, 0x00, 0x00, 0x00]
+    Lines:
+      - 
+        Id: Title
+        TextRate: 17
+        CommandRate: 100
+        Centered: true
+        Wrapped: Yes
+        Bold: No
+        Faint: No
+        Italic: No
+        Underline: Yes
+        SlowBlink: No
+        FastBlink: No
+        Invert: No
+        Hide: No
+        Strike: No
+        Font: 0
+        Fraktur: No
+        DoubleUnderline: Yes
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - Id: StartMessage
+        TextRate: 17
+        CommandRate: 100
+        Centered: Yes
+        Wrapped: Yes
+        Bold: Yes
+        Faint: No
+        Italic: No
+        Underline: No
+        SlowBlink: No
+        FastBlink: No
+        Invert: No
+        Hide: No
+        Strike: No
+        Font: 0
+        Fraktur: No
+        DoubleUnderline: No
+        Foreground: 0x00000001
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
+    Next: No
+
 --- # end of document

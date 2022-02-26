@@ -79,7 +79,7 @@ void removeCodePoint ( std::vector< std::string > & );
 std::vector< std::string >
         io::console::manip::generateTextInseperables ( std::string str )
 {
-    std::vector< std::string > output     = { };
+    std::vector< std::string > output     = { "" };
     std::vector< std::string > codePoints = splitByCodePoint ( str );
     // rule 1: never break at start of text. Add a new element
     // which simply contains the first code point.

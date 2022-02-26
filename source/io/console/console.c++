@@ -29,6 +29,7 @@
 #include <stack>
 #include <string>
 #include <thread>
+#include <vector>
 
 #ifdef WINDOWS
 #    include "windows.h"
@@ -95,11 +96,21 @@ struct io::console::Console::impl_s
     void sizeUpdateFunction ( );
 
     // internal flag to block a thread until the text channel has caught up.
-    bool waitOnTextChannel = false;
+    bool                waitOnTextChannel = false;
     // internal flag to (attempt to) wrap text.
-    bool wrapText          = false;
+    bool                wrapText          = false;
     // internal flag to (attempt to) center text.
-    bool centerText        = false;
+    bool                centerText        = false;
+    // internal flags corresponding to the SGR attributes
+    std::vector< bool > sgrMap;
+    // internal colors corresponding to the current color
+    // for the foreground / background. Handled separately
+    // from the CGA colors, but since the console asserts
+    // these foreground / background colors after setting
+    // the CGA colors, these override the CGA values when
+    // they indicate a 256 or true color
+    std::uint32_t       foreground = 0;
+    std::uint32_t       background = 0;
 
     impl_s ( ) noexcept
     {
@@ -125,6 +136,11 @@ struct io::console::Console::impl_s
                         defines::defaultConsoleColors [ i ][ j ] );
             }
         }
+        for ( std::size_t i = 0; i < ( std::size_t ) SGRCommand::_MAX; i++ )
+        {
+            sgrMap.push_back ( false );
+        }
+        sgrMap.shrink_to_fit ( );
 
         commands = std::jthread ( [ & ] ( ) { commandGenerator ( ); } );
         commands.detach ( );
@@ -423,8 +439,42 @@ void io::console::Console::send ( std::string const &str ) noexcept
         // final step: set line to joined
         line = joined;
     }
-
+    // assert our SGR attributes for this line
+    // send all attributes.
+    std::string command = "\u001b[m";
+    for ( std::size_t i = 0; i < pimpl->sgrMap.size ( ); i++ )
     {
+        if ( pimpl->sgrMap.at ( i ) )
+        {
+            command += "\u001b[" + std::to_string ( i ) + "m";
+        }
+    }
+    if ( ( pimpl->foreground & 0xff ) == 9 )
+    {
+        command += "\u001b[38;5;" + std::to_string ( pimpl->foreground >> 8 )
+                 + "m";
+    } else if ( ( pimpl->foreground & 0xff ) == 10 )
+    {
+        command += "\u001b[38;2;"
+                 + std::to_string ( ( 0xff & pimpl->foreground ) >> 24 ) + ";"
+                 + std::to_string ( ( 0xff & pimpl->foreground ) >> 16 ) + ";"
+                 + std::to_string ( ( 0xff & pimpl->foreground ) >> 8 ) + "m";
+    }
+
+    if ( ( pimpl->background & 0xff ) == 9 )
+    {
+        command += "\u001b[48;5;" + std::to_string ( pimpl->background >> 8 )
+                 + "m";
+    } else if ( ( pimpl->background & 0xff ) == 10 )
+    {
+        command += "\u001b[48;2;"
+                 + std::to_string ( ( 0xff & pimpl->background ) >> 24 ) + ";"
+                 + std::to_string ( ( 0xff & pimpl->background ) >> 16 ) + ";"
+                 + std::to_string ( ( 0xff & pimpl->background ) >> 8 ) + "m";
+    }
+    line = command + line;
+    {
+        // iterate through the SGR attributes and assert the appropriate ones.
         std::scoped_lock< std::mutex > lock ( pimpl->sending );
         for ( auto &cp : manip::splitByCodePoint ( line ) )
         {
@@ -438,6 +488,7 @@ void io::console::Console::send ( std::string const &str ) noexcept
                 // command that moves the cursor one unit forwards.
                 temp += "\u001b[C";
             }
+
             lastToken = pimpl->txt.pushString ( temp );
         }
     }
@@ -523,4 +574,171 @@ void io::console::Console::setWrapping ( bool const &value ) noexcept
 void io::console::Console::setCentering ( bool const &value ) noexcept
 {
     pimpl->centerText = value;
+}
+
+void io::console::Console::sgrCommand ( SGRCommand const &command,
+                                        bool const        value ) noexcept
+{
+    // if we're setting a color, clear all other color attributes
+    if ( value
+         && ( std::size_t ) command
+                    >= ( std::size_t ) SGRCommand::CGA_FOREGROUND_0
+         && ( std::size_t ) command
+                    <= ( std::size_t ) SGRCommand::BACKGROUND_DEFAULT )
+    {
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_BACKGROUND_0 )
+                               + i ) = false;
+            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_FOREGROUND_0 )
+                               + i ) = false;
+        }
+        pimpl->sgrMap.at ( std::size_t ( SGRCommand::FOREGROUND_DEFAULT ) ) =
+                false;
+        pimpl->sgrMap.at ( std::size_t ( SGRCommand::BACKGROUND_DEFAULT ) ) =
+                false;
+    }
+
+    pimpl->sgrMap.at ( std::size_t ( command ) ) = value;
+}
+
+void io::console::Console::setForeground ( std::uint32_t const &color ) noexcept
+{
+    if ( ( color & 0xff ) < 9 )
+    {
+        // set sgr color accordingly
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_FOREGROUND_0 )
+                               + i ) = false;
+        }
+        pimpl->sgrMap.at ( std::size_t ( SGRCommand::FOREGROUND_DEFAULT ) ) =
+                false;
+        switch ( color & 0x7 )
+        {
+            case 7:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_7 ) ) = true;
+                break;
+            case 6:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_6 ) ) = true;
+                break;
+            case 5:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_5 ) ) = true;
+                break;
+            case 4:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_4 ) ) = true;
+                break;
+            case 3:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_3 ) ) = true;
+                break;
+            case 2:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_2 ) ) = true;
+                break;
+            case 1:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_FOREGROUND_1 ) ) = true;
+                break;
+            case 0:
+                if ( color & 8 )
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::FOREGROUND_DEFAULT ) ) = true;
+                } else
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::CGA_FOREGROUND_0 ) ) = true;
+                }
+                break;
+            default:
+                if ( color & 8 )
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::FOREGROUND_DEFAULT ) ) = true;
+                } else
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::CGA_FOREGROUND_0 ) ) = true;
+                }
+        }
+    } else
+    {
+        // set internal color accordingly.
+        pimpl->foreground = color;
+    }
+}
+void io::console::Console::setBackground ( std::uint32_t const &color ) noexcept
+{
+    if ( ( color & 0xff ) < 9 )
+    {
+        // set sgr color accordingly
+        for ( std::size_t i = 0; i < 8; i++ )
+        {
+            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_BACKGROUND_0 )
+                               + i ) = false;
+        }
+        pimpl->sgrMap.at ( std::size_t ( SGRCommand::BACKGROUND_DEFAULT ) ) =
+                false;
+        switch ( color & 0x7 )
+        {
+            case 7:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_7 ) ) = true;
+                break;
+            case 6:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_6 ) ) = true;
+                break;
+            case 5:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_5 ) ) = true;
+                break;
+            case 4:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_4 ) ) = true;
+                break;
+            case 3:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_3 ) ) = true;
+                break;
+            case 2:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_2 ) ) = true;
+                break;
+            case 1:
+                pimpl->sgrMap.at (
+                        std::size_t ( SGRCommand::CGA_BACKGROUND_1 ) ) = true;
+                break;
+            case 0:
+                if ( color & 8 )
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::FOREGROUND_DEFAULT ) ) = true;
+                } else
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::CGA_FOREGROUND_0 ) ) = true;
+                }
+                break;
+            default:
+                if ( color & 8 )
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::BACKGROUND_DEFAULT ) ) = true;
+                } else
+                {
+                    pimpl->sgrMap.at ( std::size_t (
+                            SGRCommand::CGA_BACKGROUND_0 ) ) = true;
+                }
+        }
+    } else
+    {
+        // set internal color accordingly.
+        pimpl->background = color;
+    }
 }

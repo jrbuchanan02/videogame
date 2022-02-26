@@ -16,6 +16,7 @@ endif
 
 warnings = -Wall -Wpedantic -Werror
 optimize = -Ofast
+debugging = -g -Ofast
 generals = --std=gnu++2a
 
 ifeq ($(operating_system), windows)
@@ -30,7 +31,9 @@ endif
 
 defines += -DI_CHAR_SIZE=$(INTERNAL_CHAR) -DE_CHAR_SIZE=$(EXTERNAL_CHAR)
 
-CXXFLAGS += $(generals) $(warnings) $(optimize) $(defines)
+CXXFLAGS += $(generals) $(warnings) $(defines)
+debug: CXXFLAGS += $(debugging)
+all: CXXFLAGS += $(optimize)
 
 windows_exec_name = videogame.exe
 linux_exec_name = videogame.out

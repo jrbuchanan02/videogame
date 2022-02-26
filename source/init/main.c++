@@ -17,7 +17,10 @@
 #include <io/console/conmanip.h++>
 #include <io/console/console.h++>
 
+#include <ux/serialization/screens.h++>
 #include <ux/serialization/strings.h++>
+
+#include <ux/console/screen.h++>
 
 #include <filesystem>
 #include <iostream>
@@ -30,7 +33,9 @@ int main ( int const argc, char const *const *const argv )
     std::filesystem::path dataPath { argv [ 0 ] };
     dataPath = dataPath.parent_path ( );
     dataPath /= "data";
-    dataPath /= "text";
+
+    std::filesystem::path textPath   = dataPath / "text";
+    std::filesystem::path screenPath = dataPath / "screen";
 
     ux::serialization::TransliterationLevel translit =
             ux::serialization::TransliterationLevel::NOT;
@@ -39,15 +44,29 @@ int main ( int const argc, char const *const *const argv )
     std::shared_ptr< ux::serialization::ExternalizedStrings > strings =
             std::shared_ptr< ux::serialization::ExternalizedStrings > (
                     new ux::serialization::ExternalizedStrings ( ) );
-    strings->parse ( dataPath );
-    auto getString = [ & ] ( defines::IString const &key ) -> defines::IString {
+    std::shared_ptr< ux::serialization::ExternalizedScreens > screens =
+            std::shared_ptr< ux::serialization::ExternalizedScreens > (
+                    new ux::serialization::ExternalizedScreens ( ) );
+    strings->parse ( textPath );
+    screens->parse ( screenPath );
+    // auto getString = [ & ] ( defines::IString const &key ) ->
+    // defines::IString {
+    //     using ux::serialization::ExternalID;
+    //     return strings->get ( std::shared_ptr< ExternalID > ( new ExternalID
+    //     (
+    //             locale + "." + key + "."
+    //             + defines::rtToString<
+    //                     ux::serialization::TransliterationLevel > (
+    //                     translit ) ) ) );
+    // };
+
+    auto getScreen =
+            [ & ] ( defines::IString const &key ) -> ux::console::Screen {
         using ux::serialization::ExternalID;
-        return strings->get ( std::shared_ptr< ExternalID > ( new ExternalID (
-                locale + "."+  key + "."
-                + defines::rtToString<
-                        ux::serialization::TransliterationLevel > (
-                        translit ) ) ) );
+        return screens->get (
+                std::shared_ptr< ExternalID > ( new ExternalID ( key ) ) );
     };
+
     bool runUnittests    = false;
     bool dumpInformation = false;
     for ( int i = 0; i < argc; i++ )
@@ -80,79 +99,82 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
+    con << getScreen ( "Title" ).output ( *strings, locale, translit );
+    con << doSGR ( SGRCommand::BOLD ) << "Bold?\n";
+    con << "HEllo, world!\n";
     // set up some (hopefully) flashing text
-    con << setDirectColor ( 8, 1, 1, 1 );
-    con << setDirectColor ( 9, 0x80, 0x80, 0x80, 0x80 );
-    con << setDirectColor ( 10, 0, 0, 0 );
-    con << setIndirectColor ( 1, 9, 8, 10, 10, 0x7F, 0x7F, 0x7F );
-    con << setBaseComponent ( 2, 0xC0, 0xFF, 0xEE );
-    con << commandDelay ( 100 );
-    con << doWaitForText << doTextCenter << getString ( "Title" )
-        << noTextCenter << noTextWrapping << "\n";
-    con << "\u001b[31m" << doTextCenter << getString ( "StartMessage" )
-        << noTextCenter << noTextWrapping << "\n"
-        << noWaitForText;
-    std::cin.get ( );
-    con << "\u001b[39;49m\u001b[3J\u001b[2J\u001b[H";
-    con << doTextWrapping;
-    con << setDirectColor ( 8, 2, 2, 2 );
-    con << doWaitForText << getString ( "Introduction0" ) << "\n";
-    con << getString ( "Introduction1" ) << "\n";
-    con << getString ( "Introduction2" ) << "\n";
-    con << "\u001b[31m" << getString ( "ContinueMessage" ) << "\u001b[39m";
-    std::cin.get ( );
-    con << getString ( "CharacterCreation0" ) << "\n";
-    std::string temp;
-    std::getline ( std::cin, temp );
-    con << getString ( "CharacterCreation1" ) << temp
-        << getString ( "CharacterCreation2" ) << "\n";
-    defines::IString exampleAttributes [] = {
-            getString ( "AttributeName0" ),
-            getString ( "AttributeName1" ),
-            getString ( "AttributeName2" ),
-            getString ( "AttributeName3" ),
-            getString ( "AttributeName4" ),
-            getString ( "AttributeName5" ),
-            getString ( "AttributeName6" ),
-    };
-
-    for ( int i = 0; i < 3; i++ )
-    {
-        con << getString ( "AttributeSelectPrompt" ) << "\n";
-        for ( unsigned j = 0;
-              j < sizeof ( exampleAttributes ) / sizeof ( std::string );
-              j++ )
-        {
-            con << "\t" << j + 1 << exampleAttributes [ j ] << "\n";
-        }
-        std::string line;
-        std::getline ( std::cin, line );
-        unsigned temp  = 0;
-        // check to see if line contains any digits
-        char digits [] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        for ( int j = 0; j < 10; j++ )
-        {
-            if ( line.find ( digits [ j ] ) != std::string::npos )
-            {
-                std::stringstream { line } >> temp;
-                break;
-            }
-        }
-        temp %= 7;
-        con << getString ( "AttributeSelectConfirm0" );
-        con << exampleAttributes [ temp ];
-        con << getString ( "AttributeSelectConfirm1" );
-        std::string _temp;
-        std::getline ( std::cin, _temp );
-    }
-
-    con << getString ( "Introduction5" ) << "\n";
-    con << getString ( "Introduction6" ) << "\n";
-    std::cin.get ( );
-    // cute little easter-egg in that it's the color "Coffee" (even though it
-    // looks minty)
-    con << "\u001b[32m" << getString ( "ExitMessage" ) << "\n";
-    std::cin.get ( );
+    // con << setDirectColor ( 8, 1, 1, 1 );
+    // con << setDirectColor ( 9, 0x80, 0x80, 0x80, 0x80 );
+    // con << setDirectColor ( 10, 0, 0, 0 );
+    // con << setIndirectColor ( 1, 9, 8, 10, 10, 0x7F, 0x7F, 0x7F );
+    // con << setBaseComponent ( 2, 0xC0, 0xFF, 0xEE );
+    // con << commandDelay ( 100 );
+    // con << doWaitForText << doTextCenter << getString ( "Title" )
+    //    << noTextCenter << noTextWrapping << "\n";
+    // con << "\u001b[31m" << doTextCenter << getString ( "StartMessage" )
+    //    << noTextCenter << noTextWrapping << "\n"
+    //    << noWaitForText;
+    // std::cin.get ( );
+    // con << "\u001b[39;49m\u001b[3J\u001b[2J\u001b[H";
+    // con << doTextWrapping;
+    // con << setDirectColor ( 8, 2, 2, 2 );
+    // con << doWaitForText << getString ( "Introduction0" ) << "\n";
+    // con << getString ( "Introduction1" ) << "\n";
+    // con << getString ( "Introduction2" ) << "\n";
+    // con << "\u001b[31m" << getString ( "ContinueMessage" ) << "\u001b[39m";
+    // std::cin.get ( );
+    // con << getString ( "CharacterCreation0" ) << "\n";
+    // std::string temp;
+    // std::getline ( std::cin, temp );
+    // con << getString ( "CharacterCreation1" ) << temp
+    //    << getString ( "CharacterCreation2" ) << "\n";
+    // defines::IString exampleAttributes [] = {
+    //        getString ( "AttributeName0" ),
+    //        getString ( "AttributeName1" ),
+    //        getString ( "AttributeName2" ),
+    //        getString ( "AttributeName3" ),
+    //        getString ( "AttributeName4" ),
+    //        getString ( "AttributeName5" ),
+    //        getString ( "AttributeName6" ),
+    //};
+    //
+    // for ( int i = 0; i < 3; i++ )
+    //{
+    //    con << getString ( "AttributeSelectPrompt" ) << "\n";
+    //    for ( unsigned j = 0;
+    //          j < sizeof ( exampleAttributes ) / sizeof ( std::string );
+    //          j++ )
+    //    {
+    //        con << "\t" << j + 1 << exampleAttributes [ j ] << "\n";
+    //    }
+    //    std::string line;
+    //    std::getline ( std::cin, line );
+    //    unsigned temp  = 0;
+    //    // check to see if line contains any digits
+    //    char digits [] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+    //    for ( int j = 0; j < 10; j++ )
+    //    {
+    //        if ( line.find ( digits [ j ] ) != std::string::npos )
+    //        {
+    //            std::stringstream { line } >> temp;
+    //            break;
+    //        }
+    //    }
+    //    temp %= 7;
+    //    con << getString ( "AttributeSelectConfirm0" );
+    //    con << exampleAttributes [ temp ];
+    //    con << getString ( "AttributeSelectConfirm1" );
+    //    std::string _temp;
+    //    std::getline ( std::cin, _temp );
+    //}
+    //
+    // con << getString ( "Introduction5" ) << "\n";
+    // con << getString ( "Introduction6" ) << "\n";
+    // std::cin.get ( );
+    //// cute little easter-egg in that it's the color "Coffee" (even though it
+    //// looks minty)
+    // con << "\u001b[32m" << getString ( "ExitMessage" ) << "\n";
+    // std::cin.get ( );
     return 0;
 }
 

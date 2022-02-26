@@ -30,6 +30,13 @@ namespace io::console::colors
 {
     namespace blend_functions
     {
+        enum class IndirectColorBlendingFunctions
+        {
+            WAVEFORM,
+            AVERAGE4,
+            AVERAGE5,
+            _MAX,
+        };
         using BlendFunction = std::function< defines::UnboundColor (
                 double const &,
                 defines::UnboundColor const &,

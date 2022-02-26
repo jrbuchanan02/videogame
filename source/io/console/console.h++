@@ -30,6 +30,89 @@ namespace io::console
     class Console; // forward-declare
     using ConsoleManipulator = std::function< Console &( Console & ) >;
 
+    enum class SGRCommand : std::uint8_t
+    {
+        BOLD = 1,
+        FAINT,
+        ITALIC,
+        UNDERLINE,
+        SLOW_BLINK,
+        FAST_BLINK,
+        INVERT,
+        HIDE,
+        STRIKE,
+        PRIMARY_FONT,
+        ALT_FONT_1,
+        ALT_FONT_2,
+        ALT_FONT_3,
+        ALT_FONT_4,
+        ALT_FONT_5,
+        ALT_FONT_6,
+        ALT_FONT_7,
+        ALT_FONT_8,
+        ALT_FONT_9,
+        FRAKTUR,
+        DOUBLE_UNDERLINE,
+        NORMAL_INTENSITY,
+        NOT_ITALIC,
+        NOT_UNDERLINED,
+        NOT_BLINKING,
+        PROPORTIONAL_SPACING,
+        NOT_REVERSED,
+        REVEAL,
+        NOT_CROSSED_OUT,
+        CGA_FOREGROUND_BLACK,
+        CGA_FOREGROUND_RED,
+        CGA_FOREGROUND_GREEN,
+        CGA_FOREGROUND_YELLOW,
+        CGA_FOREGROUND_BLUE,
+        CGA_FOREGROUND_MAGENTA,
+        CGA_FOREGROUND_CYAN,
+        CGA_FOREGROUND_WHITE,
+        FOREGROUND_DEFAULT = 39,
+        CGA_BACKGROUND_BLACK,
+        CGA_BACKGROUND_RED,
+        CGA_BACKGROUND_GREEN,
+        CGA_BACKGROUND_YELLOW,
+        CGA_BACKGROUND_BLUE,
+        CGA_BACKGROUND_MAGENTA,
+        CGA_BACKGROUND_CYAN,
+        CGA_BACKGROUND_WHITE,
+        BACKGROUND_DEFAULT = 49,
+        DISABLE_PROP_SPACING,
+        FRAMED,
+        ENCIRCLED,
+        OVERLINED,
+        NOT_FRAMED_OR_CIRCLED,
+        NOT_OVERLINED,
+        IDEO_UNDERLINE = 60,
+        IDEO_DOUBLE_UNDERLINE,
+        IDEO_OVERLINE,
+        IDEO_DOUBLE_OVERLINE,
+        IDEO_STRESS_MARK,
+        NO_IDEOGRAM_ATTR,
+        _MAX,
+
+        CGA_FOREGROUND_0 = CGA_FOREGROUND_BLACK,
+        CGA_FOREGROUND_1 = CGA_FOREGROUND_RED,
+        CGA_FOREGROUND_2 = CGA_FOREGROUND_GREEN,
+        CGA_FOREGROUND_3 = CGA_FOREGROUND_YELLOW,
+        CGA_FOREGROUND_4 = CGA_FOREGROUND_BLUE,
+        CGA_FOREGROUND_5 = CGA_FOREGROUND_MAGENTA,
+        CGA_FOREGROUND_6 = CGA_FOREGROUND_CYAN,
+        CGA_FOREGROUND_7 = CGA_FOREGROUND_WHITE,
+
+        CGA_BACKGROUND_0 = CGA_BACKGROUND_BLACK,
+        CGA_BACKGROUND_1 = CGA_BACKGROUND_RED,
+        CGA_BACKGROUND_2 = CGA_BACKGROUND_GREEN,
+        CGA_BACKGROUND_3 = CGA_BACKGROUND_YELLOW,
+        CGA_BACKGROUND_4 = CGA_BACKGROUND_BLUE,
+        CGA_BACKGROUND_5 = CGA_BACKGROUND_MAGENTA,
+        CGA_BACKGROUND_6 = CGA_BACKGROUND_CYAN,
+        CGA_BACKGROUND_7 = CGA_BACKGROUND_WHITE,
+
+    };
+
     class Console
     {
         struct impl_s;
@@ -68,6 +151,16 @@ namespace io::console
 
         void setWrapping ( bool const & ) noexcept;
         void setCentering ( bool const & ) noexcept;
+
+        void sgrCommand ( SGRCommand const &, bool const = true ) noexcept;
+
+        // different from adjusting the palette, this color allows setting a
+        // direct color for the foreground. This color is interpreted similarly
+        // to how it is interpreted in a screen YAML, but this value, if it
+        // indicates a direct color (256-colors, true-color), overrides the CGA
+        // value.
+        void setForeground ( std::uint32_t const & ) noexcept;
+        void setBackground ( std::uint32_t const & ) noexcept;
 
         template < class T >
         // clang-format off

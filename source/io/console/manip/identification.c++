@@ -344,7 +344,7 @@ std::string grabCodePoint ( std::string &string )
 std::vector< std::string >
         io::console::manip::splitByCodePoint ( std::string string )
 {
-    std::vector< std::string > result = { };
+    std::vector< std::string > result = { "" };
     while ( !string.empty ( ) )
     {
         std::size_t       currentSize = string.size ( );

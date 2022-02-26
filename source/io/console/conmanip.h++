@@ -82,4 +82,66 @@ namespace io::console
         console.setCentering ( false );
         return console;
     }
+
+    inline ConsoleManipulator doSGR ( SGRCommand const &cmd )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.sgrCommand ( cmd, true );
+            return console;
+        };
+    }
+
+    inline ConsoleManipulator noSGR ( SGRCommand const &cmd )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.sgrCommand ( cmd, false );
+            return console;
+        };
+    }
+
+    inline Console &resetSGR ( Console &console )
+    {
+        for ( std::size_t i = 0; i < std::size_t ( SGRCommand::_MAX ); i++ )
+        {
+            console << noSGR ( ( SGRCommand ) i );
+        }
+        return console;
+    }
+
+    inline ConsoleManipulator setForeground256 ( std::uint8_t const &color )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.setForeground ( ( color << 8 ) + 9 );
+            return console;
+        };
+    }
+    inline ConsoleManipulator setBackground256 ( std::uint8_t const &color )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.setBackground ( ( color << 8 ) + 9 );
+            return console;
+        };
+    }
+
+    inline ConsoleManipulator setForegroundTrue ( std::uint8_t const &r,
+                                                  std::uint8_t const &g,
+                                                  std::uint8_t const &b )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.setForeground ( ( r << 24 ) + ( g << 16 ) + ( b << 8 )
+                                    + 10 );
+            return console;
+        };
+    }
+
+    inline ConsoleManipulator setBackgroundTrue ( std::uint8_t const &r,
+                                                  std::uint8_t const &g,
+                                                  std::uint8_t const &b )
+    {
+        return [ & ] ( Console &console ) -> Console & {
+            console.setBackground ( ( r << 24 ) + ( g << 16 ) + ( b << 8 )
+                                    + 10 );
+            return console;
+        };
+    }
 } // namespace io::console
