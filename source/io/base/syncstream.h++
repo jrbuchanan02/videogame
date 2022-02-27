@@ -13,8 +13,11 @@
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
+
 #include <io/base/unistring.h++>
+
 #include <test/unittester.h++>
 
 #include <atomic>
@@ -121,6 +124,7 @@ namespace io::base
         std::map< std::basic_streambuf< CharT, Traits > *,
                   std::unique_ptr< std::mutex > >
                 locks;
+
         SynchronizedStreamBufferImplementation ( ) = default;
 
         /**
@@ -176,7 +180,8 @@ namespace io::base
         static inline SynchronizedStreamBufferImplementation< CharT,
                                                               Traits,
                                                               Allocator >
-                                                      container;
+                container;
+
         std::mutex                                    bufferMutex;
         std::mutex                                    streamMutex;
         std::basic_streambuf< CharT, Traits >        *stream;

@@ -107,4 +107,15 @@
             return identifier;                                                 \
         }
 
+#    define CHR_STRINGIZE( X, ... ) ( defines::ChrCString ) ( #    X #    __VA_ARGS__ )
+#    define U08_STRINGIZE( X, ... )                                            \
+        ( defines::U08CString ) ( u8## #X u8## #__VA_ARGS__ )
+#    define U16_STRINGIZE( X, ... )                                            \
+        ( defines::U16CString ) ( u## #X u## #__VA_ARGS__ )
+#    define U32_STRINGIZE( X, ... )                                            \
+        ( defines::U32CString ) ( U## #X U## #__VA_ARGS__ )
+#    define INT_STRINGIZE( X, ... )                                            \
+        ( defines::ICString ) ( IS ( #X ) IS ( #__VA_ARGS__ ) )
+#    define EXT_STRINGIZE( X, ... )                                            \
+        ( defines::ECString ) ( ES ( #X ) ES ( #__VA_ARGS__ ) )
 #endif // ifndef SOURCE_DEFINES_MACROS

@@ -1,5 +1,5 @@
 
-source_ux_directories = ./source/ux/serialization
+source_ux_directories = ./source/ux/serialization ./source/ux/console
 
 source_files += $(foreach dir, $(source_ux_directories), $(wildcard $(dir)/*.c++))
 include_dirs += $(source_ux_directories)

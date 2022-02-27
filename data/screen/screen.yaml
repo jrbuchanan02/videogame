@@ -1,0 +1,119 @@
+# here is everything that could show up on a screen.
+# this file will probably end up quite long, but, we
+# want to add in plenty of indirection.
+
+# the defaults
+Defaults:
+  # default colors
+  Colors:
+    # black
+    - &defaultBlack
+      Number: 0
+      Direct: Yes
+      Base: [0.0, 0, 0, 0]
+    - &defaultRed
+      Number: 1
+      Direct: Yes
+      Base: [127.0, 0, 0, 0]
+    # green
+    - &defaultGreen
+      Number: 2
+      Direct: Yes
+      Base: [0.0, 127, 0, 0]
+    - &defaultYellow
+      Number: 3
+      Direct: Yes
+      Base: [127.0, 127, 0, 0]
+    - &defaultBlue
+      Number: 4
+      Direct: Yes
+      Base: [0.0, 0, 128, 0]
+    - &defaultMagenta
+      Number: 5
+      Direct: Yes
+      Base: [128.0, 0, 128, 0]
+    - &defaultCyan
+      Number: 6
+      Direct: Yes
+      Base: [0.0, 128, 128, 0]
+    - &defaultWhite
+      Number: 7
+      Direct: Yes
+      Base: [128.0, 128, 128, 0]
+    - &waveformBlinkOnColor1Color1
+      Number: 1
+      Direct: No
+      Base: [128.0, 128, 128, 128]
+      Params: [8, 9, 10, 10]
+      Function: WAVEFORM
+      
+# the screens
+Screens:
+  Title:
+    Palette:
+      - *defaultBlack
+      - *defaultWhite
+      - *defaultGreen
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [0x01, 0x01, 0x01, 0x01]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [0x80, 0x80, 0x80, 0x80]
+      -
+        Number: 10
+        Direct: Yes
+        Base: [0x00, 0x00, 0x00, 0x00]
+    Lines:
+      - 
+        Id: Title
+        TextRate: 17
+        CommandRate: 100
+        Centered: true
+        Wrapped: Yes
+        Bold: No
+        Faint: No
+        Italic: No
+        Underline: Yes
+        SlowBlink: No
+        FastBlink: No
+        Invert: No
+        Hide: No
+        Strike: No
+        Font: 0
+        Fraktur: No
+        DoubleUnderline: Yes
+        Foreground: 0x00000002
+        Background: 0x00000000
+      - Id: StartMessage
+        TextRate: 17
+        CommandRate: 100
+        Centered: Yes
+        Wrapped: Yes
+        Bold: Yes
+        Faint: No
+        Italic: No
+        Underline: No
+        SlowBlink: No
+        FastBlink: No
+        Invert: No
+        Hide: No
+        Strike: No
+        Font: 0
+        Fraktur: No
+        DoubleUnderline: No
+        Foreground: 0x00000109
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
+    Next: No
+
+--- # end of document

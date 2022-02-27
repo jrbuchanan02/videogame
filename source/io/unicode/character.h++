@@ -11,7 +11,9 @@
  */
 #pragma once
 
+#include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
 
 #include <cstdint>
@@ -20,7 +22,7 @@
 namespace io::unicode
 {
     // six bits.
-    enum class BreakingProperties : std::uint8_t
+    enum class BreakingProperties : defines::Flag
     {
         BK,
         CR,
@@ -65,28 +67,27 @@ namespace io::unicode
         RI,
         SA,
         XX,
+        _MAX,
     };
 
     struct CharacterProperties
     {
-#define B( N ) BITFIELD ( N )
         // 0 -> narrow, 1 -> wide
-        B ( columns )
+        BITFIELD ( columns )
         // 0 -> non-control character, 1-> control character
-        B ( control )
+        BITFIELD ( control )
         // 0 -> not emoji, 1 -> emoji
-        B ( emoji )
-        B ( reserved1 )
-        B ( reserved2 )
-        B ( reserved3 )
-        B ( reserved4 )
-        B ( reserved5 )
-        std::uint8_t lineBreaking : 6 = (std::uint8_t)BreakingProperties::XX;
-#undef B
-        inline CharacterProperties ( ) noexcept = default;
-        inline CharacterProperties ( CharacterProperties const & ) noexcept =
-                default;
-        inline CharacterProperties ( CharacterProperties && ) = delete;
+        BITFIELD ( emoji )
+        BITFIELD ( reserved1 )
+        BITFIELD ( reserved2 )
+        BITFIELD ( reserved3 )
+        BITFIELD ( reserved4 )
+        BITFIELD ( reserved5 )
+        defines::Flag lineBreaking : 6 =
+                ( std::uint8_t ) BreakingProperties::XX;
+        CharacterProperties ( ) noexcept                             = default;
+        CharacterProperties ( CharacterProperties const & ) noexcept = default;
+        CharacterProperties ( CharacterProperties && )               = delete;
     };
 
     std::vector< CharacterProperties > const &characterProperties ( );
