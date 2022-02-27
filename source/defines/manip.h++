@@ -26,6 +26,24 @@ namespace defines
         T::_MAX;
     };
 
+    template < class T >
+    concept VideoCharacter = requires ( )
+    {
+        // clang-format off
+        requires std::is_same_v<T, defines::ChrChar> 
+              || std::is_same_v<T, defines::U08Char> 
+              || std::is_same_v<T, defines::U16Char> 
+              || std::is_same_v<T, defines::U32Char>;
+        // clang-format on
+    };
+
+    template < class T >
+    concept VideoUTF8 = requires ( )
+    {
+        requires VideoCharacter< T >;
+        requires sizeof ( T ) == sizeof ( defines::U08Char );
+    };
+
     template < VideoEnumeration VE, VE Val >
     inline defines::ChrString toString ( ) noexcept
     {
@@ -68,7 +86,7 @@ namespace defines
             return VE::_MAX;
         }
     }
-    
+
     template < VideoEnumeration VE, VE val = VE::_MAX >
     inline VE fromString ( defines::ChrString string ) requires (
             ( std::size_t ) val > 0 )

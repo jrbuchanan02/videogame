@@ -31,11 +31,11 @@ void dumpInformation ( int const &, char const *const *const & );
 int main ( int const argc, char const *const *const argv )
 {
     std::filesystem::path dataPath { argv [ 0 ] };
-    dataPath = dataPath.parent_path ( );
-    dataPath /= "data";
+    dataPath = dataPath.parent_path ( ); // get the outer directory
+    dataPath /= defines::dataFolderName;
 
-    std::filesystem::path textPath   = dataPath / "text";
-    std::filesystem::path screenPath = dataPath / "screen";
+    std::filesystem::path textPath   = dataPath / defines::textFolderName;
+    std::filesystem::path screenPath = dataPath / defines::screenFolderName;
 
     ux::serialization::TransliterationLevel translit =
             ux::serialization::TransliterationLevel::NOT;

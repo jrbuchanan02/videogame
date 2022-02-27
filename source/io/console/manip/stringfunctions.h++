@@ -13,6 +13,7 @@
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
+#include <defines/manip.h++>
 #include <defines/types.h++>
 
 #include <sstream>
@@ -22,15 +23,28 @@
 namespace io::console::manip
 {
     /**
+     * @brief Converts one character from one encoding to another.
+     * @warning This function only operates on one code point in the argument
+     * and does not remove that code point from that string.
+     * @tparam L the resulting encoding
+     * @tparam R the input encoding
+     * @param lhs the value to convert
+     * @return std::basic_string< L > const the converted value
+     */
+    template < defines::VideoCharacter L, defines::VideoCharacter R >
+    std::basic_string< L > const convert ( std::basic_string< R > const lhs );
+
+    /**
+     *
      * @brief Splits the string into a vector of its code-points.
      * @param std::string the string to split
      * @throw Throws std::runtime_error if there is an invalid / unknown code
      * point.
      * @return std::vector < std::string >
      */
-    std::vector< std::string > splitByCodePoint ( std::string );
+    std::vector< defines::ChrString > splitByCodePoint ( defines::ChrString );
 
-    std::vector< std::string > splitByCodePoint ( std::u8string str );
+    std::vector< defines::ChrString > splitByCodePoint ( defines::U08String );
 
     /**
      * @brief Generates a vector of the parts of text which are not allowed to
@@ -39,7 +53,8 @@ namespace io::console::manip
      *
      * @return std::vector< std::string >
      */
-    std::vector< std::string > generateTextInseperables ( std::string );
+    std::vector< defines::ChrString >
+            generateTextInseperables ( defines::ChrString );
 
     /**
      * @brief (Attempts to) Center text on a line of the specified size.
@@ -49,14 +64,14 @@ namespace io::console::manip
      * @param columns the amount of columns on the line
      * @return std::string
      */
-    std::string centerTextOn ( std::string, std::uint32_t const );
+    defines::ChrString centerTextOn ( defines::ChrString, std::uint32_t const );
 
     /**
      * @brief How many columns wide is this string?
      *
      * @return std::uint32_t
      */
-    std::uint32_t columnsLong ( std::string const & );
+    std::uint32_t columnsLong ( defines::ChrString const & );
 
     /**
      * @brief Takes a C-string and widens it to a UTF-32 character sequence.
@@ -65,77 +80,7 @@ namespace io::console::manip
      * @param cstr
      * @return char32_t
      */
-    inline char32_t widen ( char const *const cstr )
-    {
-        char32_t translated = 0;
-        auto     grabFollow = [ & ] ( std::size_t num ) {
-            unsigned char at = cstr [ num ];
-            if ( at < 0x80 || at > 0xBF )
-            {
-                std::stringstream hexGetter;
-                hexGetter << std::hex << std::uint32_t ( at );
-                RUNTIME_ERROR (
-                        "Invalid Unicode Sequence: Expected Following Byte "
-                            "after hex literal ",
-                        hexGetter.str ( ) )
-            }
-            translated <<= 6;
-            translated += at & ~0x80;
-        };
-        if ( cstr )
-        {
-            unsigned char first = cstr [ 0 ];
-            if ( first < 0x80 )
-            {
-                translated += first;
-            } else if ( first < 0xC0 )
-            {
-                RUNTIME_ERROR (
-                        "Invalid Unicode Sequence: Begins with Following Byte" )
-            } else if ( first < 0xE0 )
-            {
-                translated += first & ~0xC0;
-                grabFollow ( 1 );
-
-                if ( translated < 0x80 )
-                {
-                    RUNTIME_ERROR ( "Overlong Encoding" )
-                }
-            } else if ( first < 0xF0 )
-            {
-                translated += first & ~0xE0;
-                grabFollow ( 1 );
-                grabFollow ( 2 );
-                if ( translated < 0x800 )
-                {
-                    RUNTIME_ERROR ( "Overlong Encoding" )
-                }
-                if ( translated >= 0xD800 && translated <= 0xDFFF )
-                {
-                    RUNTIME_ERROR ( "Illegal Encoding" )
-                }
-            } else if ( translated < 0xF8 )
-            {
-                translated += first & ~0xF8;
-                grabFollow ( 1 );
-                grabFollow ( 2 );
-                grabFollow ( 3 );
-                if ( translated < 0xFFFF )
-                {
-                    RUNTIME_ERROR ( "Overlong Encoding" )
-                }
-                if ( translated > 0x10FFFD && translated < 0x100000 )
-                {
-                    RUNTIME_ERROR ( "Illegal Encoding" )
-                }
-                if ( translated >= 0x100000 )
-                {
-                    RUNTIME_ERROR ( "Character out of Bounds!" )
-                }
-            }
-        }
-        return translated;
-    }
+    defines::U32Char   widen ( defines::ChrPString const );
     /**
      * @brief Narrows a UTF-32 sequence into the equivalent UTF-8 sequence.
      * Always allocates 5-bytes, unless it throws (it deallocates before
@@ -213,4 +158,5 @@ namespace io::console::manip
             return false;
         }
     }
+
 } // namespace io::console::manip

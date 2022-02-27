@@ -1,32 +1,347 @@
 /**
- * @file splitting.c++
+ * @file stringfunctions.c++
  * @author Joshua Buchanan (joshuarobertbuchanan@gmail.com)
- * @brief Implements the line break functionality
+ * @brief All string functions combined into a single file.
  * @version 1
- * @date 2022-02-19
+ * @date 2022-02-26
  *
  * @copyright Copyright (C) 2022. Intellectual property of the author(s) listed
  * above.
  *
  */
+
 #include <io/console/manip/stringfunctions.h++>
+
+#include <io/unicode/character.h++>
 
 #include <defines/constants.h++>
 #include <defines/macros.h++>
 #include <defines/types.h++>
-#include <io/unicode/character.h++>
 
-#include <sstream>
-#include <vector>
+#include <test/unittester.h++>
 
 #include <io/base/syncstream.h++>
+
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 using io::unicode::BreakingProperties;
 using io::unicode::CharacterProperties;
 using io::unicode::characterProperties;
 
 using namespace io::console::manip;
+
+/**
+ * @brief Type of a code point.
+ *
+ */
+enum class CodePointType
+{
+    TERMINAL, // ansi escape sequence or control character, [0x00 - 0x20]
+    UTF1BYTE, // one byte utf-8 starts with [0x20 - 0x7f]
+    UTF2BYTE, // two byte utf-8 starts with [0xC0 - 0xDF]
+    UTF3BYTE, // three byte utf-8 starts with [0xE0 - 0xEf]
+    UTF4BYTE, // four byte utf-8 starts with [0xF0 - 0xF8]
+    UTFNBYTE, // unknown, but it's probably unicode? perhaps 5-byte?
+    INVALID_, // we know we errored out and found a character we know to be
+              // invalid. includes characters outside the range of unicode.
+    _MAX,     // maximum value
+};
+
+std::size_t const utf8SequenceLength ( defines::PString const );
+
+/**
+ * @brief Identifies what CodePointType the first character of a sequence is
+ * @note This function might need to be removed? Lots of changes happened
+ * recently in the IO system.
+ * @param string the string
+ * @return A CodePointType corresponding to the code point.
+ */
+CodePointType identifyFirst ( defines::ChrString const &string )
+{
+    defines::U32Char total = 0;
+    try
+    {
+        total = widen ( string.c_str ( ) );
+    } catch ( std::runtime_error &notReallyAnError )
+    {
+        return CodePointType::INVALID_;
+    }
+
+    std::size_t length = 0;
+    try
+    {
+        length = utf8SequenceLength ( strnig.c_str ( ) );
+    } catch ( std::runtime_error &notReallyAnError )
+    {
+        return CodePointType::INVALID_;
+    }
+
+    switch ( length )
+    {
+        case 1:
+            // characters before space are all control characters
+            if ( total < defines::space )
+            {
+                return CodePointType::TERMINAL;
+            } else
+            { // if it's not a control character...
+                return CodePointType::UTF1BYTE;
+            }
+        case 2:
+            if ( total <= defines::minimumASCII )
+            {
+                // overlong encodings (when it can be made shorter) are
+                // officially an error condition
+                return CodePointType::INVALID_;
+            } else
+            {
+                // valid UTF-8 sequence (two bytes)
+                return CodePointType::UTF2BYTE;
+            }
+        case 3:
+            if ( total < defines::maximumTwoByte )
+            {
+                // overlong encoding (it can be made shorter). Which makes this
+                // sequence illegal.
+                return CodePointType::INVALID_;
+            } else if ( total >= defines::ucs2Deadzone [ 0 ]
+                        && total <= defines::ucs2Deadzone [ 1 ] )
+            {
+                // invalid UTF-8 encoding because we cannot express it in
+                // UTF-16.
+                return CodePointType::INVALID_;
+            } else
+            {
+                // valid UTF-8 sequence (three bytes)
+                return CodePointType::UTF3BYTE;
+            }
+        case 4:
+            if ( total < defines::maximumThreeByte )
+            {
+                // overlong encoding -- we can make it shorter.
+                return CodePointType::INVALID_;
+            } else if ( total > defines::maxUnicode )
+            {
+                // out of bounds. Since UTF-16 has a maximum value of
+                // defines::maxUnicode, we cannot support this character.
+                return CodePointType::INVALID_;
+            } else
+            {
+                // valid 4-byte UTF-8 sequence
+                return CodePointType::UTF4BYTE;
+            }
+            // we fell through somehow because we got a length outside the
+            // range [1, 4]. This is an error condition -- so we'll describe the
+            // character as invalid
+        default: return CodePointType::INVALID_;
+    }
+}
+/**
+ * @brief Whether a character ends a variable-length ESC sequence.
+ * @note the variable length sequences are:
+ *  - SOS (Start Of String)
+ *  - OSC (Operating System Command)
+ *  - APC (Application Program Command)
+ *  - PM ( Privacy Message).
+ * However, this function should only be dealing with OSC, as most of
+ * our sequences are Control Sequences or an Operating System Command to change
+ * the pallette
+ * @param character the character to check against
+ * @return true when the character ends the sequence
+ * @return false when the character does not end the sequence
+ */
+bool endsVariableLengthCode ( defines::ChrChar const &character )
+{
+    // if the character is outside the range [0x09, 0x7E]
+    if ( character < 0x08 || character >= defines::maximumASCII )
+    {
+        return true;
+        // if the character is a control character and greater than 0x0D
+    } else if ( character < defines::space && character > '\x0d' )
+    {
+        return true;
+    } else
+    {
+        // if the character satisfies none of the requirements, it does not end
+        // the sequence
+        return false;
+    }
+}
+/**
+ * @brief If the character ends specifically a CSI sequence.
+ *
+ * @param character the character to check against
+ * @return true ends a CSI sequence
+ * @return false does not end a CSI sequence
+ */
+bool endsCSI ( defines::ChrChar const &character )
+{
+    // if our character is an alphabetic character
+    // or one if @, [, ], _, /, etc.
+    // the characters which end CSI continue from the @ sign to the ~, which
+    // is right before the last character (tilde is 0x7E, ascii ends at 0x7F)
+    return character >= '@' && character < defines::maximumASCII;
+}
+
+/**
+ * @brief (Destructively) Grabs the first code point of a given string
+ * @note Takes at least one character. Given the nature of terminal sequences,
+ * there is no upper bound on the amount of characters  taken.
+ * @throw std::runtime_error if the sequence seems to be a unicode sequence, but
+ * has an indication of being longer than four bytes
+ * @throw std::runtime_error if the character sequence is invalid.
+ * @throw std::runtime_error if the sequence is a private-use sequence
+ * @param string the string to grab from
+ * @return the first code point
+ */
+defines::ChrString grabCodePoint ( defines::ChrString &string )
+{
+    // our return value
+    defines::ChrString result       = CHR_STRINGIZE ( );
+    // anticipated error message.
+    defines::ChrString errorMessage = "Unknown (UTF-8?) Sequence!";
+    switch ( identifyFirst ( string ) )
+    {
+        case CodePointType::INVALID_:
+            // change the error message to reflect the actual error and fall
+            // through to the next case, where we throw the runtime error
+            errorMessage = "Invalid Character Sequence!";
+        case CodePointType::UTFNBYTE:
+            RUNTIME_ERROR ( errorMessage,
+                            ": in decimal, U+",
+                            widen ( string.c_str ( ) ),
+                            ", \"",
+                            string.substr ( 0, 4 ),
+                            "\"" );
+        case CodePointType::TERMINAL:
+            // process the escape sequence.
+            result += string.front ( );
+            string = string.substr ( 1 );
+            // check for an escape sequence.
+            if ( result.starts_with ( esc ) )
+            {
+                result += string.front ( );
+                string = string.substr ( 1 );
+                // what type of sequence do we have?
+                // some are only two bytes long (incl. esc)
+                // others can be infinitely long.
+                switch ( result.back ( ) )
+                {
+                        // SS2 and SS3 require one more character. Exactly one
+                        // more character (as the name "single shift" implies)
+                    case 'N': // ss2
+                    case 'O': // ss3
+                        result += string.front ( );
+                        string = string.substr ( 1 );
+                        break;
+                        // PU1 and PU2 are subject to prior agreement on meaning
+                        // between us and the terminal. We can't know the length
+                        // here without more documentation on the windows /
+                        // linux terminals.
+                    case 'Q':
+                    case 'R':
+                        RUNTIME_ERROR (
+                                "Encountered Private Use Sequence (don't do "
+                                "that!)" )
+                        // these four commands are terminated by the string
+                        // terminator (or, on xterm and windows terminal, BEL),
+                        // and can contain the character in the range [\x08,
+                        // \x0D] U [\x20, \x7E]
+                    case 'P': // DCS
+                    case ']': // OSC
+                    case '^': // PM
+                    case '_': // APC
+                        do {
+                            if ( string.empty ( ) )
+                                break;
+                            result += string.front ( );
+                            string = string.substr ( 1 );
+                        } while (
+                                // while the result does not end with the string
+                                // terminator and while the character does not
+                                // end a variable length code.
+                                !result.ends_with (
+                                        defines::ChrString ( '\u001b' )
+                                        + defines::backwardSlash )
+                                && !endsVariableLengthCode (
+                                        result.back ( ) ) );
+                        break;
+                        // SOS is different from the four above in that it only
+                        // ends with either SOS or ST
+                    case 'X': // SOS
+                        do {
+                            if ( string.empty ( ) )
+                                break;
+                            result += string.front ( );
+                            string = string.substr ( 1 );
+                        } while (
+                                !result.ends_with (
+                                        defines::ChrString ( '\u001b' ) + "X" )
+                                && !result.ends_with (
+                                        defines::ChrString ( '\u001b' )
+                                        + defines::backwardSlash ) );
+                        break;
+                    case '[': // CSI
+                        // CSI can be terminated by a byte in the range [0x40,
+                        // 0x7E] the sequences that use a control character in
+                        // this range have undefined behavior, so we'll assume
+                        // that we know what we're doing and not terminate the
+                        // sequence.
+                        do {
+                            if ( string.empty ( ) )
+                                break;
+                            result += string.front ( );
+                            string = string.substr ( 1 );
+                        } while ( !endsCSI ( result.back ( ) ) );
+                        break;
+                    default: break;
+                }
+            }
+            break;
+            // use implicit fallthroughs to get the right amount of characters.
+        case CodePointType::UTF4BYTE:
+            result += string.front ( );
+            string = string.substr ( 1 );
+        case CodePointType::UTF3BYTE:
+            result += string.front ( );
+            string = string.substr ( 1 );
+        case CodePointType::UTF2BYTE:
+            result += string.front ( );
+            string = string.substr ( 1 );
+        case CodePointType::UTF1BYTE:
+            result += string.front ( );
+            string = string.substr ( 1 );
+        default: break;
+    }
+    return result;
+}
+
+// split text by UTF-8 code point
+std::vector< defines::ChrString >
+        io::console::manip::splitByCodePoint ( defines::ChrString string )
+{
+    // our result. Holds an empty string by default to ensure that we don't
+    // accidentally attempt to make a string with nullptr.
+    std::vector< defines::ChrString > result = { CHR_STRINGIZE ( ) };
+    while ( !string.empty ( ) )
+    {
+        result.push_back ( grabCodePoint ( string ) );
+    }
+    return result;
+}
+
+// convenience function so that you switch between UTF-8 and char less often?
+std::vector< defines::ChrString >
+        io::console::manip::splitByCodePoint ( defines::U08String str )
+{
+    defines::ChrString temp = CHR_STRINGIZE ( );
+    for ( defines::U08Char &c : str ) { temp += ( defines::ChrChar ) c; }
+    return splitByCodePoint ( temp );
+}
 
 // definitions:
 // 1. Line Break: where one line ends nad the next one starts.
@@ -40,47 +355,49 @@ using namespace io::console::manip;
 // whitespace.
 // 7. Hyphenation: uses language specific rules.
 
-BreakingProperties getBreakingPropertiesFrom ( char32_t const & );
+BreakingProperties getBreakingPropertiesFrom ( defines::U32Char const & );
 
 // bool ruleApplies(std::string const &line, std::string const &code)
-bool rule3Applies ( std::string const &, std::string const & );
-bool rule4Applies ( std::string const &, std::string const & );
-bool rule5Applies ( std::string const &, std::string const & );
-bool rule6Applies ( std::string const &, std::string const & );
-bool rule7Applies ( std::string const &, std::string const & );
-bool rule8Applies ( std::string const &, std::string const & );
-bool rule9Applies ( std::string const &, std::string const & );
-bool rule10Applies ( std::string const &, std::string const & );
-bool rule11Applies ( std::string const &, std::string const & );
-bool rule12Applies ( std::string const &, std::string const & );
-bool rule13Applies ( std::string const &, std::string const & );
-bool rule14Applies ( std::string const &, std::string const & );
-bool rule15Applies ( std::string const &, std::string const & );
-bool rule16Applies ( std::string const &, std::string const & );
-bool rule17Applies ( std::string const &, std::string const & );
-bool rule18Applies ( std::string const &, std::string const & );
-bool rule19Applies ( std::string const &, std::string const & );
-bool rule20Applies ( std::string const &, std::string const & );
-bool rule21Applies ( std::string const &, std::string const & );
-bool rule22Applies ( std::string const &, std::string const & );
-bool rule23Applies ( std::string const &, std::string const & );
-bool rule24Applies ( std::string const &, std::string const & );
-bool rule25Applies ( std::string const &, std::string const & );
-bool rule26Applies ( std::string const &, std::string const & );
-bool rule27Applies ( std::string const &, std::string const & );
-bool rule28Applies ( std::string const &, std::string const & );
-bool rule29Applies ( std::string const &, std::string const & );
-bool rule30Applies ( std::string const &, std::string const & );
+bool rule3Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule4Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule5Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule6Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule7Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule8Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule9Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule10Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule11Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule12Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule13Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule14Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule15Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule16Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule17Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule18Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule19Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule20Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule21Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule22Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule23Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule24Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule25Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule26Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule27Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule28Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule29Applies ( defines::ChrString const &, defines::ChrString const & );
+bool rule30Applies ( defines::ChrString const &, defines::ChrString const & );
 
-bool isBreakingPropertyTailorable ( char32_t const & );
+bool isBreakingPropertyTailorable ( defines::U32Char const & );
 
-void removeCodePoint ( std::vector< std::string > & );
+void removeCodePoint ( std::vector< defines::ChrString > & );
 
-std::vector< std::string >
-        io::console::manip::generateTextInseperables ( std::string str )
+std::vector< defines::ChrString >
+        io::console::manip::generateTextInseperables ( defines::ChrString str )
 {
-    std::vector< std::string > output     = { "" };
-    std::vector< std::string > codePoints = splitByCodePoint ( str );
+    // output lines. Contains an empty string to ensure that we never try to
+    // initialize a string with nullptr.
+    std::vector< defines::ChrString > output     = { CHR_STRINGIZE ( ) };
+    std::vector< defines::ChrString > codePoints = splitByCodePoint ( str );
     // rule 1: never break at start of text. Add a new element
     // which simply contains the first code point.
     output.push_back ( codePoints.front ( ) );
@@ -312,13 +629,17 @@ std::vector< std::string >
     return output;
 }
 
-std::string io::console::manip::centerTextOn ( std::string   string,
-                                               std::uint32_t columns )
+defines::ChrString io::console::manip::centerTextOn ( defines::ChrString string,
+                                                      std::uint32_t columns )
 {
     // get the estimate of the amount of columns in the string
     std::uint32_t  estimate   = columnsLong ( string );
     // get the amount of columns we have to play with
     std::ptrdiff_t difference = columns - estimate;
+    // whether or not the columns on the console and the estimated number of
+    // columns that the screen takes up have the same parity. Will come in handy
+    // later since it determines whether it is currently possible for the line
+    // to be fully centered.
     bool           sameParity = ( ~( columns ^ estimate ) ) & 1;
     // four cases:
     // 1. difference == 0: trivially, this is already centered.
@@ -329,21 +650,23 @@ std::string io::console::manip::centerTextOn ( std::string   string,
     // 4. difference > 0 && !sameParity: attempt to widen the string by one
     // column or narrow it by one column (if we can't widen it). Then follow
     // case 3.
-    if ( !difference )
+    if ( !difference ) // case 1
     {
         return string;
     } else
     {
         // all cases here are easier if we have another string as utf-32
-        std::string    result = "";
-        std::u32string asU32  = U"";
-        for ( auto &cp : splitByCodePoint ( string ) )
+        defines::ChrString result = CHR_STRINGIZE ( );
+        defines::U32String asU32  = U32_STRINGIZE ( );
+        // populate the utf-32 string.
+        for ( auto const &cp : splitByCodePoint ( string ) )
         {
             asU32 += widen ( cp.c_str ( ) );
         }
 
+        // convenient lambda function to convert back to UTF-8
         auto backToUTF8 = [ & ] ( ) {
-            std::string output = "";
+            defines::ChrString output = CHR_STRINGIZE ( );
             for ( auto &cp : asU32 ) { output += narrow ( cp ); }
             return output;
         };
@@ -352,9 +675,9 @@ std::string io::console::manip::centerTextOn ( std::string   string,
         auto narrowOneUnit = [ & ] ( ) -> bool {
             for ( std::size_t i = 0; i < asU32.size ( ) - 1; i++ )
             {
-                if ( asU32.at ( i ) == ' ' )
+                if ( asU32.at ( i ) == defines::space )
                 {
-                    if ( asU32.at ( i + 1 ) == ' ' )
+                    if ( asU32.at ( i + 1 ) == defines::space )
                     {
                         // remove the character at i+1
                         asU32.erase ( i + 1, 1 );
@@ -374,7 +697,7 @@ std::string io::console::manip::centerTextOn ( std::string   string,
                     }
                 }
             }
-            char32_t diff = U'！' - '!';
+            defines::U32Char diff = U'！' - '!';
             for ( char32_t cp = U'！'; cp <= U'～'; cp++ )
             {
                 for ( std::size_t i = 0; i < asU32.size ( ); i++ )
@@ -386,27 +709,17 @@ std::string io::console::manip::centerTextOn ( std::string   string,
                     }
                 }
             }
-            diff = U'･' - U'・';
-            for ( char32_t cp = U'･'; cp <= U'ﾟ'; cp++ )
-            {
-                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
-                {
-                    if ( asU32.at ( i ) == cp )
-                    {
-                        asU32.at ( i ) = ( cp - diff );
-                        return true;
-                    }
-                }
-            }
+            // TODO: implement looking for Katakana halfwidth <-> fullwidth
+            // (requires lookup table)
             return false;
         };
 
         auto widenOneUnit = [ & ] ( ) -> bool {
             for ( std::size_t i = 0; i < asU32.size ( ); i++ )
             {
-                if ( asU32.at ( i ) == ' ' )
+                if ( asU32.at ( i ) == defines::space )
                 {
-                    asU32.insert ( i, 1, ' ' );
+                    asU32.insert ( i, 1, defines::space );
                     return true;
                 }
             }
@@ -429,18 +742,8 @@ std::string io::console::manip::centerTextOn ( std::string   string,
                     }
                 }
             }
-            diff = U'･' - U'・';
-            for ( char32_t cp = U'・'; cp <= U'゜'; cp++ )
-            {
-                for ( std::size_t i = 0; i < asU32.size ( ); i++ )
-                {
-                    if ( asU32.at ( i ) == cp )
-                    {
-                        asU32.at ( i ) = ( cp + diff );
-                        return true;
-                    }
-                }
-            }
+            // TODO: implement looking for Katakana halfwidth <-> fullwidth
+            // (requires lookup table)
             return false;
         };
 
@@ -1176,3 +1479,320 @@ bool rule29Applies ( std::string const &line, std::string const &code )
 // rule 30, the "base case" always applies since we only check for it if none
 // of the other rules apply.
 bool rule30Applies ( std::string const &, std::string const & ) { return true; }
+
+/**
+ * @brief Takes a C-string and widens it to a UTF-32 character sequence.
+ * @note Useful for querying the properties of a sequence.
+ *
+ * @param cstr
+ * @return char32_t
+ */
+defines::U32Char io::console::manip::widen ( defines::ChrPString const cstr )
+{
+    if ( !cstr )
+    {
+        RUNTIME_ERROR ( "Invalid Sequence: \"sequence\" was nullptr" )
+    }
+    defines::ChrString temp { cstr };
+
+    std::uint32_t total             = 0;
+    unsigned      length            = 1;
+    unsigned defines::ChrChar front = temp.front ( );
+
+    auto addMultiByteSequence = [ & ] ( unsigned defines::ChrChar mask ) {
+        // error out if we have to short a string.
+        if ( temp.size ( ) < length )
+        {
+            RUNTIME_ERROR ( "Invalid Sequence: string too short" )
+        }
+        // if not, then add the first byte
+        total = front & mask;
+        // add the characters.
+        for ( std::size_t i = 1; i < length; i++ )
+        {
+            front = temp.at ( i );
+            // if the character is not a valid following byte, indicate
+            // that the sequence is invalid. Otherwise, continue with
+            // the parsing.
+            if ( front > defines::maximumFollowing
+                 || front <= defines::maximumASCII )
+            {
+                RUNTIME_ERROR ( "Invalid Sequence: missing following byte" )
+            } else
+            {
+                front &= ~( defines::minimumTwoByte - 2 );
+                total <<= 6;
+                total += front;
+            }
+        }
+    };
+
+    if ( front <= defines::maximumASCII )
+    {
+        total += front;
+    } else
+    {
+        length = utf8SequenceLength ( temp.c_str ( ) );
+        switch ( length )
+        {
+            case 2: addMultiByteSequence ( ~defines::minimumThreeByte ); break;
+            case 3: addMultiByteSequence ( ~defines::minimumFourByte ); break;
+            case 4: addMultiByteSequence ( ~defines::fourByteMask ); break;
+            default:
+                RUNTIME_ERROR ( "Unexpected Result from utf8SequenceLength: ",
+                                length )
+        }
+    }
+    return total;
+}
+
+std::size_t const utf8SequenceLength ( defines::ChrPString const string )
+{
+    // unlike in widen, a nullptr here is not necessarily an error, it just
+    // means that the string is of 0 length.
+    if ( !string )
+    {
+        return 0;
+    }
+    unsigned length                 = 1;
+    unsigned defines::ChrChar front = string [ 0 ];
+
+    if ( front <= defines::maximumASCII )
+    {
+        return 1;
+    } else if ( front < defines::minimumTwoByte )
+    {
+        RUNTIME_ERROR (
+                "Invalid Sequence: unexpected following byte or overlong "
+                "encoding" )
+    } else if ( front < defines::minimumThreeByte )
+    {
+        return 3;
+    } else if ( front < defines::maximumFirstByte )
+    {
+        return 4;
+    } else
+    {
+        RUNTIME_ERROR ( "Invalid Sequence: UTF out of range" )
+    }
+}
+
+#define INCORRECT_SEQUENCE( TRANS, EXPECT, ... )                               \
+    CHAR_UNITTEST_FAIL ( stream,                                               \
+                         "Incorrect Labeling",                                 \
+                         "U+",                                                 \
+                         std::uint32_t ( TRANS ),                              \
+                         "Was not marked as a(n) ",                            \
+                         EXPECT,                                               \
+                         " Sequence. Its byte representation is:" __VA_OPT__ ( \
+                                 ,                                             \
+                                 "0x",                                         \
+                                 ( unsigned char ) ) __VA_ARGS__ )             \
+    END_UNIT_FAIL ( stream )
+
+bool testIdentification ( std::ostream &stream )
+{
+    stream << "Beginning identification unittest.\n";
+    stream << "Ensuring that all characters can be identified properly...\n";
+
+    stream << "One byte characters:\n";
+
+    for ( char i = 0; i <= maxControlCharacter; i++ )
+    {
+        defines::ChrString test ( { i, 0 } );
+        if ( identifyFirst ( test ) != TERMINAL )
+        {
+            INCORRECT_SEQUENCE ( ( unsigned char ) i, "Terminal", i )
+        }
+    }
+    for ( char i = ' '; i < ( char ) 0x80; i++ )
+    {
+        defines::ChrString test ( { ( char ) i, 0 } );
+        if ( identifyFirst ( test ) != UTF1BYTE )
+        {
+            INCORRECT_SEQUENCE ( ( unsigned char ) i, "1-byte UTF-8", i )
+        }
+    }
+
+    stream << "Two-byte unicode characters:\n";
+    for ( char i = ( char ) 0xC2; i < ( char ) 0xE0; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            defines::ChrString test ( { i, j, 0 } );
+            if ( identifyFirst ( test ) != UTF2BYTE )
+            {
+                std::uint32_t translated = 0;
+                translated += ( ( unsigned char ) i ) & ~0xC0;
+                translated <<= 6;
+                translated += ( ( unsigned char ) j ) & ~0x80;
+
+                INCORRECT_SEQUENCE ( translated, "2-byte UTF-8", i, j )
+            }
+        }
+    }
+    for ( char i = ( char ) 0xC0; i < ( char ) 0xC2; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            defines::ChrString test ( { i, j, 0 } );
+            if ( identifyFirst ( test ) != INVALID_ )
+            {
+                std::uint32_t translated = 0;
+                translated += ( ( unsigned char ) i ) & ~0xC0;
+                translated <<= 6;
+                translated += ( ( unsigned char ) j ) & ~0x80;
+
+                INCORRECT_SEQUENCE ( translated, "Invalid", i, j )
+            }
+        }
+    }
+
+    stream << "Three-byte unicode characters:\n";
+    for ( char i = ( char ) 0xE0; i < ( char ) 0xF0; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                defines::ChrString test ( { i, j, k, 0 } );
+                if ( identifyFirst ( test ) != UTF3BYTE )
+                {
+                    std::uint32_t translated = 0;
+                    translated += ( ( unsigned char ) i ) & ~0xE0;
+                    translated <<= 6;
+                    translated += ( ( unsigned char ) j ) & ~0x80;
+                    translated <<= 6;
+                    translated += ( ( unsigned char ) k ) & ~0x80;
+                    if ( translated >= 0xD800 && translated <= 0xDFFF )
+                    {
+                        if ( identifyFirst ( test ) != INVALID_ )
+                        {
+                            INCORRECT_SEQUENCE ( translated,
+                                                 "Invalid",
+                                                 i,
+                                                 j,
+                                                 k )
+                        } else
+                        {
+                            continue;
+                        }
+                    }
+                    if ( translated < 0x800 )
+                    {
+                        if ( identifyFirst ( test ) != INVALID_ )
+                        {
+                            INCORRECT_SEQUENCE ( translated,
+                                                 "Invalid",
+                                                 i,
+                                                 j,
+                                                 k )
+                        } else
+                        {
+                            continue;
+                        }
+                    }
+
+                    INCORRECT_SEQUENCE ( translated, "3-byte UTF-8", i, j, k )
+                }
+            }
+        }
+    }
+    stream << "Four-byte unicode characters:\n";
+    for ( char i = ( char ) 0xF0; i < ( char ) 0xF4; i++ )
+    {
+        stream << "Leading byte 0x" << std::hex
+               << std::uint32_t ( ( unsigned char ) i ) << std::dec
+               << std::endl;
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
+                {
+                    defines::ChrString test ( { i, j, k, m, 0 } );
+                    if ( identifyFirst ( test ) != UTF4BYTE )
+                    {
+                        std::uint32_t translated = 0;
+                        translated += ( ( unsigned char ) i ) & ~0xF0;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) j ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) k ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) m ) & ~0x80;
+
+                        // check for overlong encodings or the last two codes.
+                        if ( translated < 0x10000 )
+                        {
+                            if ( identifyFirst ( test ) != INVALID_ )
+                            {
+                                INCORRECT_SEQUENCE ( translated,
+                                                     "Invalid",
+                                                     i,
+                                                     j,
+                                                     k,
+                                                     m )
+                            } else
+                            {
+                                continue;
+                            }
+                        }
+                        if ( translated == 0x10FFFE || translated == 0x10FFFF )
+                        {
+                            if ( identifyFirst ( test ) != INVALID_ )
+                            {
+                                INCORRECT_SEQUENCE ( translated,
+                                                     "Invalid",
+                                                     i,
+                                                     j,
+                                                     k,
+                                                     m )
+                            } else
+                            {
+                                continue;
+                            }
+                        }
+
+                        INCORRECT_SEQUENCE ( translated,
+                                             "4-byte UTF-8",
+                                             i,
+                                             j,
+                                             k,
+                                             m )
+                    }
+                }
+            }
+        }
+    }
+    stream << "Four byte, out of range characters:\n";
+    for ( char i = ( char ) 0xF5; i < ( char ) 0xF7; i++ )
+    {
+        for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
+        {
+            for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
+            {
+                for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
+                {
+                    defines::ChrString test ( { i, j, k, m, 0 } );
+                    if ( identifyFirst ( test ) != INVALID_ )
+                    {
+                        std::uint32_t translated = 0;
+                        translated += ( ( unsigned char ) i ) & ~0xF0;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) j ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) k ) & ~0x80;
+                        translated <<= 6;
+                        translated += ( ( unsigned char ) m ) & ~0x80;
+                        INCORRECT_SEQUENCE ( translated, "Invalid", i, j, k, m )
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+test::Unittest identification ( testIdentification );

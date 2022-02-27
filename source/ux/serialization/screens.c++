@@ -130,6 +130,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
     std::shared_ptr< IColor > parsedColor = nullptr;
     if ( node [ i ][ "Direct" ].as< bool > ( ) )
     {
+        std::cout << "Node " << i << " is a direct color\n";
         // parse direct color
         RGBAColor color;
         for ( std::size_t j = 0; i < 4; i++ )
@@ -154,9 +155,18 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
         // parse the waveform function
         blend_functions::IndirectColorBlendingFunctions blending =
                 blend_functions::IndirectColorBlendingFunctions::WAVEFORM;
-        blending = defines::fromString<
-                blend_functions::IndirectColorBlendingFunctions > (
-                node [ i ][ "Function" ].as< defines::ChrString > ( ) );
+        try
+        {
+            blending = defines::fromString<
+                    blend_functions::IndirectColorBlendingFunctions > (
+                    node [ i ][ "Function" ].as< defines::ChrString > ( ) );
+        } catch ( YAML::InvalidNode &invalid )
+        {
+            std::cout << "Warning: "
+                      << "Function"
+                      << " cannot be found within node " << i << ".\n";
+            blending = blend_functions::IndirectColorBlendingFunctions::_MAX;
+        }
         switch ( blending )
         {
             case blend_functions::IndirectColorBlendingFunctions::AVERAGE4:

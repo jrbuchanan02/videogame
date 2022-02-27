@@ -27,29 +27,33 @@ Defaults:
     - &defaultBlue
       Number: 4
       Direct: Yes
-      Base: [0x00, 0x00, 0x7F, 0x00]
+      Base: [0.0, 0, 128, 0]
     - &defaultMagenta
       Number: 5
       Direct: Yes
-      Base: [0x7F, 0x00, 0x7F, 0x00]
+      Base: [128.0, 0, 128, 0]
     - &defaultCyan
       Number: 6
       Direct: Yes
-      Base: [0x00, 0x7F, 0x7F, 0x00]
+      Base: [0.0, 128, 128, 0]
     - &defaultWhite
       Number: 7
       Direct: Yes
-      Base: [0x7F, 0x7F, 0x7F, 0x00]
+      Base: [128.0, 128, 128, 0]
+    - &waveformBlinkOnColor1Color1
+      Number: 1
+      Direct: No
+      Base: [128.0, 128, 128, 128]
+      Params: [8, 9, 10, 10]
+      Function: WAVEFORM
+      
 # the screens
 Screens:
   Title:
     Palette:
       - *defaultBlack
-
-      - *defaultRed
-
+      - *defaultWhite
       - *defaultGreen
-
       - *defaultYellow
       - *defaultBlue
       - *defaultMagenta
@@ -86,7 +90,7 @@ Screens:
         Font: 0
         Fraktur: No
         DoubleUnderline: Yes
-        Foreground: 0x00000007
+        Foreground: 0x00000002
         Background: 0x00000000
       - Id: StartMessage
         TextRate: 17
@@ -105,7 +109,7 @@ Screens:
         Font: 0
         Fraktur: No
         DoubleUnderline: No
-        Foreground: 0x00000001
+        Foreground: 0x00000109
         Background: 0x00000000
     Input:
       Expect:

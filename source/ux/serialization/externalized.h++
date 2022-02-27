@@ -126,12 +126,14 @@ namespace ux::serialization
         {
             std::string directoryPath = directory.string ( );
             if ( !directoryPath.ends_with ( folder ( ) )
-                 && !directoryPath.ends_with ( folder ( ) + "/" ) )
+                 && !directoryPath.ends_with ( folder ( )
+                                               + defines::forwardSlash ) )
             {
                 // I apologize for the invalid indentation here, it's
                 // conditional based on which ssytem we're compiling for.
 #ifdef WINDOWS
-                if ( !directoryPath.ends_with ( folder ( ) + "\\" ) )
+                if ( !directoryPath.ends_with ( folder ( )
+                                                + defines::backwardSlash ) )
                 {
 #endif
                     RUNTIME_ERROR (
@@ -156,7 +158,8 @@ namespace ux::serialization
                 stream.emit ( );
                 // if the file is a normal file and has a .json extension
                 if ( entry.is_regular_file ( )
-                     && entry.path ( ).string ( ).ends_with ( ".yaml" ) )
+                     && entry.path ( ).string ( ).ends_with (
+                             defines::yamlExtension ) )
                 {
                     // slurp the file then parse.
                     defines::ChrString     slurpee = "";

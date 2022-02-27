@@ -98,4 +98,5 @@ namespace io::base
         }
         os << temp;
     }
+
 } // namespace io::base

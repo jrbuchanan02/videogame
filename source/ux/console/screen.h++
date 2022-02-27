@@ -139,7 +139,7 @@ namespace ux::console
                 };
 
                 auto outputLine = [ & ] ( Line const &line ) {
-                    console << doWaitForText << resetSGR;
+                    console << resetSGR;
                     console << textDelay ( line.txtRate );
                     console << commandDelay ( line.cmdRate );
                     [[likely]] if ( line.centered ) { console << doTextCenter; }
@@ -364,8 +364,8 @@ namespace ux::console
                     auto string = strings.get ( std::shared_ptr< ExternalID > (
                             new ExternalID ( getID ( line.textID ) ) ) );
                     assert ( !string.empty ( ) );
-                    console << string;
-                    console << noWaitForText;
+                    console << doWaitForText;
+                    console << string + "\n";
                 };
                 // set our palette
                 for ( auto &color : palette )
