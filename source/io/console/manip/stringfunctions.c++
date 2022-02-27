@@ -103,7 +103,7 @@ CodePointType identifyFirst ( defines::ChrString const &string )
                 return CodePointType::UTF2BYTE;
             }
         case 3:
-            if ( total < defines::maximumTwoByte )
+            if ( total < defines::maximumTwoByteEncoded )
             {
                 // overlong encoding (it can be made shorter). Which makes this
                 // sequence illegal.
@@ -120,7 +120,7 @@ CodePointType identifyFirst ( defines::ChrString const &string )
                 return CodePointType::UTF3BYTE;
             }
         case 4:
-            if ( total < defines::maximumThreeByte )
+            if ( total < defines::maximumThreeByteEncoded )
             {
                 // overlong encoding -- we can make it shorter.
                 return CodePointType::INVALID_;
@@ -340,9 +340,8 @@ std::vector< defines::ChrString >
 std::vector< defines::ChrString >
         io::console::manip::splitByCodePoint ( defines::U08String str )
 {
-    defines::ChrString temp = CHR_STRINGIZE ( );
-    for ( defines::U08Char &c : str ) { temp += ( defines::ChrChar ) c; }
-    return splitByCodePoint ( temp );
+    return splitByCodePoint (
+            convert< defines::ChrChar, defines::U08Char > ( str ) );
 }
 
 // definitions:
@@ -1548,6 +1547,84 @@ defines::U32Char io::console::manip::widen ( defines::ChrPString const cstr )
     return total;
 }
 
+defines::ChrPString const
+        io::console::manip::narrow ( defines::U32Char const &c )
+{
+    // explicitly unsigned char to prevent subtraction from trying to
+    // kill us.
+    unsigned char *result =
+            ( unsigned char * ) new defines::ChrChar [ 5 ] { 0, 0, 0, 0, 0 };
+
+    if ( c <= ( unsigned char ) defines::maximumASCII )
+    {
+        result [ 0 ] = ( defines::ChrChar ) c;
+    } else if ( c < defines::maximumTwoByteEncoded )
+    {
+        result [ 1 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 0 ] = ( unsigned char ) defines::firstTwoByte;
+
+        result [ 1 ] +=
+                ( c >> 0x00 ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 0 ] +=
+                ( c >> 0x06 ) & ~( unsigned char ) defines::minimumThreeByte;
+    } else if ( c >= 0xD800 && c <= 0xDFFF )
+    {
+        delete [] result;
+        RUNTIME_ERROR ( "Illegal UTF-8 Sequence!" )
+    } else if ( c < defines::maximumThreeByteEncoded )
+    {
+        result [ 2 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 1 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 0 ] = ( unsigned char ) defines::minimumThreeByte;
+
+        result [ 2 ] +=
+                ( c >> 0x00 ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 1 ] +=
+                ( c >> 0x06 ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 0 ] +=
+                ( c >> 0x0C ) & ~( unsigned char ) defines::minimumFourByte;
+    } else if ( c < 0x10FFFF )
+    {
+        result [ 3 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 2 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 1 ] = ( unsigned char ) defines::minimumFollowing;
+        result [ 0 ] = ( unsigned char ) defines::minimumFourByte;
+
+        result [ 3 ] +=
+                ( c >> 0x00 ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 2 ] +=
+                ( c >> 0x06 ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 1 ] +=
+                ( c >> 0x0C ) & ~( unsigned char ) defines::firstTwoByte;
+        result [ 0 ] +=
+                ( c >> 0x12 ) & ~( unsigned char ) defines::fourByteMask;
+    } else
+    {
+        delete [] result;
+        RUNTIME_ERROR ( "Out of bounds UTF-8 sequence!" );
+    }
+    return ( defines::ChrPString ) result;
+}
+
+bool io::console::manip::validUTF08 ( defines::ChrPString const &str )
+{
+    return identifyFirst ( defines::ChrString { str } )
+        != CodePointType::INVALID_;
+}
+
+bool io::console::manip::validUTF32 ( defines::U32Char const &c )
+{
+    // UTF-32 characters are valid if they lie outside the UTF-16 deadzone
+    // and are in the bounds of unicode.
+    if ( c < defines::ucs2Deadzone [ 0 ] || c > defines::ucs2Deadzone [ 1 ] )
+    {
+        return c <= defines::maxUnicode;
+    } else
+    {
+        return false;
+    }
+}
+
 std::size_t const utf8SequenceLength ( defines::ChrPString const string )
 {
     // unlike in widen, a nullptr here is not necessarily an error, it just
@@ -1579,6 +1656,71 @@ std::size_t const utf8SequenceLength ( defines::ChrPString const string )
     {
         RUNTIME_ERROR ( "Invalid Sequence: UTF out of range" )
     }
+}
+
+template <>
+std::basic_string< defines::U16Char > const io::console::manip::convert (
+        std::basic_string< defines::U32Char > const str )
+{
+    // the conversion process is trivial for when the UTF-16 character is
+    // not a surrogate. However, we might need two characters.
+    defines::U16Char temp [ 2 ];
+    auto             convertSingleCharacter = [ & ] ( defines::U32Char in ) {
+        if ( in < defines::ucs2Deadzone [ 0 ] )
+        {
+            temp [ 0 ] = ( defines::U16Char ) in;
+            temp [ 1 ] = 0;
+        } else if ( in < defines::maxUnicode ) // requirement.
+        {
+            // use a surrogate character.
+            // the magic number used to encode both words happens to be
+            // the first UTF-8 sequence which requires four bytes.
+            defines::U32Char uPrime = in - defines::maximumThreeByteEncoded;
+            defines::U16Char w1, w2;
+            w1 = defines::ucs2Deadzone [ 0 ];
+            w2 = defines::ucs2Deadzone [ 1 ];
+            w1 += 0b1111111111 & ( uPrime >> 0xA );
+            w2 += 0b1111111111 & ( uPrime >> 0x0 );
+            temp [ 0 ] = w1;
+            temp [ 2 ] = w2;
+        } else
+        {
+            RUNTIME_ERROR ( "Unicode character out of bounds!" )
+        }
+    };
+
+    std::basic_string< defines::U16Char > accumulated { 0 };
+    for ( auto const &cp : str )
+    {
+        convertSingleCharacter ( cp );
+        accumulated += temp [ 0 ];
+        if ( temp [ 1 ] )
+        {
+            accumulated += temp [ 1 ];
+        }
+    }
+    return accumulated;
+}
+
+template <>
+defines::ChrString const
+        io::console::manip::convert ( defines::U32String const str )
+{
+    defines::ChrString temp = "";
+    for ( auto &cp : str ) { temp += narrow ( cp ); }
+    return temp;
+}
+template <>
+defines::U32String const
+        io::console::manip::convert ( defines::ChrString const str )
+{
+    defines::U32String temp = U"";
+    for ( std::size_t i = 0; i < str.size ( );
+          i += utf8SequenceLength ( &str.c_str ( ) [ i ] ) )
+    {
+        temp += widen ( &str.c_str ( ) [ i ] );
+    }
+    return temp;
 }
 
 #define INCORRECT_SEQUENCE( TRANS, EXPECT, ... )                               \

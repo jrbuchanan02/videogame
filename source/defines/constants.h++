@@ -29,26 +29,42 @@ namespace defines
     constexpr ChrPString screenFolderName = "screen";
 
     // highest control character
-    constexpr defines::ChrChar maximumControlCharacter     = ( char ) 0x1F;
+    constexpr defines::ChrChar maximumControlCharacter = ( char ) 0x1F;
+
     // highest ASCII byte
-    constexpr defines::ChrChar maximumASCII                = ( char ) 0x7F;
+    constexpr defines::ChrChar maximumASCII = ( char ) 0x7F;
+
+    // lowest UTF-8 following byte
+    constexpr defines::ChrChar minimumFollowing = ( char ) 0x80;
     // highest UTF-8 following byte
-    constexpr defines::ChrChar maximumFollowing            = ( char ) 0xBF;
+    constexpr defines::ChrChar maximumFollowing = ( char ) 0xBF;
+
+    // first byte indicating the start of a two byte sequence. Any sequence
+    // starting with this byte or the next one is invalid, however.
+    constexpr defines::ChrChar firstTwoByte   = ( char ) 0xC0;
     // first valid 2-byte UTF-8 sequence introducer (preceeding
     // ones give an overlong sequence)
-    constexpr defines::ChrChar minimumTwoByte              = ( char ) 0xC2;
+    constexpr defines::ChrChar minimumTwoByte = ( char ) 0xC2;
+    constexpr defines::ChrChar maximumTwoByte = ( char ) 0xDF;
+
     // first byte which introduces a 3-byte UTF-8 sequence
-    constexpr defines::ChrChar minimumThreeByte            = ( char ) 0xE0;
+    constexpr defines::ChrChar minimumThreeByte = ( char ) 0xE0;
+    constexpr defines::ChrChar maximumThreeByte = ( char ) 0xEF;
+
     // first byte which introduces a 4-byte UTF-8 sequence
-    constexpr defines::ChrChar minimumFourByte             = ( char ) 0xF0;
+    constexpr defines::ChrChar minimumFourByte  = ( char ) 0xF0;
     // maximum valid leading UTF-8 byte
-    constexpr defines::ChrChar maximumFirstByte            = ( char ) 0xF4;
+    constexpr defines::ChrChar maximumFirstByte = ( char ) 0xF4;
+    constexpr defines::ChrChar maximumFourByte  = ( char ) 0xF7;
+
     // mask used for four-byte UTF-8 sequences
-    constexpr defines::ChrChar fourByteMask                = ( char ) 0xF8;
+    constexpr defines::ChrChar fourByteMask = ( char ) 0xF8;
+
     // maximum 2-byte UTF-8 encoded sequence + 1
-    constexpr defines::U32Char maximumTwoByte              = 0x800;
+    constexpr defines::U32Char maximumTwoByteEncoded   = 0x800;
     // maximum 3-byte UTF-8 encoded sequence + 1
-    constexpr defines::U32Char maximumThreeByte            = 0x10000;
+    constexpr defines::U32Char maximumThreeByteEncoded = 0x10000;
+
     // UTF-16 (aka UCS-2) has a deadzone where it cannot encode characters. Each
     // potential code point in this deadzone also "happens" to be part of a
     // surrogate pair

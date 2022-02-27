@@ -28,11 +28,42 @@ namespace io::console::manip
      * and does not remove that code point from that string.
      * @tparam L the resulting encoding
      * @tparam R the input encoding
-     * @param lhs the value to convert
+     * @param str the value to convert
      * @return std::basic_string< L > const the converted value
      */
     template < defines::VideoCharacter L, defines::VideoCharacter R >
-    std::basic_string< L > const convert ( std::basic_string< R > const lhs );
+    std::basic_string< L > const convert ( std::basic_string< R > const str );
+
+    // trivial conversion between strings of same or almost same type
+    template < defines::VideoCharacter L, defines::VideoCharacter R >
+    inline std::basic_string< L > const
+            convert ( std::basic_string< R > const str ) requires (
+                    sizeof ( L ) == sizeof ( R )
+                    || defines::VideoUTF8< L > && defines::VideoUTF8< R > )
+    {
+        std::basic_string< L > res { 0 };
+        for ( auto const &c : str ) { res += ( L ) c; }
+        return res;
+    }
+
+    // conversions which are really convenience functions
+    template <>
+    defines::ChrString const convert ( defines::U32String const str );
+    template <>
+    defines::U32String const convert ( defines::ChrString const str );
+    // definitely that convenience function
+    template <>
+    inline defines::U08String const convert ( defines::U32String const str )
+    {
+        return convert< defines::U08Char, defines::ChrChar > (
+                convert< defines::ChrChar, defines::U32Char > ( str ) );
+    }
+    template <>
+    inline defines::U32String const convert ( defines::U08String const str )
+    {
+        return convert< defines::U32Char, defines::ChrChar > (
+                convert< defines::ChrChar, defines::U08Char > ( str ) );
+    }
 
     /**
      *
@@ -80,7 +111,8 @@ namespace io::console::manip
      * @param cstr
      * @return char32_t
      */
-    defines::U32Char   widen ( defines::ChrPString const );
+    defines::U32Char widen ( defines::ChrPString const );
+
     /**
      * @brief Narrows a UTF-32 sequence into the equivalent UTF-8 sequence.
      * Always allocates 5-bytes, unless it throws (it deallocates before
@@ -89,74 +121,23 @@ namespace io::console::manip
      * @param c
      * @return char* const
      */
-    inline char *const narrow ( char32_t const &c )
-    {
-        unsigned char *result = new unsigned char [ 5 ] { 0, 0, 0, 0, 0 };
-        if ( c < 0x80 )
-        {
-            result [ 0 ] = ( char ) c;
-        } else if ( c < 0x800 )
-        {
-            result [ 1 ] = 0x80;
-            result [ 0 ] = 0xC0;
+    defines::ChrPString const narrow ( defines::U32Char const &c );
 
-            result [ 1 ] += ( c >> 0x00 ) & 0b00111111;
-            result [ 0 ] += ( c >> 0x06 ) & 0b00011111;
-        } else if ( c >= 0xD800 && c <= 0xDFFF )
-        {
-            delete [] result;
-            RUNTIME_ERROR ( "Illegal UTF-8 Sequence!" )
-        } else if ( c < 0xFFFF )
-        {
-            result [ 2 ] = 0x80;
-            result [ 1 ] = 0x80;
-            result [ 0 ] = 0xE0;
+    /**
+     * @brief Checks if a string starts with a valid UTF-8 code point
+     *
+     * @param str the string to check.
+     * @return true
+     * @return false
+     */
+    bool validUTF08 ( defines::ChrPString const &str );
 
-            result [ 2 ] += ( c >> 0x00 ) & 0b00111111;
-            result [ 1 ] += ( c >> 0x06 ) & 0b00111111;
-            result [ 0 ] += ( c >> 0x0C ) & 0b00001111;
-        } else if ( c < 0x10FFFF )
-        {
-            result [ 3 ] = 0x80;
-            result [ 2 ] = 0x80;
-            result [ 1 ] = 0x80;
-            result [ 0 ] = 0xF0;
-
-            result [ 3 ] = ( c >> 0x00 ) & 0b00111111;
-            result [ 2 ] = ( c >> 0x06 ) & 0b00111111;
-            result [ 1 ] = ( c >> 0x0C ) & 0b00111111;
-            result [ 0 ] = ( c >> 0x12 ) & 0b00000111;
-        } else
-        {
-            delete [] result;
-            RUNTIME_ERROR ( "Out of bounds UTF-8 sequence!" );
-        }
-        return ( char * ) result;
-    }
-
-    inline bool validUTF08 ( char const *const &str )
-    {
-        try
-        {
-            ( void ) widen ( str );
-            return true;
-        } catch ( std::runtime_error &rt )
-        {
-            return false;
-        }
-    }
-
-    inline bool validUTF32 ( char32_t const &c )
-    {
-        try
-        {
-            auto temp = narrow ( c );
-            delete [] temp;
-            return true;
-        } catch ( std::runtime_error &rt )
-        {
-            return false;
-        }
-    }
-
+    /**
+     * @brief Indicates whether a UTF-32 character is a valid character.
+     *
+     * @param c the character to check
+     * @return true
+     * @return false
+     */
+    bool validUTF32 ( defines::U32Char const &c );
 } // namespace io::console::manip
