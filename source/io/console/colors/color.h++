@@ -23,23 +23,7 @@
 
 namespace io::console::colors
 {
-    static inline defines::BoundColor const
-            bind ( defines::UnboundColor const color )
-    {
-        if ( color > 0xff )
-        {
-            return 0xff;
-        } else if ( color < 0x00 )
-        {
-            return 0x00;
-        } else if ( std::isnan ( color ) )
-        {
-            RUNTIME_ERROR("NAN")
-        } else
-        {
-            return defines::BoundColor ( color );
-        }
-    }
+    defines::BoundColor const bind ( defines::UnboundColor const color );
 
     class IColor
     {
@@ -60,73 +44,33 @@ namespace io::console::colors
         virtual defines::UnboundColor const *const
                 cmyaRaw ( ) const noexcept = 0;
 
-        static inline defines::UnboundColor const
-                normalizeColor ( defines::UnboundColor *const &color ) noexcept
-        {
-            defines::UnboundColor magnitude =
-                    std::hypot ( color [ 0 ], color [ 1 ], color [ 2 ] );
-            if ( magnitude == 0 )
-            {
-                return 0.0;
-            }
-            for ( std::size_t i = 0; i < 3; i++ ) { color [ i ] /= magnitude; }
-            return magnitude;
-        }
+        static defines::UnboundColor const
+                normalizeColor ( defines::UnboundColor *const &color ) noexcept;
     public:
         POLYMORPHIC_IDENTIFIER ( IColor )
 
-        IColor ( ) noexcept = default;
-        virtual ~IColor ( ) = default;
+        IColor ( ) noexcept;
+        virtual ~IColor ( )                = default;
         IColor ( IColor const & ) noexcept = default;
         IColor ( IColor && ) noexcept      = default;
         IColor &operator= ( IColor const & ) noexcept = default;
         IColor &operator= ( IColor && ) noexcept = default;
 
         defines::UnboundColor const *const
-                rgba ( double const &time = 0 ) const noexcept
-        {
-            refresh ( time );
-            return rgbaRaw ( );
-        }
+                rgba ( double const & = 0 ) const noexcept;
         defines::UnboundColor const *const
-                cmyk ( double const &time = 0 ) const noexcept
-        {
-            refresh ( time );
-            return cmykRaw ( );
-        }
+                cmyk ( double const & = 0 ) const noexcept;
         defines::UnboundColor const *const
-                cmya ( double const &time = 0 ) const noexcept
-        {
-            refresh ( time );
-            return cmyaRaw ( );
-        }
+                cmya ( double const & = 0 ) const noexcept;
 
         virtual void refresh ( double const &time = 0 ) const noexcept   = 0;
         virtual bool references ( IColor const *const & ) const noexcept = 0;
 
         defines::UnboundColor const &
-                getBasicComponent ( std::size_t const &i ) const
-        {
-            if ( i > 3 )
-            {
-                RUNTIME_ERROR ( "Index out of bounds: ", i )
-            } else
-            {
-                return basic [ i ];
-            }
-        }
+                getBasicComponent ( std::size_t const & ) const;
 
-        void setBasicComponent ( std::size_t const           &i,
-                                 defines::UnboundColor const &color )
-        {
-            if ( i > 3 )
-            {
-                RUNTIME_ERROR ( "Index out of bounds: ", i )
-            } else
-            {
-                basic [ i ] = color;
-            }
-        }
+        void setBasicComponent ( std::size_t const &,
+                                 defines::UnboundColor const & );
     };
 
 } // namespace io::console::colors

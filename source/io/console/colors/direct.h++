@@ -31,24 +31,14 @@ namespace io::console::colors
      */
     class DirectColor : public IColor
     {
+        void baseRefresh ( ) const noexcept;
     public:
         POLYMORPHIC_IDENTIFIER ( DirectColor )
         DirectColor ( ) noexcept = default;
-        DirectColor ( defines::UnboundColor const &_1,
-                      defines::UnboundColor const &_2,
-                      defines::UnboundColor const &_3,
-                      defines::UnboundColor const &_4 ) noexcept :
-                DirectColor ( )
-        {
-            this->color [ 0 ] = _1;
-            this->color [ 1 ] = _2;
-            this->color [ 2 ] = _3;
-            this->color [ 3 ] = _4;
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                this->basic [ i ] = this->color [ i ];
-            }
-        }
+        DirectColor ( defines::UnboundColor const &,
+                      defines::UnboundColor const &,
+                      defines::UnboundColor const &,
+                      defines::UnboundColor const & ) noexcept;
         virtual ~DirectColor ( )                     = default;
         DirectColor ( DirectColor const & ) noexcept = default;
         DirectColor ( DirectColor && ) noexcept      = default;
@@ -56,88 +46,26 @@ namespace io::console::colors
         DirectColor &operator= ( DirectColor && ) noexcept = default;
 
         virtual void
-                refresh ( double const &time = 0 ) const noexcept override final
-        {
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                this->color [ i ] = this->basic [ i ];
-            }
-        }
+                refresh ( double const & = 0 ) const noexcept override final;
 
         // the whole point of a direct color is that there are no references.
         // thus, all color references **must** eventually resolve to a direct
         // color of some form.
         virtual bool references (
-                IColor const *const &color ) const noexcept override final
-        {
-            return color == this;
-        }
+                IColor const *const & ) const noexcept override final;
     };
 
     class RGBAColor : public DirectColor
     {
     protected:
         virtual defines::UnboundColor const *const
-                rgbaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                result [ i ] = this->color [ i ];
-            }
-            return result;
-        }
+                rgbaRaw ( ) const noexcept override final;
 
         virtual defines::UnboundColor const *const
-                cmykRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) rgbaRaw ( );
-            defines::UnboundColor magnitude =
-                    DirectColor::normalizeColor ( result );
-            if ( magnitude == 0 )
-            {
-                result [ 0 ] = result [ 1 ] = result [ 2 ] = 0;
-                result [ 3 ]                               = 255;
-            } else
-            {
-                result [ 3 ] = 1
-                             - std::max ( {
-                                     result [ 0 ],
-                                     result [ 1 ],
-                                     result [ 2 ],
-                             } );
-                for ( std::size_t i = 0; i < 3; i++ )
-                {
-                    result [ i ] = ( 1 - result [ i ] - result [ 3 ] )
-                                 / ( 1 - result [ 3 ] );
-                    result [ i ] *= magnitude;
-                }
-                result [ 3 ] *= magnitude;
-            }
-            return result;
-        }
+                cmykRaw ( ) const noexcept override final;
 
         virtual defines::UnboundColor const *const
-                cmyaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) rgbaRaw ( );
-            defines::UnboundColor magnitude =
-                    DirectColor::normalizeColor ( result );
-            if ( magnitude == 0 )
-            {
-                result [ 0 ] = result [ 1 ] = result [ 2 ] = 255;
-            } else
-            {
-                for ( std::size_t i = 0; i < 3; i++ )
-                {
-                    result [ i ] = 1 - result [ i ];
-                    result [ i ] *= magnitude;
-                }
-            }
-            return result;
-        }
+                cmyaRaw ( ) const noexcept override final;
     public:
         POLYMORPHIC_IDENTIFIER ( RGBAColor )
         RGBAColor ( ) noexcept = default;
@@ -158,59 +86,13 @@ namespace io::console::colors
     {
     protected:
         virtual defines::UnboundColor const *const
-                rgbaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) cmyaRaw ( );
-            defines::UnboundColor magnitude =
-                    DirectColor::normalizeColor ( result );
-            if ( magnitude == 0 )
-            {
-                result [ 0 ] = result [ 1 ] = result [ 2 ] = 255;
-            } else
-            {
-                for ( std::size_t i = 0; i < 3; i++ )
-                {
-                    result [ i ] = 1 - result [ i ];
-                    result [ i ] *= magnitude;
-                }
-            }
-            return result;
-        }
-        virtual defines::UnboundColor const *const
-                cmykRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) cmyaRaw ( );
-            defines::UnboundColor magnitude =
-                    DirectColor::normalizeColor ( result );
-            if ( magnitude == 0 )
-            {
-                result [ 0 ] = result [ 1 ] = result [ 2 ] = 0;
-                result [ 3 ]                               = 255;
-            } else
-            {
-                for ( std::size_t i = 0; i < 3; i++ )
-                {
-                    result [ i ] = ( result [ i ] - result [ 3 ] )
-                                 / ( 1 - result [ 3 ] );
-                    result [ i ] *= magnitude;
-                }
-                result [ 3 ] *= magnitude;
-            }
-            return result;
-        }
+                rgbaRaw ( ) const noexcept override final;
 
         virtual defines::UnboundColor const *const
-                cmyaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                result [ i ] = this->color [ i ];
-            }
-            return result;
-        }
+                cmykRaw ( ) const noexcept override final;
+
+        virtual defines::UnboundColor const *const
+                cmyaRaw ( ) const noexcept override final;
     public:
         POLYMORPHIC_IDENTIFIER ( CMYAColor )
         CMYAColor ( ) noexcept = default;
@@ -231,76 +113,12 @@ namespace io::console::colors
     {
     protected:
         virtual defines::UnboundColor const *const
-                rgbaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) cmykRaw ( );
-            // more unique: hypot 4. Because of how the colors work,
-            // all valid cmyk colors have a magnitude != 0.
-            defines::UnboundColor magnitude = 0;
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                magnitude += result [ i ] * result [ i ];
-            }
-            magnitude = std::sqrt ( magnitude );
-            for ( std::size_t i = 0; i < 4; i++ ) { result [ i ] /= magnitude; }
-
-            // cmyk formaula for a color component n solved for rgba
-            // a = 0
-            // n_k = (1 - n_a - k) / (1 - k)
-            // n_k * (1 - k ) = 1 - n_a - k
-            // n_k * (1 - k ) + k - 1 = -n_a
-            // 1 - k - n_k * (1 - k ) = n_a
-            // (1 - k)(1 - n_k) = n_a
-
-            for ( std::size_t i = 0; i < 3; i++ )
-            {
-                result [ i ] = ( 1 - result [ 3 ] ) * ( 1 - result [ i ] );
-                result [ i ] *= magnitude;
-            }
-            result [ 3 ] = 0;
-            return result;
-        }
+                rgbaRaw ( ) const noexcept override final;
         virtual defines::UnboundColor const *const
-                cmykRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result = new defines::UnboundColor [ 4 ];
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                result [ i ] = this->color [ i ];
-            }
-            return result;
-        }
+                cmykRaw ( ) const noexcept override final;
 
         virtual defines::UnboundColor const *const
-                cmyaRaw ( ) const noexcept override final
-        {
-            defines::UnboundColor *result =
-                    ( defines::UnboundColor * ) cmykRaw ( );
-            // more unique: hypot 4. Because of how the colors work,
-            // all valid cmyk colors have a magnitude != 0.
-            defines::UnboundColor magnitude = 0;
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                magnitude += result [ i ] * result [ i ];
-            }
-            magnitude = std::sqrt ( magnitude );
-            for ( std::size_t i = 0; i < 4; i++ ) { result [ i ] /= magnitude; }
-
-            // cmyk formaula for a color component n solved for cmya
-            // a = 0
-            // n_k = (n_a - k) / (1 - k)
-            // n_k(1 - k) + k = n_a
-
-            for ( std::size_t i = 0; i < 3; i++ )
-            {
-                result [ i ] =
-                        result [ i ] * ( 1 - result [ 3 ] ) + result [ 3 ];
-                result [ i ] *= magnitude;
-            }
-            result [ 3 ] = 0;
-            return result;
-        }
+                cmyaRaw ( ) const noexcept override final;
     public:
         POLYMORPHIC_IDENTIFIER ( CMYKColor )
         CMYKColor ( ) noexcept = default;

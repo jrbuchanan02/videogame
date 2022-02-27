@@ -55,7 +55,7 @@ namespace io::console::colors
                 -> defines::UnboundColor {
             defines::UnboundColor omega = 2 * std::numbers::pi * frequency;
             defines::UnboundColor phi =
-                    frequencyModulation * 2 * std::numbers::pi;
+                    -frequencyModulation * 2 * std::numbers::pi;
             return basic + amplitude * std::sin ( omega * time + phi )
                  + amplitude * amplitudeModulation;
         };
@@ -109,32 +109,11 @@ namespace io::console::colors
                 blend_functions::defaultBlending;
     protected:
         virtual defines::UnboundColor const *const
-                rgbaRaw ( ) const noexcept override final
-        {
-            return RGBAColor ( this->color [ 0 ],
-                               this->color [ 1 ],
-                               this->color [ 2 ],
-                               this->color [ 3 ] )
-                    .rgba ( );
-        }
+                rgbaRaw ( ) const noexcept override final;
         virtual defines::UnboundColor const *const
-                cmyaRaw ( ) const noexcept override final
-        {
-            return RGBAColor ( this->color [ 0 ],
-                               this->color [ 1 ],
-                               this->color [ 2 ],
-                               this->color [ 3 ] )
-                    .cmya ( );
-        }
+                cmyaRaw ( ) const noexcept override final;
         virtual defines::UnboundColor const *const
-                cmykRaw ( ) const noexcept override final
-        {
-            return RGBAColor ( this->color [ 0 ],
-                               this->color [ 1 ],
-                               this->color [ 2 ],
-                               this->color [ 3 ] )
-                    .cmyk ( );
-        }
+                cmykRaw ( ) const noexcept override final;
     public:
         POLYMORPHIC_IDENTIFIER ( IndirectColor )
 
@@ -144,13 +123,7 @@ namespace io::console::colors
                 std::shared_ptr< IColor > const &amplitude,
                 std::shared_ptr< IColor > const &frequency,
                 std::shared_ptr< IColor > const &freqModulation,
-                std::shared_ptr< IColor > const &ampModulation ) noexcept :
-                IColor ( ),
-                delta ( amplitude ), fmMod ( freqModulation ),
-                amMod ( ampModulation ), freqs ( frequency )
-        {
-            this->refresh ( );
-        }
+                std::shared_ptr< IColor > const &ampModulation ) noexcept;
         IndirectColor (
                 defines::UnboundColor const     &r,
                 defines::UnboundColor const     &g,
@@ -159,134 +132,23 @@ namespace io::console::colors
                 std::shared_ptr< IColor > const &amplitude,
                 std::shared_ptr< IColor > const &frequency,
                 std::shared_ptr< IColor > const &freqModulation,
-                std::shared_ptr< IColor > const &ampModulation ) noexcept :
-                IndirectColor ( amplitude,
-                                frequency,
-                                freqModulation,
-                                ampModulation )
-        {
-            this->basic [ 0 ] = r;
-            this->basic [ 1 ] = g;
-            this->basic [ 2 ] = b;
-            this->basic [ 3 ] = a;
-            this->refresh ( );
-        }
+                std::shared_ptr< IColor > const &ampModulation ) noexcept;
         IndirectColor ( IndirectColor const & ) noexcept = default;
         IndirectColor ( IndirectColor && ) noexcept      = default;
         IndirectColor &operator= ( IndirectColor const & ) noexcept = default;
         IndirectColor &operator= ( IndirectColor && ) noexcept = default;
 
-        void refresh ( double const &time = 0 ) const noexcept override final
-        {
-            auto deltas = delta->rgba ( time );
-            auto fmMods = fmMod->rgba ( time - std::numbers::pi / 2 );
-            auto amMods = amMod->rgba ( time );
-            auto cfreqs = freqs->rgba ( time );
+        void refresh ( double const & = 0 ) const noexcept override final;
 
-            for ( std::size_t i = 0; i < 4; i++ )
-            {
-                this->color [ i ] = blender ( time,
-                                              this->basic [ i ],
-                                              deltas [ i ],
-                                              cfreqs [ i ],
-                                              fmMods [ i ],
-                                              amMods [ i ] );
-            }
-
-            // remove the arrays
-            delete [] deltas;
-            delete [] fmMods;
-            delete [] amMods;
-            delete [] cfreqs;
-        }
-
-        bool references ( IColor const *const &color ) const noexcept
-        {
-            if ( color == this )
-            {
-                return true;
-            } else
-            {
-                if ( delta->references ( color ) )
-                {
-                    return true;
-                } else if ( fmMod->references ( color ) )
-                {
-                    return true;
-                } else if ( amMod->references ( color ) )
-                {
-                    return true;
-                } else if ( freqs->references ( color ) )
-                {
-                    return true;
-                } else
-                {
-                    return false;
-                }
-            }
-        }
+        bool references ( IColor const *const &color ) const noexcept;
 
         blend_functions::BlendFunction const &
-                getBlendFunction ( ) const noexcept
-        {
-            return blender;
-        }
+                getBlendFunction ( ) const noexcept;
+
         void setBlendFunction (
-                blend_functions::BlendFunction const &blender ) noexcept
-        {
-            this->blender = blender;
-        }
+                blend_functions::BlendFunction const & ) noexcept;
 
-        void setDelta ( std::shared_ptr< IColor > const &delta ) noexcept
-        {
-            if ( !this->references ( delta.get ( ) ) )
-            {
-                this->delta = delta;
-            }
-        }
-
-        void setFmMod ( std::shared_ptr< IColor > const &fmMod ) noexcept
-        {
-            if ( !this->references ( fmMod.get ( ) ) )
-            {
-                this->fmMod = fmMod;
-            }
-        }
-
-        void setAmMod ( std::shared_ptr< IColor > const &amMod ) noexcept
-        {
-            if ( !this->references ( amMod.get ( ) ) )
-            {
-                this->amMod = amMod;
-            }
-        }
-
-        void setFreqs ( std::shared_ptr< IColor > const &freqs ) noexcept
-        {
-            if ( !this->references ( freqs.get ( ) ) )
-            {
-                this->freqs = freqs;
-            }
-        }
-
-        void setParam ( std::uint8_t const              &param,
-                        std::shared_ptr< IColor > const &to )
-        {
-            if ( param >= 4 )
-            {
-                RUNTIME_ERROR ( "Parameter out of range: ",
-                                ( std::uint32_t ) param )
-            } else
-            {
-                switch ( param & 3 )
-                {
-                    case 0: setDelta ( to ); break;
-                    case 1: setFmMod ( to ); break;
-                    case 2: setAmMod ( to ); break;
-                    case 3:
-                    default: setFreqs ( to );
-                }
-            }
-        }
+        void setParam ( std::uint8_t const &,
+                        std::shared_ptr< IColor > const & );
     };
 } // namespace io::console::colors
