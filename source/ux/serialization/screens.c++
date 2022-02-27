@@ -157,6 +157,9 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
                 blend_functions::IndirectColorBlendingFunctions::WAVEFORM;
         try
         {
+            // BUG #60 first shows up here as "function" immediately causes
+            // YAML CPP to throw an InvalidNode exception since there is no
+            // function-key.
             blending = defines::fromString<
                     blend_functions::IndirectColorBlendingFunctions > (
                     node [ i ][ "Function" ].as< defines::ChrString > ( ) );
@@ -182,6 +185,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
                 color.setBlendFunction ( blend_functions::defaultBlending );
         }
         // parse the numbers that make up the color's parameters.
+        // #60 We catch the access to "Function" throwing, but then this throws.
         for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setParam (

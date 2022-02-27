@@ -379,6 +379,8 @@ void io::console::Console::send ( std::string const &str ) noexcept
             }
             return result;
         };
+        // TODO #61 It shows up here.
+
         // for each joinable string in joinables:
         // 1. if it's a hard line break, reset the current position since a
         // line break will occur automatically.

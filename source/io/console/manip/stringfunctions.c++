@@ -630,6 +630,8 @@ std::vector< defines::ChrString >
     return output;
 }
 
+// #61 can also be addressed here by replacing adding spaces with the
+// appropriate cursor-movement command.
 defines::ChrString io::console::manip::centerTextOn ( defines::ChrString string,
                                                       std::uint32_t columns )
 {
