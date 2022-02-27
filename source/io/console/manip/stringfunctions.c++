@@ -51,7 +51,7 @@ enum class CodePointType
     _MAX,     // maximum value
 };
 
-std::size_t const utf8SequenceLength ( defines::PString const );
+std::size_t const utf8SequenceLength ( defines::ChrPString const );
 
 /**
  * @brief Identifies what CodePointType the first character of a sequence is
@@ -74,7 +74,7 @@ CodePointType identifyFirst ( defines::ChrString const &string )
     std::size_t length = 0;
     try
     {
-        length = utf8SequenceLength ( strnig.c_str ( ) );
+        length = utf8SequenceLength ( string.c_str ( ) );
     } catch ( std::runtime_error &notReallyAnError )
     {
         return CodePointType::INVALID_;
@@ -92,7 +92,7 @@ CodePointType identifyFirst ( defines::ChrString const &string )
                 return CodePointType::UTF1BYTE;
             }
         case 2:
-            if ( total <= defines::minimumASCII )
+            if ( total <= ( unsigned char ) defines::maximumASCII )
             {
                 // overlong encodings (when it can be made shorter) are
                 // officially an error condition
@@ -222,7 +222,7 @@ defines::ChrString grabCodePoint ( defines::ChrString &string )
             result += string.front ( );
             string = string.substr ( 1 );
             // check for an escape sequence.
-            if ( result.starts_with ( esc ) )
+            if ( result.starts_with ( '\u001b' ) )
             {
                 result += string.front ( );
                 string = string.substr ( 1 );
@@ -264,9 +264,9 @@ defines::ChrString grabCodePoint ( defines::ChrString &string )
                                 // while the result does not end with the string
                                 // terminator and while the character does not
                                 // end a variable length code.
-                                !result.ends_with (
-                                        defines::ChrString ( '\u001b' )
-                                        + defines::backwardSlash )
+                                !result.ends_with ( defines::ChrString (
+                                                            { '\u001b', '\0' } )
+                                                    + defines::backwardSlash )
                                 && !endsVariableLengthCode (
                                         result.back ( ) ) );
                         break;
@@ -279,10 +279,12 @@ defines::ChrString grabCodePoint ( defines::ChrString &string )
                             result += string.front ( );
                             string = string.substr ( 1 );
                         } while (
-                                !result.ends_with (
-                                        defines::ChrString ( '\u001b' ) + "X" )
+                                !result.ends_with ( defines::ChrString (
+                                                            { '\u001b', '\0' } )
+                                                    + "X" )
                                 && !result.ends_with (
-                                        defines::ChrString ( '\u001b' )
+                                        defines::ChrString (
+                                                { '\u001b', '\0' } )
                                         + defines::backwardSlash ) );
                         break;
                     case '[': // CSI
@@ -1495,11 +1497,11 @@ defines::U32Char io::console::manip::widen ( defines::ChrPString const cstr )
     }
     defines::ChrString temp { cstr };
 
-    std::uint32_t total             = 0;
-    unsigned      length            = 1;
-    unsigned defines::ChrChar front = temp.front ( );
+    std::uint32_t total  = 0;
+    unsigned      length = 1;
+    unsigned      front  = ( unsigned char ) temp.front ( );
 
-    auto addMultiByteSequence = [ & ] ( unsigned defines::ChrChar mask ) {
+    auto addMultiByteSequence = [ & ] ( unsigned mask ) {
         // error out if we have to short a string.
         if ( temp.size ( ) < length )
         {
@@ -1510,12 +1512,12 @@ defines::U32Char io::console::manip::widen ( defines::ChrPString const cstr )
         // add the characters.
         for ( std::size_t i = 1; i < length; i++ )
         {
-            front = temp.at ( i );
+            front = ( unsigned char ) temp.at ( i );
             // if the character is not a valid following byte, indicate
             // that the sequence is invalid. Otherwise, continue with
             // the parsing.
-            if ( front > defines::maximumFollowing
-                 || front <= defines::maximumASCII )
+            if ( front > ( unsigned char ) defines::maximumFollowing
+                 || front <= ( unsigned char ) defines::maximumASCII )
             {
                 RUNTIME_ERROR ( "Invalid Sequence: missing following byte" )
             } else
@@ -1554,21 +1556,23 @@ std::size_t const utf8SequenceLength ( defines::ChrPString const string )
     {
         return 0;
     }
-    unsigned length                 = 1;
-    unsigned defines::ChrChar front = string [ 0 ];
+    unsigned front = ( unsigned char ) string [ 0 ];
 
-    if ( front <= defines::maximumASCII )
+    if ( front <= ( unsigned char ) defines::maximumASCII )
     {
         return 1;
-    } else if ( front < defines::minimumTwoByte )
+    } else if ( front < ( unsigned char ) defines::minimumTwoByte )
     {
         RUNTIME_ERROR (
                 "Invalid Sequence: unexpected following byte or overlong "
                 "encoding" )
-    } else if ( front < defines::minimumThreeByte )
+    } else if ( front < ( unsigned char ) defines::minimumThreeByte )
+    {
+        return 2;
+    } else if ( front < ( unsigned char ) defines::minimumFourByte )
     {
         return 3;
-    } else if ( front < defines::maximumFirstByte )
+    } else if ( front <= ( unsigned char ) defines::maximumFirstByte )
     {
         return 4;
     } else
@@ -1597,10 +1601,10 @@ bool testIdentification ( std::ostream &stream )
 
     stream << "One byte characters:\n";
 
-    for ( char i = 0; i <= maxControlCharacter; i++ )
+    for ( char i = 0; i <= defines::maximumControlCharacter; i++ )
     {
         defines::ChrString test ( { i, 0 } );
-        if ( identifyFirst ( test ) != TERMINAL )
+        if ( identifyFirst ( test ) != CodePointType::TERMINAL )
         {
             INCORRECT_SEQUENCE ( ( unsigned char ) i, "Terminal", i )
         }
@@ -1608,7 +1612,7 @@ bool testIdentification ( std::ostream &stream )
     for ( char i = ' '; i < ( char ) 0x80; i++ )
     {
         defines::ChrString test ( { ( char ) i, 0 } );
-        if ( identifyFirst ( test ) != UTF1BYTE )
+        if ( identifyFirst ( test ) != CodePointType::UTF1BYTE )
         {
             INCORRECT_SEQUENCE ( ( unsigned char ) i, "1-byte UTF-8", i )
         }
@@ -1620,13 +1624,20 @@ bool testIdentification ( std::ostream &stream )
         for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
         {
             defines::ChrString test ( { i, j, 0 } );
-            if ( identifyFirst ( test ) != UTF2BYTE )
+            if ( identifyFirst ( test ) != CodePointType::UTF2BYTE )
             {
                 std::uint32_t translated = 0;
                 translated += ( ( unsigned char ) i ) & ~0xC0;
                 translated <<= 6;
                 translated += ( ( unsigned char ) j ) & ~0x80;
-
+                stream << "Translated to U+" << std::hex << translated
+                       << std::dec << "\n";
+                stream << "CodePointType is: "
+                       << defines::rtToString< CodePointType > (
+                                  identifyFirst ( test ) )
+                       << "\n";
+                stream << "Code Point Length is: "
+                       << utf8SequenceLength ( test.c_str ( ) ) << "\n";
                 INCORRECT_SEQUENCE ( translated, "2-byte UTF-8", i, j )
             }
         }
@@ -1636,7 +1647,7 @@ bool testIdentification ( std::ostream &stream )
         for ( char j = ( char ) 0x80; j < ( char ) 0xC0; j++ )
         {
             defines::ChrString test ( { i, j, 0 } );
-            if ( identifyFirst ( test ) != INVALID_ )
+            if ( identifyFirst ( test ) != CodePointType::INVALID_ )
             {
                 std::uint32_t translated = 0;
                 translated += ( ( unsigned char ) i ) & ~0xC0;
@@ -1656,7 +1667,7 @@ bool testIdentification ( std::ostream &stream )
             for ( char k = ( char ) 0x80; k < ( char ) 0xC0; k++ )
             {
                 defines::ChrString test ( { i, j, k, 0 } );
-                if ( identifyFirst ( test ) != UTF3BYTE )
+                if ( identifyFirst ( test ) != CodePointType::UTF3BYTE )
                 {
                     std::uint32_t translated = 0;
                     translated += ( ( unsigned char ) i ) & ~0xE0;
@@ -1666,7 +1677,7 @@ bool testIdentification ( std::ostream &stream )
                     translated += ( ( unsigned char ) k ) & ~0x80;
                     if ( translated >= 0xD800 && translated <= 0xDFFF )
                     {
-                        if ( identifyFirst ( test ) != INVALID_ )
+                        if ( identifyFirst ( test ) != CodePointType::INVALID_ )
                         {
                             INCORRECT_SEQUENCE ( translated,
                                                  "Invalid",
@@ -1680,7 +1691,7 @@ bool testIdentification ( std::ostream &stream )
                     }
                     if ( translated < 0x800 )
                     {
-                        if ( identifyFirst ( test ) != INVALID_ )
+                        if ( identifyFirst ( test ) != CodePointType::INVALID_ )
                         {
                             INCORRECT_SEQUENCE ( translated,
                                                  "Invalid",
@@ -1711,7 +1722,7 @@ bool testIdentification ( std::ostream &stream )
                 for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
                 {
                     defines::ChrString test ( { i, j, k, m, 0 } );
-                    if ( identifyFirst ( test ) != UTF4BYTE )
+                    if ( identifyFirst ( test ) != CodePointType::UTF4BYTE )
                     {
                         std::uint32_t translated = 0;
                         translated += ( ( unsigned char ) i ) & ~0xF0;
@@ -1725,7 +1736,8 @@ bool testIdentification ( std::ostream &stream )
                         // check for overlong encodings or the last two codes.
                         if ( translated < 0x10000 )
                         {
-                            if ( identifyFirst ( test ) != INVALID_ )
+                            if ( identifyFirst ( test )
+                                 != CodePointType::INVALID_ )
                             {
                                 INCORRECT_SEQUENCE ( translated,
                                                      "Invalid",
@@ -1740,7 +1752,8 @@ bool testIdentification ( std::ostream &stream )
                         }
                         if ( translated == 0x10FFFE || translated == 0x10FFFF )
                         {
-                            if ( identifyFirst ( test ) != INVALID_ )
+                            if ( identifyFirst ( test )
+                                 != CodePointType::INVALID_ )
                             {
                                 INCORRECT_SEQUENCE ( translated,
                                                      "Invalid",
@@ -1775,7 +1788,7 @@ bool testIdentification ( std::ostream &stream )
                 for ( char m = ( char ) 0x80; m < ( char ) 0xC0; m++ )
                 {
                     defines::ChrString test ( { i, j, k, m, 0 } );
-                    if ( identifyFirst ( test ) != INVALID_ )
+                    if ( identifyFirst ( test ) != CodePointType::INVALID_ )
                     {
                         std::uint32_t translated = 0;
                         translated += ( ( unsigned char ) i ) & ~0xF0;

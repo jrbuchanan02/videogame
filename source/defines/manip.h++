@@ -48,21 +48,38 @@ namespace defines
     inline defines::ChrString toString ( ) noexcept
     {
         defines::ChrString memberName { __PRETTY_FUNCTION__ };
-        memberName.pop_back ( );
-        if ( memberName.find_last_of ( ':' ) != defines::ChrString::npos )
-        {
-            memberName = memberName.substr ( memberName.find_last_of ( ':' ) );
-        }
-        // also eliminate up to the last space
-        if ( memberName.find_last_of ( ' ' ) != defines::ChrString::npos )
-        {
-            memberName = memberName.substr ( memberName.find_last_of ( ' ' ) );
-        }
+        // the format of our string:
+        // defines::ChrString toString() [with VE = Test; VE Val = Test::Hello;
+        // defines::ChrString = std::__cxx11::basic_string<char>]
+        //
+        // What we want is the part between 'Val = ' and the next semicolon.
+        //
+        // remove everything before the square bracket and the square bracket
+        // itself
+        memberName = memberName.substr ( memberName.find ( '[' ) + 1 );
+        // remove everything after the last semicolon
+        memberName = memberName.substr ( 0, memberName.find_last_of ( ';' ) );
+        // remeover everything before the last '= '
+        memberName = memberName.substr ( memberName.find_last_of ( ' ' ) + 2 );
         return memberName;
     }
 
     template < VideoEnumeration VE, VE checkVal = VE::_MAX >
+    inline defines::ChrString
+            rtToString ( VE const &ve ) requires ( checkVal == ( VE ) 0 )
+    {
+        if ( checkVal == ve )
+        {
+            return toString< VE, checkVal > ( );
+        } else
+        {
+            return "????";
+        }
+    }
+
+    template < VideoEnumeration VE, VE checkVal = VE::_MAX >
     inline defines::ChrString rtToString ( VE const &ve ) noexcept
+            requires ( checkVal != ( VE ) 0 )
     {
         if ( checkVal == ve )
         {

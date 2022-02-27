@@ -28,33 +28,35 @@ namespace defines
     constexpr ChrPString textFolderName   = "text";
     constexpr ChrPString screenFolderName = "screen";
 
+    // highest control character
+    constexpr defines::ChrChar maximumControlCharacter     = ( char ) 0x1F;
     // highest ASCII byte
-    constexpr unsigned defines::ChrChar maximumASCII       = 0x7F;
+    constexpr defines::ChrChar maximumASCII                = ( char ) 0x7F;
     // highest UTF-8 following byte
-    constexpr unsigned defines::ChrChar maximumFollowing   = 0xBF;
+    constexpr defines::ChrChar maximumFollowing            = ( char ) 0xBF;
     // first valid 2-byte UTF-8 sequence introducer (preceeding
     // ones give an overlong sequence)
-    constexpr unsigned defines::ChrChar minimumTwoByte     = 0xC2;
+    constexpr defines::ChrChar minimumTwoByte              = ( char ) 0xC2;
     // first byte which introduces a 3-byte UTF-8 sequence
-    constexpr unsigned defines::ChrChar minimumThreeByte   = 0xE0;
+    constexpr defines::ChrChar minimumThreeByte            = ( char ) 0xE0;
     // first byte which introduces a 4-byte UTF-8 sequence
-    constexpr unsigned defines::ChrChar minimumFourByte    = 0xF0;
+    constexpr defines::ChrChar minimumFourByte             = ( char ) 0xF0;
     // maximum valid leading UTF-8 byte
-    constexpr unsigned defines::ChrChar maximumFirstByte   = 0xF4;
+    constexpr defines::ChrChar maximumFirstByte            = ( char ) 0xF4;
     // mask used for four-byte UTF-8 sequences
-    constexpr unsigned defines::ChrChar fourByteMask       = 0xF8;
+    constexpr defines::ChrChar fourByteMask                = ( char ) 0xF8;
     // maximum 2-byte UTF-8 encoded sequence + 1
-    constexpr unsigned defines::U32Char maximumTwoByte     = 0x800;
+    constexpr defines::U32Char maximumTwoByte              = 0x800;
     // maximum 3-byte UTF-8 encoded sequence + 1
-    constexpr unsigned defines::U32Char maximumThreeByte   = 0x10000;
+    constexpr defines::U32Char maximumThreeByte            = 0x10000;
     // UTF-16 (aka UCS-2) has a deadzone where it cannot encode characters. Each
     // potential code point in this deadzone also "happens" to be part of a
     // surrogate pair
-    constexpr unsigned defines::U32Char ucs2Deadzone [ 2 ] = { 0xD800, 0xDFFF };
+    constexpr defines::U32Char ucs2Deadzone [ 2 ]          = { 0xD800, 0xDFFF };
     // maximum valid unicode code point
-    constexpr unsigned defines::U32Char maxUnicode         = 0x10FFFF;
+    constexpr defines::U32Char maxUnicode                  = 0x10FFFF;
     // the space character in UTF-8. It's more useful than you think.
-    constexpr defines::ChrChar          space              = ' ';
+    constexpr defines::ChrChar space                       = ' ';
     // single-width ASCII start and end
     constexpr defines::U32Char singleWidthASCIIRange [ 2 ] = { U'!', U'~' };
     // double-width ASCII start and end
@@ -103,6 +105,5 @@ namespace defines
                     { 0x00, 0x7F, 0x7F },
                     { 0x7F, 0x7F, 0x7F },
     };
-
 
 } // namespace defines
