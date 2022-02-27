@@ -35,7 +35,7 @@ creating the most versatile engine for whatever that plot will be.
 
 ## System Requirements:
 ### Base
-1. Around 50 MB RAM free[^1]. This requirement will change as Videogame gets more
+1. Around ~~50~~ 200 MB RAM free[^1]. This requirement will change as Videogame gets more
 complete. If your computer cannot meet this requirement, the advice is: get a 
 better computer. There is a good chance a more skilled programmer than me could 
 save some RAM, as most of the requirement consists of loading in an
@@ -68,11 +68,16 @@ with Videogame such as setting the font, setting the starting-window size, and
 more. In general, I would recommend Windows Terminal for normal use.
 2. A display capable of housing 120 columns onscreen at once.
 
-[^1]: This measurement comes from measuring my own computer while Videogame is 
-running. It is most accurate to Windows 11 Home running on a x64-style processor
-and this number does *not* include the standard library and operating system 
-features that Videogame automatically loads. The actual number is likely much
-higher than the number listed in the minimum requirements.
+[^1]: This measurement comes from connecting videogame.exe to the Microsoft
+Visual Studio 2022 Community Edition Preview running on Windows 11 Home for
+an ACPI x64 PC. Your results will probably vary since I was debugging something
+and probably had some of the compilation arguments different. When loaded, however
+Videogame uses around 3 MB of RAM. The reason for this massive difference is 
+loading in the Unicode character database. (in fact, 200 MB RAM utilization 
+implies that each byte in the file is copied less than five times -- impressive).
+This amount could be lowered by splitting the unicode character database into
+multiple files, something not really worth the effort of working with a file
+containing more than 150k lines!
 
 [^2]: If you are on the most recent version of windows available for your PC and
 you have Windows 10 or Windows 11, then you meet this requirement. This requirement
