@@ -773,7 +773,7 @@ defines::ChrString io::console::manip::centerTextOn ( defines::ChrString string,
                 // attempt to narrow the string by one unit.
                 // add a space on the left.
                 narrowOneUnit ( );
-                return " " + backToUTF8 ( );
+                return "\u001b[C" + backToUTF8 ( );
             } else if ( !sameParity )
             {
                 // attempt to narrow the string by one unit. If that
@@ -786,7 +786,7 @@ defines::ChrString io::console::manip::centerTextOn ( defines::ChrString string,
                 std::string output = "";
                 for ( std::ptrdiff_t i = 0; i < difference / 2; i++ )
                 {
-                    output += " ";
+                    output += "\u001b[C";
                 }
                 return output + backToUTF8 ( );
 
@@ -796,7 +796,7 @@ defines::ChrString io::console::manip::centerTextOn ( defines::ChrString string,
                 std::string output = "";
                 for ( std::ptrdiff_t i = 0; i < difference / 2; i++ )
                 {
-                    output += " ";
+                    output += "\u001b[C";
                 }
                 return output + backToUTF8 ( );
             }
