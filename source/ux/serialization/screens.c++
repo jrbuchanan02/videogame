@@ -146,7 +146,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
         // same basic principle applies in terms of parsing base
         // component
         IndirectColor color;
-        for ( std::size_t j = 0; i < 4; i++ )
+        for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setBasicComponent (
                     j,

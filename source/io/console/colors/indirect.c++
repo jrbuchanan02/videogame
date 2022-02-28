@@ -126,7 +126,13 @@ bool io::console::colors::IndirectColor::references (
         IColor const *const &color ) const noexcept
 {
     auto check = [ & ] ( std::shared_ptr< IColor > const &c ) -> bool {
-        return c->references ( color );
+        if ( c )
+        {
+            return c->references ( color );
+        } else
+        {
+            return false;
+        } // nothing references nothing else
     };
 
     if ( color == this )

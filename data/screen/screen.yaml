@@ -52,7 +52,12 @@ Screens:
   Title:
     Palette:
       - *defaultBlack
-      - *defaultWhite
+      - 
+        Number: 1
+        Direct: No
+        Base: [128.0, 128, 128, 128]
+        Params: [8, 9, 10, 10]
+        Function: 'WAVEFORM'
       - *defaultGreen
       - *defaultYellow
       - *defaultBlue
@@ -90,7 +95,7 @@ Screens:
         Font: 0
         Fraktur: No
         DoubleUnderline: Yes
-        Foreground: 0x00000002
+        Foreground: 0x00000007
         Background: 0x00000000
       - Id: StartMessage
         TextRate: 17
@@ -109,7 +114,7 @@ Screens:
         Font: 0
         Fraktur: No
         DoubleUnderline: No
-        Foreground: 0x00000109
+        Foreground: 0x00000001
         Background: 0x00000000
     Input:
       Expect:
