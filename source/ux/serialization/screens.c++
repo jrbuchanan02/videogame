@@ -89,9 +89,12 @@ void ux::serialization::ExternalizedScreens::_parse (
 
         for ( std::size_t i = 0; i < palette.size ( ); i++ )
         {
-            parsed.palette.insert_or_assign (
-                    palette [ i ][ "Number" ].as< std::size_t > ( ),
-                    parseSingleColor ( palette, i ) );
+            if ( !parsed.palette.contains ( i ) )
+            {
+                parsed.palette.emplace (
+                        palette [ i ][ "Number" ].as< std::size_t > ( ),
+                        parseSingleColor ( palette, i ) );
+            }
         }
 
         parsed.inputPrompt.mode = defines::fromString< InputModes > (
@@ -130,10 +133,9 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
     std::shared_ptr< IColor > parsedColor = nullptr;
     if ( node [ i ][ "Direct" ].as< bool > ( ) )
     {
-        std::cout << "Node " << i << " is a direct color\n";
         // parse direct color
         RGBAColor color;
-        for ( std::size_t j = 0; i < 4; i++ )
+        for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setBasicComponent (
                     j,
@@ -196,6 +198,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
         }
         parsedColor = std::shared_ptr< IndirectColor > (
                 new IndirectColor ( color ) );
+        assert ( parsedColor->getIdentifier ( ) == IndirectColor::identifier );
     }
     return parsedColor;
 }

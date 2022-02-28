@@ -31,21 +31,15 @@ Defaults:
     - &defaultMagenta
       Number: 5
       Direct: Yes
-      Base: [128.0, 0, 128, 0]
+      Base: [127.0, 0, 127, 0]
     - &defaultCyan
       Number: 6
       Direct: Yes
-      Base: [0.0, 128, 128, 0]
+      Base: [0.0, 127, 127, 0]
     - &defaultWhite
       Number: 7
       Direct: Yes
-      Base: [128.0, 128, 128, 0]
-    - &waveformBlinkOnColor1Color1
-      Number: 1
-      Direct: No
-      Base: [128.0, 128, 128, 128]
-      Params: [8, 9, 10, 10]
-      Function: WAVEFORM
+      Base: [127.0, 127, 127, 0]
       
 # the screens
 Screens:
@@ -56,7 +50,7 @@ Screens:
         Number: 1
         Direct: No
         Base: [128.0, 128, 128, 128]
-        Params: [8, 9, 10, 10]
+        Params: [8, 9, 10, 11]
         Function: 'WAVEFORM'
       - *defaultGreen
       - *defaultYellow
@@ -67,15 +61,19 @@ Screens:
       -
         Number: 8
         Direct: Yes
-        Base: [0x01, 0x01, 0x01, 0x01]
+        Base: [1.0, 1, 1, 1]
       -
         Number: 9
         Direct: Yes
-        Base: [0x80, 0x80, 0x80, 0x80]
+        Base: [128.0, 128, 128, 128]
       -
         Number: 10
         Direct: Yes
-        Base: [0x00, 0x00, 0x00, 0x00]
+        Base: [0.0, 0, 0, 0]
+      - 
+        Number: 11
+        Direct: Yes
+        Base: [0.0, 0, 0, 0]
     Lines:
       - 
         Id: Title
