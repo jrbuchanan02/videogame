@@ -223,15 +223,19 @@ void parseColor ( Console               &console,
     if ( ( color & 0xff ) < 8 )
     {
         std::uint8_t temp =
-                ( off ? ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0
-                      : ( std::uint8_t ) SGRCommand::CGA_BACKGROUND_0 );
+                ( off == 0 ? ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0
+                           : ( std::uint8_t ) SGRCommand::CGA_BACKGROUND_0 );
         temp += ( color & 7 );
         console << doSGR ( ( SGRCommand ) temp );
     } else if ( ( color & 0xff ) == 8 )
     {
+        console << doSGR ( off == 0 ? SGRCommand::FOREGROUND_DEFAULT
+                                    : SGRCommand::BACKGROUND_DEFAULT );
+    } else if ( ( color & 0xff ) == 9 )
+    {
         // 256 color mode
         console << vgaColor ( ( color >> 8 ) & 0xff );
-    } else if ( ( color & 0xff ) == 9 )
+    } else if ( ( color & 0xff ) == 10 )
     {
         // true color mode
         std::uint8_t c [ 3 ] = { 0, 0, 0 };

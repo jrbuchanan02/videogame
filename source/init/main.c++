@@ -99,10 +99,9 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
-    con << "\u001b[31mFlashing?\u001b[38m\n";
+    con << doSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "Flashing?"
+        << noSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "\n";
     con << getScreen ( "Title" ).output ( *strings, locale, translit );
-    con << doSGR ( SGRCommand::BOLD ) << "Bold?\n";
-    con << "HEllo, world!\n";
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );
     // con << setDirectColor ( 9, 0x80, 0x80, 0x80, 0x80 );
