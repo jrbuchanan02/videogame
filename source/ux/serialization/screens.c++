@@ -76,8 +76,6 @@ void ux::serialization::ExternalizedScreens::_parse (
                     line [ "DoubleUnderline" ].as< bool > ( ) ? 1 : 0;
             parse.foreground = line [ "Foreground" ].as< std::uint32_t > ( );
             parse.background = line [ "Background" ].as< std::uint32_t > ( );
-            if ( !parse.centered )
-                RUNTIME_ERROR ( "Not centered!" )
             return parse;
         };
 
@@ -113,15 +111,9 @@ void ux::serialization::ExternalizedScreens::_parse (
         {
             parsed.nextScreen.clear ( );
         }
-        try
-        {
-            getMap ( ).try_emplace (
-                    std::shared_ptr< ExternalID > ( new ExternalID ( tag ) ),
-                    parsed );
-        } catch ( std::logic_error &err )
-        {
-            RUNTIME_ERROR ( "IT's here officer!" )
-        }
+        getMap ( ).try_emplace (
+                std::shared_ptr< ExternalID > ( new ExternalID ( tag ) ),
+                parsed );
         // std::cin.get ( );
     }
 }
@@ -198,7 +190,6 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
         }
         parsedColor = std::shared_ptr< IndirectColor > (
                 new IndirectColor ( color ) );
-        assert ( parsedColor->getIdentifier ( ) == IndirectColor::identifier );
     }
     return parsedColor;
 }

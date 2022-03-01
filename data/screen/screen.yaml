@@ -4,42 +4,43 @@
 
 # the defaults
 Defaults:
-  # default colors
+  # default colors these have both the color itself and the value associated 
+  # with the color labeled for use with indirection. 
   Colors:
     # black
     - &defaultBlack
       Number: 0
       Direct: Yes
-      Base: [0.0, 0, 0, 0]
+      Base: &colorBlack [0.0, 0, 0, 0]
     - &defaultRed
       Number: 1
       Direct: Yes
-      Base: [127.0, 0, 0, 0]
+      Base: &colorRed [127.0, 0, 0, 0]
     # green
     - &defaultGreen
       Number: 2
       Direct: Yes
-      Base: [0.0, 127, 0, 0]
+      Base: &colorGreen [0.0, 127, 0, 0]
     - &defaultYellow
       Number: 3
       Direct: Yes
-      Base: [127.0, 127, 0, 0]
+      Base: &colorYellow [127.0, 127, 0, 0]
     - &defaultBlue
       Number: 4
       Direct: Yes
-      Base: [0.0, 0, 128, 0]
+      Base: &colorBlue [0.0, 0, 127, 0]
     - &defaultMagenta
       Number: 5
       Direct: Yes
-      Base: [127.0, 0, 127, 0]
+      Base: &colorMagenta [127.0, 0, 127, 0]
     - &defaultCyan
       Number: 6
       Direct: Yes
-      Base: [0.0, 127, 127, 0]
+      Base: &colorCyan [0.0, 127, 127, 0]
     - &defaultWhite
       Number: 7
       Direct: Yes
-      Base: [127.0, 127, 127, 0]
+      Base: &colorWhite [127.0, 127, 127, 0]
       
 # the screens
 Screens:
@@ -49,8 +50,8 @@ Screens:
       - 
         Number: 1
         Direct: No
-        Base: [128.0, 128, 128, 128]
-        Params: [8, 9, 10, 11]
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 9]
         Function: 'WAVEFORM'
       - *defaultGreen
       - *defaultYellow
@@ -61,19 +62,19 @@ Screens:
       -
         Number: 8
         Direct: Yes
-        Base: [1.0, 1, 1, 1]
+        Base: [128.0, 128, 128, 128]
       -
         Number: 9
         Direct: Yes
-        Base: [128.0, 128, 128, 128]
+        Base: [1.0, 1, 1, 1]
       -
         Number: 10
         Direct: Yes
-        Base: [0.0, 0, 0, 0]
+        Base: *colorBlack
       - 
         Number: 11
         Direct: Yes
-        Base: [0.0, 0, 0, 0]
+        Base: *colorBlack
     Lines:
       - 
         Id: Title
@@ -93,11 +94,22 @@ Screens:
         Font: 0
         Fraktur: No
         DoubleUnderline: Yes
-        Foreground: 0x00000007
+        Foreground: 0x00000007 # All colors are unsigned 32-bit integers.
+                               # if the value is less than 8, then it is
+                               # interpreted as the color defined in the
+                               # palette.
         Background: 0x00000000
       - Id: StartMessage
-        TextRate: 17
-        CommandRate: 100
+        TextRate: 17           # How many milliseconds Videogame waits between 
+                               # Sending each glyph (what you see as the 
+                               # character) to the terminal. Lower numbers are
+                               # Faster. For reference, 16.66667 is 60 FPS (or
+                               # close enough to it).
+                               # 
+                               # Videogame cannot wait in fractions of
+                               # milliseconds.
+        CommandRate: 100       # Like text rate, but it adjusts the rate of 
+                               # Palette adjustments
         Centered: Yes
         Wrapped: Yes
         Bold: Yes

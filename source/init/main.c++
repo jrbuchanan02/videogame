@@ -99,6 +99,7 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
+    con << "\u001b[31mFlashing?\u001b[38m\n";
     con << getScreen ( "Title" ).output ( *strings, locale, translit );
     con << doSGR ( SGRCommand::BOLD ) << "Bold?\n";
     con << "HEllo, world!\n";

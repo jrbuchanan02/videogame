@@ -582,23 +582,34 @@ void io::console::Console::sgrCommand ( SGRCommand const &command,
                                         bool const        value ) noexcept
 {
     // if we're setting a color, clear all other color attributes
-    if ( value
-         && ( std::size_t ) command
-                    >= ( std::size_t ) SGRCommand::CGA_FOREGROUND_0
-         && ( std::size_t ) command
-                    <= ( std::size_t ) SGRCommand::BACKGROUND_DEFAULT )
+    // check if we're setting a foreground
+    std::uint8_t           cmd  = ( std::uint8_t ) command;
+    constexpr std::uint8_t minF = ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0;
+    constexpr std::uint8_t maxF =
+            ( std::uint8_t ) SGRCommand::FOREGROUND_DEFAULT;
+    constexpr std::uint8_t minB = ( std::uint8_t ) SGRCommand::CGA_BACKGROUND_0;
+    constexpr std::uint8_t maxB =
+            ( std::uint8_t ) SGRCommand::BACKGROUND_DEFAULT;
+    if ( cmd >= minF && cmd <= maxF )
     {
-        for ( std::size_t i = 0; i < 8; i++ )
+        // set all foreground attributes to false
+        for ( std::size_t i = minF;
+              i <= ( std::size_t ) SGRCommand::CGA_FOREGROUND_7;
+              i++ )
         {
-            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_BACKGROUND_0 )
-                               + i ) = false;
-            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_FOREGROUND_0 )
-                               + i ) = false;
+            pimpl->sgrMap.at ( i ) = false;
         }
-        pimpl->sgrMap.at ( std::size_t ( SGRCommand::FOREGROUND_DEFAULT ) ) =
-                false;
-        pimpl->sgrMap.at ( std::size_t ( SGRCommand::BACKGROUND_DEFAULT ) ) =
-                false;
+        pimpl->sgrMap.at ( maxF ) = false;
+    } else if ( cmd >= minB && cmd <= maxB )
+    {
+        // set all background attributes to false
+        for ( std::size_t i = minB;
+              i <= ( std::size_t ) SGRCommand::CGA_BACKGROUND_7;
+              i++ )
+        {
+            pimpl->sgrMap.at ( i ) = false;
+        }
+        pimpl->sgrMap.at ( maxB ) = false;
     }
 
     pimpl->sgrMap.at ( std::size_t ( command ) ) = value;

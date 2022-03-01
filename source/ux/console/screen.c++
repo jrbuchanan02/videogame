@@ -222,34 +222,11 @@ void parseColor ( Console               &console,
 {
     if ( ( color & 0xff ) < 8 )
     {
-        std::uint8_t temp = ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0;
-        temp += off;
-        temp += ( color & 0x7 );
-
-        // the following checks should never take place, but ensure that we
-        // actually affect the foreground / background when we intended to do
-        // so. They would take place, for example, if there is an invalid
-        // offset.
-        //
-        // as such, they are marked with the unlikely attribute.
-        [[unlikely]] if ( temp < 30 ) // if we somehow ended up below the
-                                      // foreground, go to the color 30
-        {
-            temp = 30;
-        }
-        [[unlikely]] if ( temp >= 38
-                          && temp < 40 ) // if we went out of bounds on the
-                                         // foreground, go to color 37
-        {
-            temp = 37;
-        }
-        [[unlikely]] if ( temp >= 48 ) // if we went out of bounds on the
-                                       // background, go to color 47
-        {
-            temp = 47;
-        }
-
-        console << cgaColor ( ( SGRCommand ) temp );
+        std::uint8_t temp =
+                ( off ? ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0
+                      : ( std::uint8_t ) SGRCommand::CGA_BACKGROUND_0 );
+        temp += ( color & 7 );
+        console << doSGR ( ( SGRCommand ) temp );
     } else if ( ( color & 0xff ) == 8 )
     {
         // 256 color mode

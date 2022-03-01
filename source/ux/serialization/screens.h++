@@ -30,7 +30,7 @@ namespace ux::serialization
     class ExternalizedScreens : public Externalized< console::Screen >
     {
     protected:
-        void _parse ( defines::ChrString const & );
+        void _parse ( defines::ChrString const & ) override final;
 
         virtual defines::IString folder ( ) const noexcept override final
         {
