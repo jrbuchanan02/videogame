@@ -61,6 +61,11 @@ namespace defines
         memberName = memberName.substr ( 0, memberName.find_last_of ( ';' ) );
         // remeover everything before the last '= '
         memberName = memberName.substr ( memberName.find_last_of ( ' ' ) + 2 );
+        // remove everything before the last instance of '::'
+        while ( memberName.find ( "::" ) != memberName.find_last_of ( "::" ) )
+        {
+            memberName = memberName.substr ( memberName.find ( "::" ) + 2);
+        }
         return memberName;
     }
 

@@ -76,8 +76,6 @@ void ux::serialization::ExternalizedScreens::_parse (
                     line [ "DoubleUnderline" ].as< bool > ( ) ? 1 : 0;
             parse.foreground = line [ "Foreground" ].as< std::uint32_t > ( );
             parse.background = line [ "Background" ].as< std::uint32_t > ( );
-            if ( !parse.centered )
-                RUNTIME_ERROR ( "Not centered!" )
             return parse;
         };
 
@@ -89,9 +87,12 @@ void ux::serialization::ExternalizedScreens::_parse (
 
         for ( std::size_t i = 0; i < palette.size ( ); i++ )
         {
-            parsed.palette.insert_or_assign (
-                    palette [ i ][ "Number" ].as< std::size_t > ( ),
-                    parseSingleColor ( palette, i ) );
+            if ( !parsed.palette.contains ( i ) )
+            {
+                parsed.palette.emplace (
+                        palette [ i ][ "Number" ].as< std::size_t > ( ),
+                        parseSingleColor ( palette, i ) );
+            }
         }
 
         parsed.inputPrompt.mode = defines::fromString< InputModes > (
@@ -99,26 +100,17 @@ void ux::serialization::ExternalizedScreens::_parse (
         parsed.wrongAnswer = input [ "Remind" ]
                                    ? parseLine ( input [ "Remind" ] )
                                    : Line { "EmptyString" };
-        try
+        if ( next )
         {
             for ( auto const &option : next )
             {
                 parsed.nextScreen.push_back (
                         option.as< defines::IString > ( ) );
             }
-        } catch ( ... )
-        {
-            parsed.nextScreen.clear ( );
         }
-        try
-        {
-            getMap ( ).try_emplace (
-                    std::shared_ptr< ExternalID > ( new ExternalID ( tag ) ),
-                    parsed );
-        } catch ( std::logic_error &err )
-        {
-            RUNTIME_ERROR ( "IT's here officer!" )
-        }
+        getMap ( ).try_emplace (
+                std::shared_ptr< ExternalID > ( new ExternalID ( tag ) ),
+                parsed );
         // std::cin.get ( );
     }
 }
@@ -130,10 +122,9 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
     std::shared_ptr< IColor > parsedColor = nullptr;
     if ( node [ i ][ "Direct" ].as< bool > ( ) )
     {
-        std::cout << "Node " << i << " is a direct color\n";
         // parse direct color
         RGBAColor color;
-        for ( std::size_t j = 0; i < 4; i++ )
+        for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setBasicComponent (
                     j,
@@ -146,7 +137,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
         // same basic principle applies in terms of parsing base
         // component
         IndirectColor color;
-        for ( std::size_t j = 0; i < 4; i++ )
+        for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setBasicComponent (
                     j,
@@ -157,6 +148,9 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
                 blend_functions::IndirectColorBlendingFunctions::WAVEFORM;
         try
         {
+            // BUG #60 first shows up here as "function" immediately causes
+            // YAML CPP to throw an InvalidNode exception since there is no
+            // function-key.
             blending = defines::fromString<
                     blend_functions::IndirectColorBlendingFunctions > (
                     node [ i ][ "Function" ].as< defines::ChrString > ( ) );
@@ -182,6 +176,7 @@ std::shared_ptr< IColor > parseSingleColor ( YAML::Node const &node,
                 color.setBlendFunction ( blend_functions::defaultBlending );
         }
         // parse the numbers that make up the color's parameters.
+        // #60 We catch the access to "Function" throwing, but then this throws.
         for ( std::size_t j = 0; j < 4; j++ )
         {
             color.setParam (

@@ -88,6 +88,11 @@ namespace ux::serialization
             // otherwise, return the strong ordering.
             return strong;
         }
+
+        bool const operator== ( ExternalID const &that ) const noexcept
+        {
+            return *this <=> that == std::strong_ordering::equal;
+        }
     };
 
     template < class T > class Externalized

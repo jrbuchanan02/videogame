@@ -226,7 +226,6 @@ void io::console::Console::impl_s::commandGenerator ( )
 
         std::stringstream command;
         auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
-            std::stringstream result;
             this->screen [ color ]->refresh ( time );
             defines::UnboundColor const *rawColor =
                     this->screen [ color ]->rgba ( time );
@@ -244,15 +243,27 @@ void io::console::Console::impl_s::commandGenerator ( )
                     defines::SentColor ( bound [ 3 ] ),
             };
 
-            result << "\u001b]" << defines::paletteChangePrefix << std::hex;
-            result << color << defines::paletteChangeSpecif;
-            for ( std::size_t i = 0; i < 2; i++ )
-            {
-                result << sent [ i ] << defines::paletteChangeDelimt;
-            }
-            result << sent [ 2 ] << "\u001b\\";
-            delete [] rawColor;
-            return result.str ( );
+            auto toHex = [ & ] ( std::size_t i ) -> defines::ChrString {
+                defines::ChrStringStream temp { "" };
+                temp << std::hex << i;
+                return temp.str ( );
+            };
+
+            // TODO #63 This code works on VS-Code's integrated terminal to its
+            // full effect, but for some reason fails on the Windows Terminal.
+            defines::ChrString result = "";
+            result += "\u001b]";
+            result += defines::paletteChangePrefix;
+            result += toHex ( color );
+            result += defines::paletteChangeSpecif;
+            result += toHex ( sent [ 0 ] );
+            result += defines::paletteChangeDelimt;
+            result += toHex ( sent [ 1 ] );
+            result += defines::paletteChangeDelimt;
+            result += toHex ( sent [ 2 ] );
+            result += "\u001b\\";
+
+            return result;
         };
 
         for ( std::size_t i = 0; i < 8; i++ )
@@ -379,6 +390,8 @@ void io::console::Console::send ( std::string const &str ) noexcept
             }
             return result;
         };
+        // TODO #61 It shows up here.
+
         // for each joinable string in joinables:
         // 1. if it's a hard line break, reset the current position since a
         // line break will occur automatically.
@@ -580,23 +593,34 @@ void io::console::Console::sgrCommand ( SGRCommand const &command,
                                         bool const        value ) noexcept
 {
     // if we're setting a color, clear all other color attributes
-    if ( value
-         && ( std::size_t ) command
-                    >= ( std::size_t ) SGRCommand::CGA_FOREGROUND_0
-         && ( std::size_t ) command
-                    <= ( std::size_t ) SGRCommand::BACKGROUND_DEFAULT )
+    // check if we're setting a foreground
+    std::uint8_t           cmd  = ( std::uint8_t ) command;
+    constexpr std::uint8_t minF = ( std::uint8_t ) SGRCommand::CGA_FOREGROUND_0;
+    constexpr std::uint8_t maxF =
+            ( std::uint8_t ) SGRCommand::FOREGROUND_DEFAULT;
+    constexpr std::uint8_t minB = ( std::uint8_t ) SGRCommand::CGA_BACKGROUND_0;
+    constexpr std::uint8_t maxB =
+            ( std::uint8_t ) SGRCommand::BACKGROUND_DEFAULT;
+    if ( cmd >= minF && cmd <= maxF )
     {
-        for ( std::size_t i = 0; i < 8; i++ )
+        // set all foreground attributes to false
+        for ( std::size_t i = minF;
+              i <= ( std::size_t ) SGRCommand::CGA_FOREGROUND_7;
+              i++ )
         {
-            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_BACKGROUND_0 )
-                               + i ) = false;
-            pimpl->sgrMap.at ( std::size_t ( SGRCommand::CGA_FOREGROUND_0 )
-                               + i ) = false;
+            pimpl->sgrMap.at ( i ) = false;
         }
-        pimpl->sgrMap.at ( std::size_t ( SGRCommand::FOREGROUND_DEFAULT ) ) =
-                false;
-        pimpl->sgrMap.at ( std::size_t ( SGRCommand::BACKGROUND_DEFAULT ) ) =
-                false;
+        pimpl->sgrMap.at ( maxF ) = false;
+    } else if ( cmd >= minB && cmd <= maxB )
+    {
+        // set all background attributes to false
+        for ( std::size_t i = minB;
+              i <= ( std::size_t ) SGRCommand::CGA_BACKGROUND_7;
+              i++ )
+        {
+            pimpl->sgrMap.at ( i ) = false;
+        }
+        pimpl->sgrMap.at ( maxB ) = false;
     }
 
     pimpl->sgrMap.at ( std::size_t ( command ) ) = value;

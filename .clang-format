@@ -1,4 +1,3 @@
----
 Language: Cpp
 # we don't want any indent or outdent of access modifiers
 AccessModifierOffset: -4

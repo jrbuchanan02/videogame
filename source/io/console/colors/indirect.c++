@@ -32,11 +32,9 @@ using namespace io::console::colors::blend_functions;
 defines::UnboundColor const *const
         io::console::colors::IndirectColor::rgbaRaw ( ) const noexcept
 {
-    return RGBAColor ( this->color [ 0 ],
-                       this->color [ 1 ],
-                       this->color [ 2 ],
-                       this->color [ 3 ] )
-            .rgba ( );
+    defines::UnboundColor *temp = new defines::UnboundColor [ 4 ];
+    for ( std::size_t i = 0; i < 4; i++ ) { temp [ i ] = this->color [ i ]; }
+    return temp;
 }
 
 defines::UnboundColor const *const
@@ -126,7 +124,13 @@ bool io::console::colors::IndirectColor::references (
         IColor const *const &color ) const noexcept
 {
     auto check = [ & ] ( std::shared_ptr< IColor > const &c ) -> bool {
-        return c->references ( color );
+        if ( c )
+        {
+            return c->references ( color );
+        } else
+        {
+            return false;
+        } // nothing references nothing else
     };
 
     if ( color == this )
