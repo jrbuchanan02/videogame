@@ -100,16 +100,13 @@ void ux::serialization::ExternalizedScreens::_parse (
         parsed.wrongAnswer = input [ "Remind" ]
                                    ? parseLine ( input [ "Remind" ] )
                                    : Line { "EmptyString" };
-        try
+        if ( next )
         {
             for ( auto const &option : next )
             {
                 parsed.nextScreen.push_back (
                         option.as< defines::IString > ( ) );
             }
-        } catch ( ... )
-        {
-            parsed.nextScreen.clear ( );
         }
         getMap ( ).try_emplace (
                 std::shared_ptr< ExternalID > ( new ExternalID ( tag ) ),

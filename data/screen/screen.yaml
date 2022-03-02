@@ -40,7 +40,7 @@ Defaults:
     - &defaultWhite
       Number: 7
       Direct: Yes
-      Base: &colorWhite [127.0, 127, 127, 0]
+      Base: &colorWhite [200.0, 200, 200, 0]
       
 # the screens
 Screens:
@@ -129,18 +129,40 @@ Screens:
     Input:
       Expect:
         Mode: NONE
-    Next: Yes
+    Next: 
       - IntroPart1
+# Begin the introduction things.
   IntroPart1:
     Palette:
       - *defaultBlack
-      - *defaultRed
+      - 
+        Number: 1
+        Direct: No
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 9]
+        Function: 'WAVEFORM'
       - *defaultGreen
       - *defaultYellow
       - *defaultBlue
       - *defaultMagenta
       - *defaultCyan
       - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [128.0, 128, 128, 128]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [1.0, 1, 1, 1]
+      -
+        Number: 10
+        Direct: Yes
+        Base: *colorBlack
+      - 
+        Number: 11
+        Direct: Yes
+        Base: *colorBlack
     Lines:
       - 
         Id: Introduction0
@@ -202,8 +224,317 @@ Screens:
         DoubleUnderline: no
         Foreground: 0x00000007
         Background: 0x00000000
+      -
+        Id: ContinueMessage
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000001
+        Background: 0x00000000
     Input:
       Expect:
         Mode: NONE
-    Next: No
+
+  IntroductionPart2:
+    Palette:
+      - *defaultBlack
+      - 
+        Number: 1
+        Direct: No
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 9]
+        Function: 'WAVEFORM'
+      - *defaultGreen
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [128.0, 128, 128, 128]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [1.0, 1, 1, 1]
+      -
+        Number: 10
+        Direct: Yes
+        Base: *colorBlack
+      - 
+        Number: 11
+        Direct: Yes
+        Base: *colorBlack
+    Lines:
+      - 
+        Id: Introduction3
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - 
+        Id: Introduction4
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - 
+        Id: Introduction5
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - 
+        Id: Introduction6
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
+  Exit:
+    Palette:
+      - *defaultBlack
+      - *defaultRed
+      - 
+        Number: 2
+        Direct: Yes
+        Base: [192.0, 255, 248, 0]
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+    Lines:
+      - 
+        Id: ExitMessage
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000002
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
+# Begin the character creation things
+
+    CharacterCreationPart1:
+    Palette:
+      - *defaultBlack
+      - 
+        Number: 1
+        Direct: No
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 9]
+        Function: 'WAVEFORM'
+      - *defaultGreen
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [128.0, 128, 128, 128]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [1.0, 1, 1, 1]
+      -
+        Number: 10
+        Direct: Yes
+        Base: *colorBlack
+      - 
+        Number: 11
+        Direct: Yes
+        Base: *colorBlack
+    Lines:
+      - 
+        Id: CharacterCreation0
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE # TODO: replace with input that gets one or two strings.
+      Remind:
+        Id: NameEntryReminder
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Backgroudn: 0x00000000
+    Next:
+      - CharacterCreationPart2
+
+  CharacterCreationPart2:
+    Palette:
+      - *defaultBlack
+      - 
+        Number: 1
+        Direct: No
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 9]
+        Function: 'WAVEFORM'
+      - *defaultGreen
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+      -
+        Number: 8
+        Direct: Yes
+        Base: [128.0, 128, 128, 128]
+      -
+        Number: 9
+        Direct: Yes
+        Base: [1.0, 1, 1, 1]
+      -
+        Number: 10
+        Direct: Yes
+        Base: *colorBlack
+      - 
+        Number: 11
+        Direct: Yes
+        Base: *colorBlack
+    Lines:
+      - 
+        Id: CharacterCreation1
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
+    Next:
+      - IntroductionPart2
 --- # end of document

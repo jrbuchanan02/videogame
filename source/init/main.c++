@@ -99,9 +99,31 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
-    // con << doSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "Flashing?"
-    //     << noSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "\n";
-    con << getScreen ( "Title" ).output ( *strings, locale, translit );
+    // TODO #53 should get implemented here.
+    auto    chooseNext = [ & ] ( ux::console::Screen const &current ) {
+        // screen choosing logic, potentially moved eventually
+        // to Screen as a member function.
+        //
+        // also eventually fleshed out into more than choosing the first
+        // option if available.
+        if ( current == getScreen ( "Exit" ) )
+        {
+            std::exit ( 0 );
+        } else if ( current.nextScreen.empty ( ) )
+        {
+            // exit screen.
+            return getScreen ( "Exit" );
+        } else
+        {
+            return getScreen ( current.nextScreen.front ( ).key );
+        }
+    };
+
+    for ( ux::console::Screen screen = getScreen ( "Title" );;
+          screen                     = chooseNext ( screen ) )
+    {
+        con << screen.output ( *strings, locale, translit );
+    }
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );
     // con << setDirectColor ( 9, 0x80, 0x80, 0x80, 0x80 );

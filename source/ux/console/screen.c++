@@ -168,7 +168,11 @@ ConsoleManipulator
             assert ( !string.empty ( ) );
             // wait until we have finished outputting the line.
             console << doWaitForText;
-            console << string + "\n";
+            if (!string.ends_with("\n"))
+            {
+                string += "\n";
+            }
+            console << string;
         };
         // set our palette
         for ( auto &color : palette )

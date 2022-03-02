@@ -88,6 +88,8 @@ namespace ux::console
         // have an alpha <= 10.
         std::uint32_t    foreground          = 7;
         std::uint32_t    background          = 0;
+
+        bool operator== ( Line const & ) const noexcept = default;
     };
 
     enum class InputModes
@@ -103,6 +105,11 @@ namespace ux::console
         InputModes mode            = InputModes::_MAX;
         bool       inputReady      = false;
         InputResult mutable result = { };
+
+        bool const operator== ( Input const &in ) const noexcept
+        {
+            return mode == in.mode;
+        }
     };
 
     struct Screen
@@ -110,9 +117,9 @@ namespace ux::console
         // the lines to draw
         std::list< Line > lines;
         // the input we ask for
-        Input inputPrompt;
+        Input             inputPrompt;
         // the line shown on invalid input.
-        Line wrongAnswer;
+        Line              wrongAnswer;
 
         std::map< std::size_t, std::shared_ptr< io::console::colors::IColor > >
                 palette;
@@ -122,8 +129,9 @@ namespace ux::console
         std::list< serialization::ExternalID > nextScreen;
 
         io::console::ConsoleManipulator
-                output ( serialization::ExternalizedStrings const  &strings,
-                         defines::IString const                    &locale,
-                         serialization::TransliterationLevel const &level );
+                   output ( serialization::ExternalizedStrings const  &strings,
+                            defines::IString const                    &locale,
+                            serialization::TransliterationLevel const &level );
+        bool operator== ( Screen const &screen ) const noexcept = default;
     };
 } // namespace ux::console
