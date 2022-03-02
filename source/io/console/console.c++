@@ -226,7 +226,6 @@ void io::console::Console::impl_s::commandGenerator ( )
 
         std::stringstream command;
         auto generateCommand = [ & ] ( std::size_t color ) -> std::string {
-            std::stringstream result;
             this->screen [ color ]->refresh ( time );
             defines::UnboundColor const *rawColor =
                     this->screen [ color ]->rgba ( time );
@@ -244,15 +243,27 @@ void io::console::Console::impl_s::commandGenerator ( )
                     defines::SentColor ( bound [ 3 ] ),
             };
 
-            result << "\u001b]" << defines::paletteChangePrefix << std::hex;
-            result << color << defines::paletteChangeSpecif;
-            for ( std::size_t i = 0; i < 2; i++ )
-            {
-                result << sent [ i ] << defines::paletteChangeDelimt;
-            }
-            result << sent [ 2 ] << "\u001b\\";
-            delete [] rawColor;
-            return result.str ( );
+            auto toHex = [ & ] ( std::size_t i ) -> defines::ChrString {
+                defines::ChrStringStream temp { "" };
+                temp << std::hex << i;
+                return temp.str ( );
+            };
+
+            // TODO #63 This code works on VS-Code's integrated terminal to its
+            // full effect, but for some reason fails on the Windows Terminal.
+            defines::ChrString result = "";
+            result += "\u001b]";
+            result += defines::paletteChangePrefix;
+            result += toHex ( color );
+            result += defines::paletteChangeSpecif;
+            result += toHex ( sent [ 0 ] );
+            result += defines::paletteChangeDelimt;
+            result += toHex ( sent [ 1 ] );
+            result += defines::paletteChangeDelimt;
+            result += toHex ( sent [ 2 ] );
+            result += "\u001b\\";
+
+            return result;
         };
 
         for ( std::size_t i = 0; i < 8; i++ )

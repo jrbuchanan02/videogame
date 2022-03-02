@@ -99,8 +99,8 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
-    con << doSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "Flashing?"
-        << noSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "\n";
+    // con << doSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "Flashing?"
+    //     << noSGR ( SGRCommand::CGA_FOREGROUND_1 ) << "\n";
     con << getScreen ( "Title" ).output ( *strings, locale, translit );
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );

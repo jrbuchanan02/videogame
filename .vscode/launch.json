@@ -12,10 +12,10 @@
             "program": "${workspaceRoot}/videogame.exe",
             
             "args": [],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "${fileDirname}",
             "environment": [],
-            "externalConsole": false,
+            "externalConsole": true,
             "MIMode": "gdb",
             "miDebuggerPath": "gdb",
             "setupCommands": [

@@ -129,6 +129,81 @@ Screens:
     Input:
       Expect:
         Mode: NONE
+    Next: Yes
+      - IntroPart1
+  IntroPart1:
+    Palette:
+      - *defaultBlack
+      - *defaultRed
+      - *defaultGreen
+      - *defaultYellow
+      - *defaultBlue
+      - *defaultMagenta
+      - *defaultCyan
+      - *defaultWhite
+    Lines:
+      - 
+        Id: Introduction0
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - 
+        Id: Introduction1
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+      - 
+        Id: Introduction2
+        TextRate: 17
+        CommandRate: 100
+        Centered: no
+        Wrapped: yes
+        Bold: no
+        Faint: no
+        Italic: no
+        Underline: no
+        SlowBlink: no
+        FastBlink: no
+        Invert: no
+        Hide: no
+        Strike: no
+        Font: 0
+        Fraktur: no
+        DoubleUnderline: no
+        Foreground: 0x00000007
+        Background: 0x00000000
+    Input:
+      Expect:
+        Mode: NONE
     Next: No
-
 --- # end of document
