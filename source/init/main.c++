@@ -119,10 +119,26 @@ int main ( int const argc, char const *const *const argv )
         }
     };
 
+    // first and last name as grabbed from the name input.
+    defines::IString firstName;
+    defines::IString lastName;
+
     for ( ux::console::Screen screen = getScreen ( "Title" );;
           screen                     = chooseNext ( screen ) )
     {
         con << screen.output ( *strings, locale, translit );
+        // check if the screen is the part which asks for the first name and
+        // last name of the hypothetical character.
+        if ( screen == getScreen ( "CharacterCreationPart1" ) )
+        {
+            // get the first and last name.
+            auto temp = std::get< std::array< defines::IString, 2 > > (
+                    screen.inputPrompt.result );
+            firstName = temp [ 0 ];
+            lastName  = temp [ 1 ];
+        }
+
+        con << "Read in the name \"" << firstName << ", " << lastName << "\"\n";
     }
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );

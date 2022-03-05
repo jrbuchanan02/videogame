@@ -402,7 +402,7 @@ Screens:
         Mode: NONE
 # Begin the character creation things
 
-    CharacterCreationPart1:
+  CharacterCreationPart1:
     Palette:
       - *defaultBlack
       - 
@@ -456,7 +456,7 @@ Screens:
         Background: 0x00000000
     Input:
       Expect:
-        Mode: NONE # TODO: replace with input that gets one or two strings.
+        Mode: FULL_NAME
       Remind:
         Id: NameEntryReminder
         TextRate: 17

@@ -168,7 +168,7 @@ ConsoleManipulator
             assert ( !string.empty ( ) );
             // wait until we have finished outputting the line.
             console << doWaitForText;
-            if (!string.ends_with("\n"))
+            if ( !string.ends_with ( "\n" ) )
             {
                 string += "\n";
             }
@@ -207,6 +207,37 @@ ConsoleManipulator
 
 // the input modes.
 bool inputModeNone ( InputResult & ) { return true; }
+
+bool inputModeFullName ( InputResult &result )
+{
+    defines::ChrStringStream line;
+
+    auto getLine = [ & ] ( ) {
+        defines::ChrString temp = "";
+        std::getline ( std::cin, temp );
+        line = defines::ChrStringStream ( temp );
+    };
+
+    getLine ( );
+    defines::ChrString name [ 2 ] = { "", "" };
+    for ( std::size_t i = 0; i < 2; i++ )
+    {
+        if ( line )
+        {
+            line >> name [ i ];
+        } else
+        {
+            return false;
+        }
+    }
+    result = std::array< defines::IString, 2 > {
+            io::console::manip::convert< defines::IChar, defines::ChrChar > (
+                    name [ 0 ] ),
+            io::console::manip::convert< defines::IChar, defines::ChrChar > (
+                    name [ 1 ] ),
+    };
+    return true;
+}
 
 InputModeGetter parseInputMode ( InputModes const &mode )
 {
