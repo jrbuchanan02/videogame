@@ -247,6 +247,8 @@ Screens:
     Input:
       Expect:
         Mode: NONE
+    Next:
+      - CharacterCreationPart1
 
   IntroductionPart2:
     Palette:
@@ -476,7 +478,7 @@ Screens:
         Fraktur: no
         DoubleUnderline: no
         Foreground: 0x00000007
-        Backgroudn: 0x00000000
+        Background: 0x00000000
     Next:
       - CharacterCreationPart2
 
