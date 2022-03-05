@@ -25,12 +25,12 @@
 
 #include <io/base/syncstream.h++>
 
+#include <any>
 #include <array>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <map>
-#include <variant>
 
 namespace ux::console
 {
@@ -100,8 +100,7 @@ namespace ux::console
         _MAX,
     };
 
-    using InputResult =
-            std::variant< void *, std::array< defines::IString, 2 > >;
+    using InputResult = std::any;
 
     struct Input
     {

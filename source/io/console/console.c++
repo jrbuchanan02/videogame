@@ -158,6 +158,9 @@ struct io::console::Console::impl_s
 #endif
         std::cout << "\u001b[3J\u001b[2J\u001b[0m\u001b[H";
         std::cout.flush ( );
+        // untie std::cin and std::cout
+        std::cin.tie ( nullptr );
+        std::cout.tie ( nullptr );
         readySignal.store ( true );
         sizeUpdater = std::jthread ( [ & ] ( ) { sizeUpdateFunction ( ); } );
         sizeUpdater.detach ( );

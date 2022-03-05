@@ -22,6 +22,7 @@
 
 #include <ux/console/screen.h++>
 
+#include <any>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -99,8 +100,11 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
+
+    defines::IString currentScreenName = "Title";
+
     // TODO #53 should get implemented here.
-    auto    chooseNext = [ & ] ( ux::console::Screen const &current ) {
+    auto chooseNext = [ & ] ( ux::console::Screen const &current ) {
         // screen choosing logic, potentially moved eventually
         // to Screen as a member function.
         //
@@ -111,10 +115,12 @@ int main ( int const argc, char const *const *const argv )
             std::exit ( 0 );
         } else if ( current.nextScreen.empty ( ) )
         {
+            currentScreenName = "Exit";
             // exit screen.
             return getScreen ( "Exit" );
         } else
         {
+            currentScreenName = current.nextScreen.front ( ).key;
             return getScreen ( current.nextScreen.front ( ).key );
         }
     };
@@ -129,16 +135,23 @@ int main ( int const argc, char const *const *const argv )
         con << screen.output ( *strings, locale, translit );
         // check if the screen is the part which asks for the first name and
         // last name of the hypothetical character.
-        if ( screen == getScreen ( "CharacterCreationPart1" ) )
+        if ( currentScreenName == "CharacterCreationPart1" )
         {
-            // get the first and last name.
-            auto temp = std::get< std::array< defines::IString, 2 > > (
-                    screen.inputPrompt.result );
-            firstName = temp [ 0 ];
-            lastName  = temp [ 1 ];
-        }
+            if ( std::any_cast< std::vector< defines::IString > > (
+                         &screen.inputPrompt.result ) )
+            {
+                firstName = std::any_cast< std::vector< defines::IString > > (
+                        screen.inputPrompt.result ) [ 0 ];
+                lastName = std::any_cast< std::vector< defines::IString > > (
+                        screen.inputPrompt.result ) [ 1 ];
 
-        con << "Read in the name \"" << firstName << ", " << lastName << "\"\n";
+                con << "Name read is " << firstName << " " << lastName << "\n";
+            } else
+            {
+                con << "For some reason, the stored input is of type "
+                    << screen.inputPrompt.result.type ( ).name ( ) << "\n";
+            }
+        }
     }
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );

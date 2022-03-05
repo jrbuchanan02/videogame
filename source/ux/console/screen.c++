@@ -191,9 +191,6 @@ ConsoleManipulator
         bool matches = false;
         do {
             std::cin.clear ( );
-            defines::ChrString input = "";
-            std::getline ( std::cin, input );
-
             // check against input
             // get the input
             matches =
@@ -210,32 +207,18 @@ bool inputModeNone ( InputResult & ) { return true; }
 
 bool inputModeFullName ( InputResult &result )
 {
-    defines::ChrStringStream line;
-
-    auto getLine = [ & ] ( ) {
-        defines::ChrString temp = "";
-        std::getline ( std::cin, temp );
-        line = defines::ChrStringStream ( temp );
-    };
-
-    getLine ( );
     defines::ChrString name [ 2 ] = { "", "" };
-    for ( std::size_t i = 0; i < 2; i++ )
+    std::cin >> name [ 0 ] >> name [ 1 ];
     {
-        if ( line )
-        {
-            line >> name [ i ];
-        } else
-        {
-            return false;
-        }
+        io::base::osyncstream { std::cout } << name [ 0 ] << ", " << name [ 1 ]
+                                            << "\n";
     }
-    result = std::array< defines::IString, 2 > {
-            io::console::manip::convert< defines::IChar, defines::ChrChar > (
-                    name [ 0 ] ),
-            io::console::manip::convert< defines::IChar, defines::ChrChar > (
-                    name [ 1 ] ),
-    };
+    if ( name [ 0 ].empty ( ) || name [ 1 ].empty ( ) )
+    {
+        return false;
+    }
+    result.emplace< std::vector< defines::ChrString > > (
+            { name [ 0 ], name [ 1 ] } );
     return true;
 }
 
@@ -244,6 +227,7 @@ InputModeGetter parseInputMode ( InputModes const &mode )
     switch ( mode )
     {
         case InputModes::NONE: return &inputModeNone;
+        case InputModes::FULL_NAME: return &inputModeFullName;
         default: return &inputModeNone;
     }
 }
