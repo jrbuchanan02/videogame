@@ -139,5 +139,8 @@ namespace defines
 
     template < class I, class O >
     using BinaryFunction = std::function< O ( I, I ) >;
+
+    using StatisticInteger = std::int_least64_t;
+    using ObjectIdentifier = std::uint_least64_t;
 } // namespace defines
 #endif // ifndef SOURCE_DEFINES_TYPES
