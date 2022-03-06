@@ -67,6 +67,7 @@
         "set": "cpp",
         "regex": "cpp",
         "cinttypes": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "any": "cpp"
     }
 }

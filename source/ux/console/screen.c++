@@ -195,15 +195,23 @@ ConsoleManipulator
             // get the input
             matches =
                     parseInputMode ( inputPrompt.mode ) ( inputPrompt.result );
+            io::base::osyncstream { std::cout }
+                    << "Result type as currently read is "
+                    << inputPrompt.result.type ( ).name ( ) << "\n";
 
         } while ( !matches );
-
+        inputPrompt.inputReady = true;
         return console;
     };
 }
 
 // the input modes.
-bool inputModeNone ( InputResult & ) { return true; }
+bool inputModeNone ( InputResult & )
+{
+    defines::ChrString temp = "";
+    std::getline ( std::cin, temp );
+    return true;
+}
 
 bool inputModeFullName ( InputResult &result )
 {
@@ -217,8 +225,11 @@ bool inputModeFullName ( InputResult &result )
     {
         return false;
     }
-    result.emplace< std::vector< defines::ChrString > > (
-            { name [ 0 ], name [ 1 ] } );
+    result = std::make_any< defines::ChrString * > (
+            new defines::ChrString [ 2 ] { name [ 0 ], name [ 1 ] } );
+    io::base::osyncstream { std::cout } << "Result type as stored is "
+                                        << result.type ( ).name ( ) << "\n";
+    std::cin.clear ( );
     return true;
 }
 

@@ -97,11 +97,6 @@ void ux::serialization::ExternalizedScreens::_parse (
 
         parsed.inputPrompt.mode = defines::fromString< InputModes > (
                 input [ "Expect" ][ "Mode" ].Scalar ( ) );
-        std::cout << input [ "Expect" ][ "Mode" ].Scalar ( ) << "\n";
-        std::cout << defines::rtToString< InputModes > (
-                parsed.inputPrompt.mode )
-                  << "\n";
-        std::cin.get ( );
         parsed.wrongAnswer = input [ "Remind" ]
                                    ? parseLine ( input [ "Remind" ] )
                                    : Line { "EmptyString" };

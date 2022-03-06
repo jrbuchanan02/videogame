@@ -105,8 +105,8 @@ namespace ux::console
     struct Input
     {
         InputModes mode            = InputModes::_MAX;
-        bool       inputReady      = false;
-        InputResult mutable result = { };
+        bool mutable inputReady    = false;
+        InputResult mutable result = 0;
 
         bool const operator== ( Input const &in ) const noexcept
         {

@@ -41,7 +41,11 @@ Defaults:
       Number: 7
       Direct: Yes
       Base: &colorWhite [200.0, 200, 200, 0]
-      
+
+  Rates:
+    DefaultTxtRate: &defaultText 17
+    DefaultCmdRate: &defaultCmd 100
+
 # the screens
 Screens:
   Title:
