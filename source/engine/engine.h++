@@ -75,6 +75,8 @@ namespace engine
 
         // ticks the engine, calling tick functions on all objects contained.
         void tick ( );
+
+        std::shared_ptr< Object > const &createObject ( ) noexcept;
     };
 
     /**
@@ -85,6 +87,8 @@ namespace engine
     {
         struct impl_s;
         std::unique_ptr< impl_s > pimpl;
+        friend class Engine;
+        Object ( Engine const & ) noexcept;
     public:
         Object ( ) noexcept;
         Object ( Object const & ) noexcept;
