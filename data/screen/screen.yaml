@@ -44,21 +44,27 @@ Defaults:
 
   Rates:
     DefaultTxtRate: &defaultText 17
-    DefaultCmdRate: &defaultCmd 100
+    DefaultCmdRate: &defaultCmd 17
 
-# the screens
-Screens:
-  Title:
-    Palette:
-      - *defaultBlack
+  Palettes:
+    CharacterCreationAndTitle: &titlePalette
+      - *defaultBlack 
       - 
         Number: 1
         Direct: No
         Base: [128.0, 128.0, 128.0, 0]
         Params: [8, 10, 11, 9]
         Function: 'WAVEFORM'
-      - *defaultGreen
-      - *defaultYellow
+      - 
+        Number: 2
+        Direct: Yes
+        Base: [192.0, 255, 254, 0]
+      - 
+        Number: 3
+        Direct: No
+        Base: [128.0, 128.0, 128.0, 0]
+        Params: [8, 10, 11, 12]
+        Function: 'WAVEFORM'
       - *defaultBlue
       - *defaultMagenta
       - *defaultCyan
@@ -70,7 +76,7 @@ Screens:
       -
         Number: 9
         Direct: Yes
-        Base: [1.0, 1, 1, 1]
+        Base: [0.0333, 0.02, 0.0147, 1]
       -
         Number: 10
         Direct: Yes
@@ -79,11 +85,20 @@ Screens:
         Number: 11
         Direct: Yes
         Base: *colorBlack
+      - 
+        Number: 12
+        Direct: Yes
+        Base: [0.1, 0.1, 0.1, 0.1]
+
+# the screens
+Screens:
+  Title:
+    Palette: *titlePalette
     Lines:
       - 
         Id: Title
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: true
         Wrapped: Yes
         Bold: No
@@ -104,16 +119,16 @@ Screens:
                                # palette.
         Background: 0x00000000
       - Id: StartMessage
-        TextRate: 17           # How many milliseconds Videogame waits between 
-                               # Sending each glyph (what you see as the 
-                               # character) to the terminal. Lower numbers are
-                               # Faster. For reference, 16.66667 is 60 FPS (or
-                               # close enough to it).
-                               # 
-                               # Videogame cannot wait in fractions of
-                               # milliseconds.
-        CommandRate: 100       # Like text rate, but it adjusts the rate of 
-                               # Palette adjustments
+        TextRate: *defaultText   # How many milliseconds Videogame waits between 
+                                 # Sending each glyph (what you see as the 
+                                 # character) to the terminal. Lower numbers are
+                                 # Faster. For reference, 16.66667 is 60 FPS (or
+                                 # close enough to it).
+                                 # 
+                                 # Videogame cannot wait in fractions of
+                                 # milliseconds.
+        CommandRate: *defaultCmd # Like text rate, but it adjusts the rate of 
+                                 # Palette adjustments
         Centered: Yes
         Wrapped: Yes
         Bold: Yes
@@ -137,41 +152,12 @@ Screens:
       - IntroPart1
 # Begin the introduction things.
   IntroPart1:
-    Palette:
-      - *defaultBlack
-      - 
-        Number: 1
-        Direct: No
-        Base: [128.0, 128.0, 128.0, 0]
-        Params: [8, 10, 11, 9]
-        Function: 'WAVEFORM'
-      - *defaultGreen
-      - *defaultYellow
-      - *defaultBlue
-      - *defaultMagenta
-      - *defaultCyan
-      - *defaultWhite
-      -
-        Number: 8
-        Direct: Yes
-        Base: [128.0, 128, 128, 128]
-      -
-        Number: 9
-        Direct: Yes
-        Base: [1.0, 1, 1, 1]
-      -
-        Number: 10
-        Direct: Yes
-        Base: *colorBlack
-      - 
-        Number: 11
-        Direct: Yes
-        Base: *colorBlack
+    Palette: *titlePalette
     Lines:
       - 
         Id: Introduction0
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -190,8 +176,8 @@ Screens:
         Background: 0x00000000
       - 
         Id: Introduction1
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -210,8 +196,8 @@ Screens:
         Background: 0x00000000
       - 
         Id: Introduction2
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -230,8 +216,8 @@ Screens:
         Background: 0x00000000
       -
         Id: ContinueMessage
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -246,7 +232,7 @@ Screens:
         Font: 0
         Fraktur: no
         DoubleUnderline: no
-        Foreground: 0x00000001
+        Foreground: 0x00000003
         Background: 0x00000000
     Input:
       Expect:
@@ -255,41 +241,12 @@ Screens:
       - CharacterCreationPart1
 
   IntroductionPart2:
-    Palette:
-      - *defaultBlack
-      - 
-        Number: 1
-        Direct: No
-        Base: [128.0, 128.0, 128.0, 0]
-        Params: [8, 10, 11, 9]
-        Function: 'WAVEFORM'
-      - *defaultGreen
-      - *defaultYellow
-      - *defaultBlue
-      - *defaultMagenta
-      - *defaultCyan
-      - *defaultWhite
-      -
-        Number: 8
-        Direct: Yes
-        Base: [128.0, 128, 128, 128]
-      -
-        Number: 9
-        Direct: Yes
-        Base: [1.0, 1, 1, 1]
-      -
-        Number: 10
-        Direct: Yes
-        Base: *colorBlack
-      - 
-        Number: 11
-        Direct: Yes
-        Base: *colorBlack
+    Palette: *titlePalette
     Lines:
       - 
         Id: Introduction3
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -308,8 +265,8 @@ Screens:
         Background: 0x00000000
       - 
         Id: Introduction4
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -328,8 +285,8 @@ Screens:
         Background: 0x00000000
       - 
         Id: Introduction5
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -348,8 +305,8 @@ Screens:
         Background: 0x00000000
       - 
         Id: Introduction6
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -370,23 +327,12 @@ Screens:
       Expect:
         Mode: NONE
   Exit:
-    Palette:
-      - *defaultBlack
-      - *defaultRed
-      - 
-        Number: 2
-        Direct: Yes
-        Base: [192.0, 255, 248, 0]
-      - *defaultYellow
-      - *defaultBlue
-      - *defaultMagenta
-      - *defaultCyan
-      - *defaultWhite
+    Palette: *titlePalette
     Lines:
       - 
         Id: ExitMessage
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -409,41 +355,12 @@ Screens:
 # Begin the character creation things
 
   CharacterCreationPart1:
-    Palette:
-      - *defaultBlack
-      - 
-        Number: 1
-        Direct: No
-        Base: [128.0, 128.0, 128.0, 0]
-        Params: [8, 10, 11, 9]
-        Function: 'WAVEFORM'
-      - *defaultGreen
-      - *defaultYellow
-      - *defaultBlue
-      - *defaultMagenta
-      - *defaultCyan
-      - *defaultWhite
-      -
-        Number: 8
-        Direct: Yes
-        Base: [128.0, 128, 128, 128]
-      -
-        Number: 9
-        Direct: Yes
-        Base: [1.0, 1, 1, 1]
-      -
-        Number: 10
-        Direct: Yes
-        Base: *colorBlack
-      - 
-        Number: 11
-        Direct: Yes
-        Base: *colorBlack
+    Palette: *titlePalette
     Lines:
       - 
         Id: CharacterCreation0
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -465,8 +382,8 @@ Screens:
         Mode: FULL_NAME
       Remind:
         Id: NameEntryReminder
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
@@ -487,41 +404,12 @@ Screens:
       - CharacterCreationPart2
 
   CharacterCreationPart2:
-    Palette:
-      - *defaultBlack
-      - 
-        Number: 1
-        Direct: No
-        Base: [128.0, 128.0, 128.0, 0]
-        Params: [8, 10, 11, 9]
-        Function: 'WAVEFORM'
-      - *defaultGreen
-      - *defaultYellow
-      - *defaultBlue
-      - *defaultMagenta
-      - *defaultCyan
-      - *defaultWhite
-      -
-        Number: 8
-        Direct: Yes
-        Base: [128.0, 128, 128, 128]
-      -
-        Number: 9
-        Direct: Yes
-        Base: [1.0, 1, 1, 1]
-      -
-        Number: 10
-        Direct: Yes
-        Base: *colorBlack
-      - 
-        Number: 11
-        Direct: Yes
-        Base: *colorBlack
+    Palette: *titlePalette
     Lines:
       - 
         Id: CharacterCreation1
-        TextRate: 17
-        CommandRate: 100
+        TextRate: *defaultText
+        CommandRate: *defaultCmd
         Centered: no
         Wrapped: yes
         Bold: no
