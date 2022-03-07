@@ -25,11 +25,12 @@
 
 #include <io/base/syncstream.h++>
 
+#include <any>
+#include <array>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <map>
-#include <variant>
 
 namespace ux::console
 {
@@ -94,17 +95,18 @@ namespace ux::console
 
     enum class InputModes
     {
-        NONE, // wait for the user to press enter.
+        NONE,      // wait for the user to press enter.
+        FULL_NAME, // get two strings delimited by a space.
         _MAX,
     };
 
-    using InputResult = std::variant< void * >;
+    using InputResult = std::any;
 
     struct Input
     {
         InputModes mode            = InputModes::_MAX;
-        bool       inputReady      = false;
-        InputResult mutable result = { };
+        bool mutable inputReady    = false;
+        InputResult mutable result = 0;
 
         bool const operator== ( Input const &in ) const noexcept
         {
@@ -129,9 +131,9 @@ namespace ux::console
         std::list< serialization::ExternalID > nextScreen;
 
         io::console::ConsoleManipulator
-                   output ( serialization::ExternalizedStrings const  &strings,
-                            defines::IString const                    &locale,
-                            serialization::TransliterationLevel const &level );
-        bool operator== ( Screen const &screen ) const noexcept = default;
+                output ( serialization::ExternalizedStrings const  &strings,
+                         defines::IString const                    &locale,
+                         serialization::TransliterationLevel const &level );
+        bool    operator== ( Screen const &screen ) const noexcept = default;
     };
 } // namespace ux::console

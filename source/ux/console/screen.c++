@@ -168,7 +168,7 @@ ConsoleManipulator
             assert ( !string.empty ( ) );
             // wait until we have finished outputting the line.
             console << doWaitForText;
-            if (!string.ends_with("\n"))
+            if ( !string.ends_with ( "\n" ) )
             {
                 string += "\n";
             }
@@ -191,28 +191,54 @@ ConsoleManipulator
         bool matches = false;
         do {
             std::cin.clear ( );
-            defines::ChrString input = "";
-            std::getline ( std::cin, input );
-
             // check against input
             // get the input
             matches =
                     parseInputMode ( inputPrompt.mode ) ( inputPrompt.result );
+            io::base::osyncstream { std::cout }
+                    << "Result type as currently read is "
+                    << inputPrompt.result.type ( ).name ( ) << "\n";
 
         } while ( !matches );
-
+        inputPrompt.inputReady = true;
         return console;
     };
 }
 
 // the input modes.
-bool inputModeNone ( InputResult & ) { return true; }
+bool inputModeNone ( InputResult & )
+{
+    defines::ChrString temp = "";
+    std::getline ( std::cin, temp );
+    return true;
+}
+
+bool inputModeFullName ( InputResult &result )
+{
+    defines::ChrString name [ 2 ] = { "", "" };
+    std::cin >> name [ 0 ] >> name [ 1 ];
+    {
+        io::base::osyncstream { std::cout } << name [ 0 ] << ", " << name [ 1 ]
+                                            << "\n";
+    }
+    if ( name [ 0 ].empty ( ) || name [ 1 ].empty ( ) )
+    {
+        return false;
+    }
+    result = std::make_any< defines::ChrString * > (
+            new defines::ChrString [ 2 ] { name [ 0 ], name [ 1 ] } );
+    io::base::osyncstream { std::cout } << "Result type as stored is "
+                                        << result.type ( ).name ( ) << "\n";
+    std::cin.clear ( );
+    return true;
+}
 
 InputModeGetter parseInputMode ( InputModes const &mode )
 {
     switch ( mode )
     {
         case InputModes::NONE: return &inputModeNone;
+        case InputModes::FULL_NAME: return &inputModeFullName;
         default: return &inputModeNone;
     }
 }

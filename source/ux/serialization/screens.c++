@@ -96,7 +96,7 @@ void ux::serialization::ExternalizedScreens::_parse (
         }
 
         parsed.inputPrompt.mode = defines::fromString< InputModes > (
-                input [ "Expect" ][ "Mode" ].as< defines::ChrString > ( ) );
+                input [ "Expect" ][ "Mode" ].Scalar ( ) );
         parsed.wrongAnswer = input [ "Remind" ]
                                    ? parseLine ( input [ "Remind" ] )
                                    : Line { "EmptyString" };

@@ -22,6 +22,7 @@
 
 #include <ux/console/screen.h++>
 
+#include <any>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -99,8 +100,11 @@ int main ( int const argc, char const *const *const argv )
 
     using namespace io::console;
     Console con;
+
+    defines::IString currentScreenName = "Title";
+
     // TODO #53 should get implemented here.
-    auto    chooseNext = [ & ] ( ux::console::Screen const &current ) {
+    auto chooseNext = [ & ] ( ux::console::Screen const &current ) {
         // screen choosing logic, potentially moved eventually
         // to Screen as a member function.
         //
@@ -111,19 +115,53 @@ int main ( int const argc, char const *const *const argv )
             std::exit ( 0 );
         } else if ( current.nextScreen.empty ( ) )
         {
+            currentScreenName = "Exit";
             // exit screen.
             return getScreen ( "Exit" );
         } else
         {
+            currentScreenName = current.nextScreen.front ( ).key;
             return getScreen ( current.nextScreen.front ( ).key );
         }
     };
 
+    // first and last name as grabbed from the name input.
+    defines::IString firstName;
+    defines::IString lastName;
+
     for ( ux::console::Screen screen = getScreen ( "Title" );;
           screen                     = chooseNext ( screen ) )
     {
+        std::cin.clear ( );
         con << screen.output ( *strings, locale, translit );
+        // check if the screen is the part which asks for the first name and
+        // last name of the hypothetical character.
+        if ( currentScreenName == "CharacterCreationPart1" )
+        {
+            while ( !screen.inputPrompt.inputReady ) { }
+            defines::ChrString *temp = nullptr;
+            try
+            {
+                temp = std::any_cast< defines::ChrString * > (
+                        screen.inputPrompt.result );
+            } catch ( std::bad_any_cast &bac )
+            {
+                io::base::osyncstream { std::cout }
+                        << "Failed to read in the name. Despite what the "
+                           "result "
+                           "types say, we see the input as a "
+                        << screen.inputPrompt.result.type ( ).name ( ) << "\n";
+            }
+
+            if ( temp )
+            {
+                con << "Read in the data " << temp [ 0 ] << " and "
+                    << temp [ 1 ] << "\n";
+            }
+        }
     }
+
+    std::cin.get ( );
     // set up some (hopefully) flashing text
     // con << setDirectColor ( 8, 1, 1, 1 );
     // con << setDirectColor ( 9, 0x80, 0x80, 0x80, 0x80 );
