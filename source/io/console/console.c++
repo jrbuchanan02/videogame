@@ -112,6 +112,8 @@ struct io::console::Console::impl_s
     std::uint32_t       foreground = 0;
     std::uint32_t       background = 0;
 
+    std::atomic_bool printingNow = false;
+
     impl_s ( ) noexcept
     {
         // txt.setReady ( std::shared_ptr< std::atomic_bool > ( &readySignal )
@@ -370,6 +372,7 @@ void io::console::Console::setRows ( std::uint32_t const &value ) noexcept
 
 void io::console::Console::send ( std::string const &str ) noexcept
 {
+    pimpl->printingNow.store ( true );
     std::shared_ptr< bool > lastToken;
     std::string             line = str;
     if ( pimpl->wrapText )
@@ -515,6 +518,7 @@ void io::console::Console::send ( std::string const &str ) noexcept
             std::this_thread::sleep_for ( std::chrono::milliseconds ( 1 ) );
         }
     }
+    pimpl->printingNow.store ( false );
 }
 
 std::shared_ptr< io::console::colors::IColor >
@@ -768,4 +772,9 @@ void io::console::Console::setBackground ( std::uint32_t const &color ) noexcept
         // set internal color accordingly.
         pimpl->background = color;
     }
+}
+
+bool const io::console::Console::printing ( ) const noexcept
+{
+    return pimpl->printingNow.load ( );
 }

@@ -123,7 +123,14 @@ namespace io::console
         Console ( );
         virtual ~Console ( );
 
-        void setWaitOnText ( bool const & ) noexcept;
+        void       setWaitOnText ( bool const       &) noexcept;
+        /**
+         * @brief Indicates whether th console is currently using the text
+         * channel. Useful for reading input to ensure that the user has seen
+         * the entire prompt.
+         *
+         */
+        bool const printing ( ) const noexcept;
 
         std::uint32_t getCols ( ) const noexcept;
         void          setCols ( std::uint32_t const &value ) noexcept;
