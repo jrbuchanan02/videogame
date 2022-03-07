@@ -121,6 +121,16 @@ complete but have not been thouroughly (however you spell that word) tested.
    brings randomness into seemingly completely certain game-events.
    - [ ] Multiple engine states including a menu, cutscene, tutorial, and in-game
    state.
+
+## Version Numbering
+Videogame uses a modified version of symver. Videogame uses the shortest version number
+possible while giving each version a unique number which always counts up. 
+So, v0 is the first version, then, if there is bug fix, the version would increment to
+v0.1 (never using v0.0). This is to keep the version number as short as reasonable. 
+Videogame's source files uses a simple counter numbering-scheme where a version 
+increment occurs whenever a major rewrite occurs. (none have happened yet, so all
+of videogame's source files are version 1).
+
 ## Dependencies
 Videogame intends on having minimal dependencies. All external code is currently
 contained within the `extern` folder. The complete list of all program contents

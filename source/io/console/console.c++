@@ -324,8 +324,8 @@ void io::console::Console::impl_s::sizeUpdateFunction ( )
         defines::ChrChar *_rows = std::getenv ( "ROWS" );
         defines::ChrChar *_cols = std::getenv ( "COLUMNS" );
 
-        defines::ChrStringStream rows { _rows };
-        defines::ChrStringStream cols { _cols };
+        defines::ChrStringStream rows { _rows ? _rows : "25" };
+        defines::ChrStringStream cols { _cols ? _cols : "80" };
         rows >> consoleSize.row;
         cols >> consoleSize.col;
 #endif
